@@ -1,0 +1,318 @@
+{
+  "id": "dms",
+  "realm": "dms",
+  "displayName": "Legal DMS",
+  "displayNameHtml": "<div class=\"kc-logo-text\"><span>Legal DMS</span></div>",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "registrationEmailAsUsername": false,
+  "rememberMe": false,
+  "verifyEmail": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "bruteForceProtected": true,
+  "permanentLockout": false,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "waitIncrementSeconds": 60,
+  "quickLoginCheckMilliSeconds": 1000,
+  "maxDeltaTimeSeconds": 43200,
+  "failureFactor": 5,
+  "defaultRoles": [
+    "offline_access",
+    "uma_authorization",
+    "default-roles-dms"
+  ],
+  "requiredCredentials": [
+    "password"
+  ],
+  "otpPolicyType": "totp",
+  "otpPolicyAlgorithm": "HmacSHA1",
+  "otpPolicyInitialCounter": 0,
+  "otpPolicyDigits": 6,
+  "otpPolicyLookAheadWindow": 1,
+  "otpPolicyPeriod": 30,
+  "otpPolicyCodeReusable": false,
+  "webAuthnPolicyRpEntityName": "Legal DMS",
+  "webAuthnPolicySignatureAlgorithms": [
+    "ES256",
+    "RS256"
+  ],
+  "webAuthnPolicyRpId": "localhost",
+  "webAuthnPolicyAttestationConveyancePreference": "not specified",
+  "webAuthnPolicyAuthenticatorAttachment": "not specified",
+  "webAuthnPolicyRequireResidentKey": "not specified",
+  "webAuthnPolicyUserVerificationRequirement": "not specified",
+  "webAuthnPolicyCreateTimeout": 0,
+  "webAuthnPolicyAvoidSameAuthenticatorRegister": false,
+  "webAuthnPolicyAcceptableAaguids": [],
+  "attributes": {
+    "cibaBackchannelTokenDeliveryMode": "poll",
+    "cibaAuthRequestedUserHint": "login_hint",
+    "oauth2DeviceCodeLifespan": "600",
+    "clientSessionIdleTimeout": "0",
+    "clientSessionMaxLifespan": "0",
+    "clientOfflineSessionIdleTimeout": "0",
+    "clientOfflineSessionMaxLifespan": "0"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "default-roles-dms",
+        "description": "${role_default-roles}",
+        "composite": true,
+        "composites": {
+          "realm": [
+            "offline_access",
+            "uma_authorization"
+          ]
+        }
+      },
+      {
+        "name": "super_admin",
+        "description": "System-wide super administrator"
+      },
+      {
+        "name": "firm_admin",
+        "description": "Firm administrator"
+      },
+      {
+        "name": "legal_professional",
+        "description": "Legal professional"
+      },
+      {
+        "name": "legal_manager",
+        "description": "Legal manager"
+      },
+      {
+        "name": "support_staff",
+        "description": "Support staff"
+      },
+      {
+        "name": "client_user",
+        "description": "Client user"
+      },
+      {
+        "name": "external_partner",
+        "description": "External partner from another firm"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "System Administrators",
+      "path": "/System Administrators",
+      "realmRoles": [
+        "super_admin"
+      ]
+    },
+    {
+      "name": "Firm Administrators",
+      "path": "/Firm Administrators", 
+      "realmRoles": [
+        "firm_admin"
+      ]
+    },
+    {
+      "name": "Legal Professionals",
+      "path": "/Legal Professionals",
+      "realmRoles": [
+        "legal_professional"
+      ]
+    },
+    {
+      "name": "Clients",
+      "path": "/Clients",
+      "realmRoles": [
+        "client_user"
+      ]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "dms-app",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "dev-secret",
+      "redirectUris": [
+        "http://localhost/*",
+        "http://localhost:3000/*",
+        "http://localhost:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost",
+        "http://localhost:3000", 
+        "http://localhost:5173"
+      ],
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": true,
+      "fullScopeAllowed": true,
+      "attributes": {
+        "oidc.ciba.grant.enabled": "false",
+        "oauth2.device.authorization.grant.enabled": "false",
+        "backchannel.logout.session.required": "true",
+        "backchannel.logout.revoke.offline.tokens": "false"
+      },
+      "protocolMappers": [
+        {
+          "name": "firm_id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "firm_id",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "firm_id",
+            "jsonType.label": "String"
+          }
+        },
+        {
+          "name": "teams",
+          "protocol": "openid-connect", 
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "teams",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "teams",
+            "jsonType.label": "JSON"
+          }
+        },
+        {
+          "name": "clearance_level",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper", 
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "clearance_level",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "clearance_level",
+            "jsonType.label": "int"
+          }
+        },
+        {
+          "name": "is_partner",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "userinfo.token.claim": "true",
+            "user.attribute": "is_partner", 
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "is_partner",
+            "jsonType.label": "boolean"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "admin",
+      "enabled": true,
+      "email": "admin@example.com",
+      "firstName": "System",
+      "lastName": "Administrator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "super_admin",
+        "default-roles-dms"
+      ],
+      "attributes": {
+        "firm_id": ["system"],
+        "teams": ["[\"system\"]"],
+        "clearance_level": ["10"],
+        "is_partner": ["false"]
+      }
+    },
+    {
+      "username": "firm1-admin",
+      "enabled": true,
+      "email": "admin@firm1.com",
+      "firstName": "Firm",
+      "lastName": "Admin",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "firm_admin",
+        "default-roles-dms"
+      ],
+      "attributes": {
+        "firm_id": ["f-1"],
+        "teams": ["[\"admin\"]"],
+        "clearance_level": ["5"],
+        "is_partner": ["false"]
+      }
+    },
+    {
+      "username": "lawyer1",
+      "enabled": true,
+      "email": "lawyer1@firm1.com",
+      "firstName": "John",
+      "lastName": "Lawyer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "lawyer123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "legal_professional",
+        "default-roles-dms"
+      ],
+      "attributes": {
+        "firm_id": ["f-1"],
+        "teams": ["[\"litigation\", \"corporate\"]"],
+        "clearance_level": ["3"],
+        "is_partner": ["false"]
+      }
+    },
+    {
+      "username": "client1",
+      "enabled": true,
+      "email": "contact@client1.com",
+      "firstName": "Jane",
+      "lastName": "Client",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "client123",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "client_user",
+        "default-roles-dms"
+      ],
+      "attributes": {
+        "firm_id": ["external"],
+        "teams": ["[]"],
+        "clearance_level": ["1"],
+        "is_partner": ["false"]
+      }
+    }
+  ]
+}

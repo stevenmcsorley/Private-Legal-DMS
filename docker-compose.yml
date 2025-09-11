@@ -1,0 +1,390 @@
+services:
+  # Gateway & Load Balancer
+  traefik:
+    image: traefik:v3.1
+    command:
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "8080:8080"  # Traefik dashboard (dev only)
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - dms-network
+
+  # Authentication Service
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: ["start-dev", "--import-realm"]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTP_PORT: 8080
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./infra/keycloak/realm-export:/opt/keycloak/data/import
+    networks:
+      - dms-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.keycloak.rule=Host(`localhost`) && PathPrefix(`/auth`)
+      - traefik.http.services.keycloak.loadbalancer.server.port=8080
+
+  keycloak-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - keycloak-db:/var/lib/postgresql/data
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Main Application (BFF)
+  app:
+    image: node:18-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm run start:dev"
+    environment:
+      NODE_ENV: development
+      DATABASE_URL: postgres://app:app@app-db:5432/app
+      OPENSEARCH_URL: http://opensearch:9200
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minio
+      MINIO_SECRET_KEY: minio123
+      MINIO_USE_SSL: "false"
+      OPA_URL: http://opa:8181/v1/data/dms/authz
+      KEYCLOAK_ISSUER: http://keycloak:8080/realms/dms
+      KEYCLOAK_CLIENT_ID: dms-app
+      KEYCLOAK_CLIENT_SECRET: dev-secret
+      SESSION_SECRET: "dev_session_secret_change_in_production"
+      REDIS_URL: redis://redis:6379
+      TIKA_URL: http://tika:9998
+      CLAMAV_HOST: clamav
+      CLAMAV_PORT: 3310
+    depends_on:
+      app-db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./services/app:/app
+      - /app/node_modules
+    networks:
+      - dms-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.app.rule=Host(`localhost`) && PathPrefix(`/api`)
+      - traefik.http.services.app.loadbalancer.server.port=3000
+
+  app-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: app
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    volumes:
+      - app-db:/var/lib/postgresql/data
+      - ./scripts/sql:/docker-entrypoint-initdb.d
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Frontend SPA
+  frontend:
+    image: node:18-alpine  
+    working_dir: /app
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      VITE_API_BASE: /api
+      VITE_KEYCLOAK_URL: http://localhost:8081
+      VITE_KEYCLOAK_REALM: dms
+      VITE_KEYCLOAK_CLIENT_ID: dms-app
+    depends_on: []
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    networks:
+      - dms-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.frontend.rule=Host(`localhost`)
+      - traefik.http.services.frontend.loadbalancer.server.port=5173
+
+  # Object Storage
+  minio:
+    image: minio/minio:RELEASE.2024-08-29T01-40-52Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio:/data
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Search Engine
+  opensearch:
+    image: opensearchproject/opensearch:2.14.0
+    environment:
+      discovery.type: single-node
+      plugins.security.disabled: "true"
+      bootstrap.memory_lock: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch:/usr/share/opensearch/data
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Document Processing
+  tika:
+    image: apache/tika:2.9.2.0
+    ports:
+      - "9998:9998"
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9998/version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # OCR Service (disabled for initial setup)
+  # ocr:
+  #   image: jbarlow83/ocrmypdf
+  #   environment:
+  #     TESSDATA_PREFIX: /usr/share/tesseract-ocr/4.00/tessdata
+  #   networks:
+  #     - dms-network
+
+  # Virus Scanning
+  clamav:
+    image: clamav/clamav:stable
+    ports:
+      - "3310:3310"
+    volumes:
+      - clamav:/var/lib/clamav
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD", "clamdscan", "--version"]
+      interval: 60s
+      timeout: 30s
+      retries: 5
+
+  # Background Worker (disabled for initial setup)
+  # worker:
+  #   image: node:18-alpine
+  #   working_dir: /app
+  #   environment:
+  #     NODE_ENV: development
+  #     DATABASE_URL: postgres://app:app@app-db:5432/app
+  #     TIKA_URL: http://tika:9998
+  #     OPENSEARCH_URL: http://opensearch:9200
+  #     MINIO_ENDPOINT: minio:9000
+  #     MINIO_ACCESS_KEY: minio
+  #     MINIO_SECRET_KEY: minio123
+  #     MINIO_USE_SSL: "false"
+  #     REDIS_URL: redis://redis:6379
+  #     CLAMAV_HOST: clamav
+  #     CLAMAV_PORT: 3310
+  #   depends_on:
+  #     app-db:
+  #       condition: service_healthy
+  #     tika:
+  #       condition: service_healthy
+  #     opensearch:
+  #       condition: service_healthy
+  #     minio:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
+  #     clamav:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./services/worker:/app
+  #     - /app/node_modules
+  #   networks:
+  #     - dms-network
+
+  # Cache & Queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis:/data
+    networks:
+      - dms-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Authorization Policy Engine
+  opa:
+    image: openpolicyagent/opa:0.66.0
+    command: ["run", "--server", "--addr=:8181", "/policies/policy.rego"]
+    volumes:
+      - ./infra/opa:/policies
+    ports:
+      - "8181:8181"
+    networks:
+      - dms-network
+
+  # Document Preview/Edit
+  onlyoffice:
+    image: onlyoffice/documentserver:8.2
+    environment:
+      JWT_ENABLED: "false"  # Disabled for development
+    ports:
+      - "8082:80"
+    volumes:
+      - onlyoffice-logs:/var/log/onlyoffice
+      - onlyoffice-data:/var/www/onlyoffice/Data
+    networks:
+      - dms-network
+
+  # Email Testing (Development)
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    environment:
+      MP_MAX_MESSAGES: 10000
+    networks:
+      - dms-network
+
+  # Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.console.libraries=/etc/prometheus/console_libraries
+      - --web.console.templates=/etc/prometheus/consoles
+      - --storage.tsdb.retention.time=200h
+      - --web.enable-lifecycle
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - dms-network
+
+  # Container Metrics
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    ports:
+      - "8083:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - dms-network
+
+  # Dashboards
+  grafana:
+    image: grafana/grafana:11.3.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana:/var/lib/grafana
+    ports:
+      - "3001:3000"
+    networks:
+      - dms-network
+
+  # Log Aggregation
+  loki:
+    image: grafana/loki:3.0.0
+    command: -config.file=/etc/loki/local-config.yaml
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./infra/loki/loki-config.yml:/etc/loki/local-config.yaml
+      - loki:/tmp/loki
+    networks:
+      - dms-network
+
+  # Local Container Registry (for offline deployments)
+  registry:
+    image: registry:2
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry:/var/lib/registry
+    networks:
+      - dms-network
+
+volumes:
+  keycloak-db:
+  app-db:
+  minio:
+  opensearch:
+  clamav:
+  redis:
+  onlyoffice-logs:
+  onlyoffice-data:
+  prometheus:
+  grafana:
+  loki:
+  registry:
+
+networks:
+  dms-network:
+    driver: bridge
