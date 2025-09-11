@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { BullRootModuleOptions, BullOptionsFactory } from '@nestjs/bull';
+import { BullRootModuleOptions, SharedBullConfigurationFactory } from '@nestjs/bull';
 
 @Injectable()
-export class RedisConfig implements BullOptionsFactory {
+export class RedisConfig implements SharedBullConfigurationFactory {
   constructor(private configService: ConfigService) {}
 
-  createBullOptions(): BullRootModuleOptions {
+  createSharedConfiguration(): BullRootModuleOptions {
     const redisUrl = this.configService.get('REDIS_URL');
     
     return {

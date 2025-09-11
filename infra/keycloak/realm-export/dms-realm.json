@@ -98,6 +98,14 @@
       {
         "name": "external_partner",
         "description": "External partner from another firm"
+      },
+      {
+        "name": "offline_access",
+        "description": "Offline access role"
+      },
+      {
+        "name": "uma_authorization",
+        "description": "UMA authorization role"
       }
     ]
   },

@@ -7,6 +7,12 @@ import * as session from 'express-session';
 import * as compression from 'compression';
 import helmet from 'helmet';
 
+// Polyfill for crypto.randomUUID if not available
+if (!global.crypto) {
+  const { webcrypto } = require('crypto');
+  global.crypto = webcrypto;
+}
+
 import { AppModule } from './app.module';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 
@@ -18,7 +24,7 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   
   // Trust proxy for proper IP forwarding
-  app.set('trust proxy', 1);
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   // Security middleware
   app.use(helmet({
