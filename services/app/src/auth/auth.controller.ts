@@ -209,46 +209,6 @@ export class AuthController {
     };
   }
 
-  @Public()
-  @Post('test-login')
-  async testLogin(@Req() req: Request) {
-    if (this.configService.get('NODE_ENV') === 'production') {
-      throw new BadRequestException('Test login not available in production');
-    }
-
-    const testUserInfo: UserInfo = {
-      sub: 'test-admin',
-      email: 'admin@example.com',
-      preferred_username: 'admin',
-      given_name: 'Admin',
-      family_name: 'User',
-      name: 'Admin User',
-      roles: ['firm_admin', 'legal_manager', 'legal_professional'],
-      firm_id: '22222222-2222-2222-2222-222222222222',
-      attributes: {
-        clearance_level: 10
-      }
-    };
-
-    const testSession: Session = {
-      user: testUserInfo,
-      accessToken: 'test-token',
-      refreshToken: 'test-refresh',
-      expiresAt: new Date(Date.now() + 3600000),
-      issuedAt: new Date()
-    };
-
-    (req.session as any).auth = testSession;
-
-    return {
-      message: 'Test session created',
-      user: {
-        id: testUserInfo.sub,
-        email: testUserInfo.email,
-        name: testUserInfo.name,
-        roles: testUserInfo.roles,
-        firmId: testUserInfo.firm_id,
-      }
-    };
-  }
+  // NOTE: test-login removed for production security
+  // All authentication now goes through proper Keycloak OIDC flow
 }
