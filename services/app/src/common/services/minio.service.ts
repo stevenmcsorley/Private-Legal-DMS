@@ -20,6 +20,7 @@ export interface ObjectInfo {
 export class MinioService implements OnModuleInit {
   private readonly logger = new Logger(MinioService.name);
   private client: Minio.Client | null = null;
+  private externalClient: Minio.Client | null = null;
   private isInitialized = false;
 
   constructor(private minioConfig: MinioConfig) {}
@@ -27,6 +28,27 @@ export class MinioService implements OnModuleInit {
   async onModuleInit() {
     try {
       this.client = new Minio.Client(this.minioConfig.config);
+      
+      // Create external client for presigned URL generation if configured
+      const externalEndpoint = this.minioConfig.externalEndpoint;
+      this.logger.log(`External endpoint config: ${externalEndpoint}`);
+      if (externalEndpoint) {
+        const url = new URL(externalEndpoint);
+        this.logger.log(`Parsing external URL: ${externalEndpoint} -> host: ${url.hostname}, port: ${url.port || 'default'}`);
+        const externalClientConfig = {
+          endPoint: url.hostname,
+          port: parseInt(url.port) || (url.protocol === 'https:' ? 443 : 80),
+          useSSL: url.protocol === 'https:',
+          accessKey: this.minioConfig.config.accessKey,
+          secretKey: this.minioConfig.config.secretKey,
+        };
+        this.logger.log(`External client config: ${JSON.stringify(externalClientConfig, null, 2)}`);
+        this.externalClient = new Minio.Client(externalClientConfig);
+        this.logger.log(`External MinIO client configured for ${externalEndpoint}`);
+      } else {
+        this.logger.log(`No external endpoint configured, using internal client for URLs`);
+      }
+      
       await this.ensureBucketExists();
       this.isInitialized = true;
       this.logger.log('MinIO service initialized successfully');
@@ -165,13 +187,8 @@ export class MinioService implements OnModuleInit {
   ): Promise<string> {
     try {
       const bucketName = this.minioConfig.bucketName;
-      let url = await this.getClient().presignedGetObject(bucketName, objectKey, expiry);
-      
-      // Replace internal Docker network hostname with localhost for browser access
-      if (url.includes('minio:9000')) {
-        url = url.replace('minio:9000', 'localhost:9000');
-      }
-      
+      const url = await this.getClient().presignedGetObject(bucketName, objectKey, expiry);
+      this.logger.log(`Generated presigned URL: ${url}`);
       return url;
     } catch (error) {
       this.logger.error(`Failed to generate presigned URL for ${objectKey}:`, error);

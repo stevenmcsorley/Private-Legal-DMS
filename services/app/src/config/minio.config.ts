@@ -27,4 +27,8 @@ export class MinioConfig {
   get region(): string {
     return this.configService.get('MINIO_REGION', 'us-east-1');
   }
+
+  get externalEndpoint(): string | undefined {
+    return this.configService.get('MINIO_EXTERNAL_ENDPOINT');
+  }
 }

@@ -313,6 +313,18 @@ export class DocumentsService {
   }
 
   async getPreviewUrl(id: string, user: UserInfo): Promise<{ url: string; expires_at: Date }> {
+    // This method is now handled directly in the controller
+    // for the secure proxy approach
+    const expirySeconds = 3600; // 1 hour
+    const expiresAt = new Date(Date.now() + expirySeconds * 1000);
+    
+    return {
+      url: `/api/documents/${id}/stream`,
+      expires_at: expiresAt,
+    };
+  }
+
+  async streamDocument(id: string, user: UserInfo, response: any): Promise<void> {
     const document = await this.documentRepository.findOne({
       where: { id },
       relations: ['metadata'],
@@ -331,18 +343,28 @@ export class DocumentsService {
       throw new NotFoundException('Document has been deleted');
     }
 
-    // Generate presigned URL with 1 hour expiry for preview
-    const expirySeconds = 3600; // 1 hour
-    const url = await this.minioService.generatePresignedUrl(document.object_key, expirySeconds);
-    const expiresAt = new Date(Date.now() + expirySeconds * 1000);
+    try {
+      // Get file from MinIO
+      const buffer = await this.minioService.downloadFile(document.object_key);
+      
+      // Set appropriate headers
+      response.set({
+        'Content-Type': document.mime_type,
+        'Content-Length': buffer.length.toString(),
+        'Cache-Control': 'private, no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      });
 
-    // Audit log the document preview
-    await this.auditService.logDocumentView(user, id, document.metadata?.title || document.original_filename);
+      // Stream the document
+      response.send(buffer);
 
-    return {
-      url,
-      expires_at: expiresAt,
-    };
+      // Audit log the document view
+      await this.auditService.logDocumentView(user, id, document.metadata?.title || document.original_filename);
+    } catch (error) {
+      this.logger.error(`Failed to stream document ${id}:`, error);
+      throw new NotFoundException('Document content not available');
+    }
   }
 
   async deleteDocument(id: string, user: UserInfo): Promise<void> {

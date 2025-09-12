@@ -259,7 +259,7 @@ export class DocumentsController {
       properties: {
         url: {
           type: 'string',
-          description: 'Presigned URL for document preview',
+          description: 'Secure proxy URL for document preview',
         },
         expires_at: {
           type: 'string',
@@ -281,7 +281,47 @@ export class DocumentsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserInfo,
   ): Promise<{ url: string; expires_at: Date }> {
-    return this.documentsService.getPreviewUrl(id, user);
+    // Return secure proxy URL instead of presigned URL
+    const expirySeconds = 3600; // 1 hour
+    const expiresAt = new Date(Date.now() + expirySeconds * 1000);
+    
+    return {
+      url: `/api/documents/${id}/stream`,
+      expires_at: expiresAt,
+    };
+  }
+
+  @Get(':id/stream')
+  @CanRead('document')
+  @ApiOperation({ summary: 'Stream document content securely' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document content streamed successfully',
+    headers: {
+      'Content-Type': {
+        description: 'MIME type of the document',
+        schema: { type: 'string' },
+      },
+      'Content-Length': {
+        description: 'Size of the document in bytes',
+        schema: { type: 'string' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Document not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied to this document',
+  })
+  async streamDocument(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+    @Res() response: Response,
+  ): Promise<void> {
+    return this.documentsService.streamDocument(id, user, response);
   }
 
   @Delete(':id')
