@@ -19,23 +19,45 @@ firm_access_allowed if {
 # Cross-firm access via matter shares
 cross_firm_access_allowed if {
     input.resource.type == "document"
-    some share in input.resource.shared_with
-    share.firm_id == input.user.attrs.firm_id
-    share.expires_at > time.now_ns()
+    some share in input.resource.matter_shares
+    share.shared_with_firm_id == input.user.attrs.firm_id
+    share.status == "accepted"
+    _share_not_expired(share)
 }
 
-# Document access rules
+cross_firm_access_allowed if {
+    input.resource.type == "matter"
+    some share in input.resource.shares
+    share.shared_with_firm_id == input.user.attrs.firm_id
+    share.status == "accepted"
+    _share_not_expired(share)
+}
+
+# Helper function to check if share is not expired
+_share_not_expired(share) if {
+    not share.expires_at
+}
+
+_share_not_expired(share) if {
+    share.expires_at
+    time.parse_rfc3339_ns(share.expires_at) > time.now_ns()
+}
+
+# Document access rules (firm access)
 allow if {
     input.resource.type == "document"
     input.action in ["read", "download"]
-    
-    # Must have firm access or cross-firm access
-    firm_access_allowed or cross_firm_access_allowed
-    
-    # Security clearance check
+    firm_access_allowed
     input.user.attrs.clearance_level >= input.resource.security_class
-    
-    # Role-based permissions
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Document access rules (cross-firm access)
+allow if {
+    input.resource.type == "document"
+    input.action in ["read", "download"]
+    cross_firm_access_allowed
+    input.user.attrs.clearance_level >= input.resource.security_class
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
@@ -159,11 +181,69 @@ allow if {
     "super_admin" in input.user.roles
 }
 
-# Matter sharing (cross-firm collaboration)
+# Matter sharing management
+# Create new matter shares (only by owning firm)
+allow if {
+    input.resource.type == "matter_share"
+    input.action == "create"
+    input.resource.shared_by_firm_id == input.user.attrs.firm_id
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# View matter shares (either sharing or receiving firm)
+allow if {
+    input.resource.type == "matter_share"
+    input.action in ["read", "list"]
+    _has_share_access
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin", "support_staff"]
+}
+
+# Update matter shares (both firms can update - sharing firm for permissions, receiving firm for status)
+allow if {
+    input.resource.type == "matter_share" 
+    input.action == "update"
+    _has_share_access
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Delete matter shares (only sharing firm)
+allow if {
+    input.resource.type == "matter_share"
+    input.action == "delete"
+    input.resource.shared_by_firm_id == input.user.attrs.firm_id
+    input.user.roles[_] in ["legal_manager", "firm_admin"]
+}
+
+# Accept/decline share invitations (only receiving firm)
+allow if {
+    input.resource.type == "matter_share"
+    input.action in ["accept", "decline"]
+    input.resource.shared_with_firm_id == input.user.attrs.firm_id
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Revoke shares (only sharing firm)
+allow if {
+    input.resource.type == "matter_share"
+    input.action == "revoke"
+    input.resource.shared_by_firm_id == input.user.attrs.firm_id
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Helper function for share access
+_has_share_access if {
+    input.resource.shared_by_firm_id == input.user.attrs.firm_id
+}
+
+_has_share_access if {
+    input.resource.shared_with_firm_id == input.user.attrs.firm_id
+}
+
+# Cross-firm matter access (via active shares)
 allow if {
     input.resource.type == "matter"
-    input.action == "share"
-    firm_access_allowed
+    input.action in ["read", "list"]
+    cross_firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
@@ -181,38 +261,10 @@ allow if {
     "firm_admin" in input.user.roles
 }
 
-# Generate decision with reasoning
-decision := {
-    "allow": allow,
-    "reason": reason
-}
+# Generate decision (simple)
+decision := {"allow": allow, "reason": allow_reason}
 
-reason := "access granted" if allow
-
-reason := "insufficient clearance" if {
-    not allow
-    input.resource.security_class > input.user.attrs.clearance_level
-}
-
-reason := "firm access denied" if {
-    not allow
-    not firm_access_allowed
-    not cross_firm_access_allowed
-}
-
-reason := "role insufficient" if {
-    not allow
-    not reason == "insufficient clearance"
-    not reason == "firm access denied"
-}
-
-reason := "legal hold prevents action" if {
-    not allow
-    input.resource.legal_hold == true
-    input.action == "delete"
-}
-
-reason := "default deny" if {
-    not allow
-    not reason
+allow_reason := "access granted" if allow
+allow_reason := "denied" if {
+  not allow
 }

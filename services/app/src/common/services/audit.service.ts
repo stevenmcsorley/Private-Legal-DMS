@@ -99,10 +99,8 @@ export class AuditService {
     const user: UserInfo = {
       sub: 'unknown',
       email,
-      display_name: email,
+      preferred_username: email,
       roles: [],
-      firm_id: null,
-      client_ids: null,
     };
 
     await this.log({

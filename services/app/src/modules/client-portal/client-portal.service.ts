@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Client, Matter, Document } from '../../common/entities';
+import { Client, Matter, Document, MatterStatus } from '../../common/entities';
 import { UserInfo } from '../../auth/auth.service';
 import { DocumentResponseDto } from '../documents/dto/document-response.dto';
 
@@ -49,7 +49,7 @@ export class ClientPortalService {
     const activeMattersCount = await this.matterRepository.count({
       where: { 
         client_id: client.id,
-        status: 'active',
+        status: MatterStatus.ACTIVE,
       },
     });
 
@@ -108,8 +108,8 @@ export class ClientPortalService {
       client: {
         id: client.id,
         name: client.name,
-        type: client.type,
-        status: client.status,
+        type: 'client',
+        status: 'active',
       },
       stats: {
         active_matters: activeMattersCount,
@@ -233,7 +233,7 @@ export class ClientPortalService {
     const accessibleMatters = await this.matterRepository.find({
       where: { 
         client_id: client.id,
-        status: 'active', // Only allow uploads to active matters
+        status: MatterStatus.ACTIVE, // Only allow uploads to active matters
       },
       select: ['id', 'title', 'status'],
     });

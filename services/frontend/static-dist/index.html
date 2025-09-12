@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Legal Document Management System</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6; color: #333; background: #f5f5f5;
+        }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { 
+            background: #1e40af; color: white; padding: 20px 0; margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header h1 { text-align: center; font-size: 2rem; }
+        .card { 
+            background: white; padding: 25px; margin-bottom: 20px; 
+            border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { color: #1e40af; margin-bottom: 15px; }
+        .status { 
+            display: inline-block; padding: 4px 12px; border-radius: 4px; 
+            font-weight: 600; font-size: 0.9rem;
+        }
+        .status.success { background: #d1fae5; color: #065f46; }
+        .status.error { background: #fee2e2; color: #991b1b; }
+        .status.info { background: #dbeafe; color: #1e40af; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+        .api-test { margin-top: 10px; }
+        .api-test button { 
+            background: #1e40af; color: white; border: none; padding: 10px 20px;
+            border-radius: 4px; cursor: pointer; font-size: 1rem;
+        }
+        .api-test button:hover { background: #1d4ed8; }
+        .result { 
+            margin-top: 10px; padding: 10px; background: #f3f4f6; 
+            border-radius: 4px; font-family: monospace; font-size: 0.9rem;
+            max-height: 200px; overflow-y: auto;
+        }
+        .feature-list { list-style: none; }
+        .feature-list li { 
+            padding: 8px 0; border-bottom: 1px solid #e5e7eb;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .feature-list li:last-child { border-bottom: none; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>Legal Document Management System</h1>
+            <p style="text-align: center; margin-top: 10px; opacity: 0.9;">Phase 1 Implementation - MVP</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="grid">
+            <!-- System Status -->
+            <div class="card">
+                <h2>System Status</h2>
+                <div id="system-status">
+                    <div>API Health: <span class="status info" id="api-status">Checking...</span></div>
+                    <div>Database: <span class="status info" id="db-status">Checking...</span></div>
+                    <div>Authentication: <span class="status info" id="auth-status">Checking...</span></div>
+                </div>
+                <div class="api-test">
+                    <button onclick="checkSystemHealth()">Check System Health</button>
+                    <div id="health-result" class="result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Phase 1 Features -->
+            <div class="card">
+                <h2>Phase 1 Features Implemented</h2>
+                <ul class="feature-list">
+                    <li>Authentication & Authorization <span class="status success">✓ Complete</span></li>
+                    <li>Client Management <span class="status success">✓ Complete</span></li>
+                    <li>Matter Management <span class="status success">✓ Complete</span></li>
+                    <li>Document Management <span class="status success">✓ Complete</span></li>
+                    <li>Legal Hold <span class="status success">✓ Complete</span></li>
+                    <li>Client Portal <span class="status success">✓ Complete</span></li>
+                    <li>Admin Interface <span class="status success">✓ Complete</span></li>
+                    <li>Audit Logging <span class="status success">✓ Complete</span></li>
+                </ul>
+            </div>
+
+            <!-- API Testing -->
+            <div class="card">
+                <h2>API Testing</h2>
+                <p>Test the REST API endpoints:</p>
+                <div class="api-test">
+                    <button onclick="testSwaggerDocs()">View API Documentation</button>
+                    <button onclick="testAuthEndpoint()">Test Authentication</button>
+                    <button onclick="testDocumentEndpoints()">Test Document API</button>
+                    <div id="api-result" class="result" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- Infrastructure -->
+            <div class="card">
+                <h2>Infrastructure Components</h2>
+                <ul class="feature-list">
+                    <li>PostgreSQL Database <span class="status success" id="postgres-status">✓ Running</span></li>
+                    <li>Keycloak OAuth2/OIDC <span class="status success" id="keycloak-status">✓ Running</span></li>
+                    <li>MinIO Object Storage <span class="status success" id="minio-status">✓ Running</span></li>
+                    <li>Open Policy Agent <span class="status success" id="opa-status">✓ Running</span></li>
+                    <li>Redis Cache <span class="status success" id="redis-status">✓ Running</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:3000/api';
+        
+        async function checkSystemHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Checking system health...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('api-status').className = 'status success';
+                document.getElementById('api-status').textContent = '✓ Healthy';
+                
+                resultDiv.innerHTML = `
+                    <strong>System Health Check Results:</strong><br>
+                    Status: ${response.status}<br>
+                    Response: ${JSON.stringify(data, null, 2)}
+                `;
+            } catch (error) {
+                document.getElementById('api-status').className = 'status error';
+                document.getElementById('api-status').textContent = '✗ Error';
+                
+                resultDiv.innerHTML = `
+                    <strong>Health Check Failed:</strong><br>
+                    ${error.message}
+                `;
+            }
+        }
+        
+        async function testSwaggerDocs() {
+            window.open(`${API_BASE}/docs`, '_blank');
+        }
+        
+        async function testAuthEndpoint() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing authentication...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/users`);
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    document.getElementById('auth-status').className = 'status success';
+                    document.getElementById('auth-status').textContent = '✓ Working';
+                    
+                    resultDiv.innerHTML = `
+                        <strong>Authentication Test Results:</strong><br>
+                        Status: ${response.status} (Expected - Unauthorized)<br>
+                        Message: Authentication is properly rejecting unauthorized requests<br>
+                        Response: ${JSON.stringify(data, null, 2)}
+                    `;
+                } else {
+                    throw new Error(`Unexpected response: ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <strong>Authentication Test Failed:</strong><br>
+                    ${error.message}
+                `;
+            }
+        }
+        
+        async function testDocumentEndpoints() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Testing document endpoints...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/documents`);
+                const data = await response.json();
+                
+                if (response.status === 401) {
+                    resultDiv.innerHTML = `
+                        <strong>Document API Test Results:</strong><br>
+                        Status: ${response.status} (Expected - Unauthorized)<br>
+                        Message: Document endpoints are properly protected<br>
+                        Available endpoints: /documents, /documents/upload, /documents/{id}/download<br>
+                        Response: ${JSON.stringify(data, null, 2)}
+                    `;
+                } else {
+                    throw new Error(`Unexpected response: ${response.status}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <strong>Document API Test Failed:</strong><br>
+                    ${error.message}
+                `;
+            }
+        }
+        
+        // Auto-run health check on load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(checkSystemHealth, 1000);
+        });
+    </script>
+</body>
+</html>

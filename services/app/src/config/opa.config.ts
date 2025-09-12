@@ -6,7 +6,7 @@ export class OpaConfig {
   constructor(private configService: ConfigService) {}
 
   get baseUrl(): string {
-    return this.configService.get('OPA_BASE_URL', 'http://opa:8181');
+    return this.configService.get('OPA_BASE_URL') || this.configService.get('OPA_URL', 'http://opa:8181').replace('/v1/data/dms/authz', '');
   }
 
   get queryEndpoint(): string {

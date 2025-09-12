@@ -340,7 +340,7 @@ export class AdminController {
       },
     },
   })
-  async getSystemStats(@CurrentUser() user: UserInfo) {
+  async getSystemStats(@CurrentUser() user: UserInfo): Promise<any> {
     return this.adminService.getSystemStats(user);
   }
 

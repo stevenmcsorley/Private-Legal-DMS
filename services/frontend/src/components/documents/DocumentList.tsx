@@ -188,9 +188,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     setShowViewer(true);
   };
 
-  const downloadDocument = async (document: Document) => {
+  const downloadDocument = async (doc: Document) => {
     try {
-      const response = await fetch(`/api/documents/${document.id}/download`, {
+      const response = await fetch(`/api/documents/${doc.id}/download`, {
         credentials: 'include',
       });
       
@@ -202,7 +202,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = document.original_filename;
+      link.download = doc.original_filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);

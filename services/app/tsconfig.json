@@ -21,4 +21,10 @@
       "@/*": ["src/*"]
     }
   }
+  ,
+  "exclude": [
+    "test",
+    "**/*.spec.ts",
+    "src/test/**"
+  ]
 }

@@ -72,7 +72,7 @@ export class ClientPortalController {
       },
     },
   })
-  async getDashboard(@CurrentUser() user: UserInfo) {
+  async getDashboard(@CurrentUser() user: UserInfo): Promise<any> {
     return this.clientPortalService.getClientDashboard(user);
   }
 
@@ -303,7 +303,7 @@ export class ClientPortalController {
       },
     },
   })
-  async getUploadSettings(@CurrentUser() user: UserInfo) {
+  async getUploadSettings(@CurrentUser() user: UserInfo): Promise<any> {
     return this.clientPortalService.getUploadSettings(user);
   }
 }

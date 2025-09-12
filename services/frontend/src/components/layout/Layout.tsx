@@ -1,25 +1,27 @@
 import { Outlet } from 'react-router-dom'
+import { Sidebar } from './Sidebar'
 
 export const Layout = () => {
   return (
-    <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto px-4 py-4">
-          <h1 className="text-2xl font-bold">Legal DMS</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gray-50">
+      <Sidebar />
       
-      <main className="container mx-auto px-4 py-8">
-        <Outlet />
-      </main>
-      
-      <footer className="border-t mt-auto">
-        <div className="container mx-auto px-4 py-4">
-          <p className="text-sm text-muted-foreground">
-            © 2024 Legal DMS. All rights reserved.
-          </p>
-        </div>
-      </footer>
+      {/* Main content */}
+      <div className="lg:pl-64">
+        <main className="py-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <Outlet />
+          </div>
+        </main>
+        
+        <footer className="border-t bg-white">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+            <p className="text-sm text-gray-500">
+              © 2024 Legal DMS. All rights reserved.
+            </p>
+          </div>
+        </footer>
+      </div>
     </div>
   )
 }

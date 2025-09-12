@@ -110,7 +110,7 @@ export class AdminService {
 
     if (search) {
       queryBuilder.andWhere(
-        '(user.display_name ILIKE :search OR user.email ILIKE :search OR user.first_name ILIKE :search OR user.last_name ILIKE :search)',
+        '(user.display_name ILIKE :search OR user.email ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -134,12 +134,9 @@ export class AdminService {
         id: user.id,
         email: user.email,
         display_name: user.display_name,
-        first_name: user.first_name,
-        last_name: user.last_name,
         roles: user.roles,
         firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
         is_active: user.is_active,
-        last_login_at: user.last_login_at,
         created_at: user.created_at,
       })),
       total,
@@ -169,16 +166,9 @@ export class AdminService {
       id: user.id,
       email: user.email,
       display_name: user.display_name,
-      first_name: user.first_name,
-      last_name: user.last_name,
       roles: user.roles,
-      client_ids: user.client_ids,
       firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
-      job_title: user.job_title,
-      department: user.department,
-      phone: user.phone,
       is_active: user.is_active,
-      last_login_at: user.last_login_at,
       created_at: user.created_at,
       updated_at: user.updated_at,
     };
@@ -531,8 +521,8 @@ export class AdminService {
     );
     const activeMatters = await this.matterRepository.count(
       firmId
-        ? { where: { firm_id: firmId, status: 'active' } }
-        : { where: { status: 'active' } },
+        ? { where: { firm_id: firmId, status: 'active' as any } }
+        : { where: { status: 'active' as any } },
     );
 
     const matters = await this.matterRepository.find(

@@ -16,7 +16,7 @@ export class AuditInterceptor implements NestInterceptor {
 
   intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
     const request = context.switchToHttp().getRequest<Request>();
-    const user = request.user as UserInfo;
+    const user = (request as any).user as UserInfo | undefined;
 
     // Skip audit logging for certain endpoints
     if (this.shouldSkipAudit(request)) {
@@ -89,7 +89,7 @@ export class AuditInterceptor implements NestInterceptor {
     return false;
   }
 
-  private buildAuditContext(request: Request, user: UserInfo): any {
+  private buildAuditContext(request: Request, user?: UserInfo): any {
     if (!user) {
       return null; // Skip audit if no user context
     }

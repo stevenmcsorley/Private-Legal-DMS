@@ -6,9 +6,17 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# Configure npm for better network handling with longer timeouts
+RUN npm config set registry https://registry.npmjs.org/ && \
+    npm config set fetch-timeout 1200000 && \
+    npm config set fetch-retry-mintimeout 30000 && \
+    npm config set fetch-retry-maxtimeout 180000 && \
+    npm config set fetch-retries 10 && \
+    npm config set maxsockets 2
+
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
-RUN npm ci && npm cache clean --force
+RUN if [ -f package-lock.json ]; then npm ci --no-audit --prefer-offline; else npm install --no-audit --no-fund; fi && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder

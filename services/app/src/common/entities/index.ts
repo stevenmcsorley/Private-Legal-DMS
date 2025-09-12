@@ -7,3 +7,4 @@ export { RetentionClass } from './retention-class.entity';
 export { Document } from './document.entity';
 export { DocumentMeta } from './document-meta.entity';
 export { AuditLog } from './audit-log.entity';
+export { MatterShare, ShareRole, ShareStatus } from './matter-share.entity';

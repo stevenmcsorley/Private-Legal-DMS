@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity('audit_logs')
+@Entity('audits')
 @Index(['firm_id', 'timestamp'])
 @Index(['user_id', 'timestamp'])
 @Index(['resource_type', 'timestamp'])

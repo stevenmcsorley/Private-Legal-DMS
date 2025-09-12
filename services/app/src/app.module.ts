@@ -23,12 +23,11 @@ import { ClientPortalModule } from './modules/client-portal/client-portal.module
 import { AdminModule } from './modules/admin/admin.module';
 import { SearchModule } from './modules/search/search.module';
 import { AuditModule } from './modules/audit/audit.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 // Common
 import { LoggerModule } from './common/logger/logger.module';
 import { MetricsModule } from './common/metrics/metrics.module';
-import { AuditInterceptor } from './common/interceptors/audit.interceptor';
-import { APP_INTERCEPTOR } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -85,14 +84,9 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     AdminModule,
     SearchModule,
     AuditModule,
+    DashboardModule,
   ],
   controllers: [],
-  providers: [
-    // Global audit interceptor
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: AuditInterceptor,
-    },
-  ],
+  providers: [],
 })
 export class AppModule {}

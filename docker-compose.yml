@@ -60,11 +60,18 @@ services:
 
   # Main Application (BFF)
   app:
-    image: node:18-alpine
+    build:
+      context: ./services/app
+      dockerfile: Dockerfile
+    image: dms-app:dev
     working_dir: /app
-    command: sh -c "npm install && npm run start:dev"
+    command: ["npm", "run", "start:prod"]
     environment:
       NODE_ENV: development
+      TS_NODE_TRANSPILE_ONLY: "true"
+      API_BASE_URL: http://localhost
+      FRONTEND_URL: http://localhost
+      KEYCLOAK_PUBLIC_URL: http://localhost:8081
       DATABASE_URL: postgres://app:app@app-db:5432/app
       OPENSEARCH_URL: http://opensearch:9200
       MINIO_ENDPOINT: minio:9000
@@ -87,9 +94,7 @@ services:
         condition: service_healthy
     ports:
       - "3000:3000"
-    volumes:
-      - ./services/app:/app
-      - /app/node_modules
+    # No volume mount to use built image files
     networks:
       - dms-network
     labels:
@@ -116,20 +121,17 @@ services:
 
   # Frontend SPA
   frontend:
-    image: node:18-alpine  
-    working_dir: /app
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
-    environment:
-      VITE_API_BASE: /api
-      VITE_KEYCLOAK_URL: http://localhost:8081
-      VITE_KEYCLOAK_REALM: dms
-      VITE_KEYCLOAK_CLIENT_ID: dms-app
-    depends_on: []
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: /api
+        VITE_KEYCLOAK_URL: http://localhost:8081
+        VITE_KEYCLOAK_REALM: dms
+        VITE_KEYCLOAK_CLIENT_ID: dms-app
+    image: dms-frontend:dev
     ports:
       - "5173:5173"
-    volumes:
-      - ./services/frontend:/app
-      - /app/node_modules
     networks:
       - dms-network
     labels:
@@ -165,7 +167,7 @@ services:
       plugins.security.disabled: "true"
       bootstrap.memory_lock: "true"
       OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: admin2025!
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: S3cure-OsPass-2025#
     ulimits:
       memlock:
         soft: -1

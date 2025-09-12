@@ -165,7 +165,13 @@ export class MinioService implements OnModuleInit {
   ): Promise<string> {
     try {
       const bucketName = this.minioConfig.bucketName;
-      const url = await this.getClient().presignedGetObject(bucketName, objectKey, expiry);
+      let url = await this.getClient().presignedGetObject(bucketName, objectKey, expiry);
+      
+      // Replace internal Docker network hostname with localhost for browser access
+      if (url.includes('minio:9000')) {
+        url = url.replace('minio:9000', 'localhost:9000');
+      }
+      
       return url;
     } catch (error) {
       this.logger.error(`Failed to generate presigned URL for ${objectKey}:`, error);
