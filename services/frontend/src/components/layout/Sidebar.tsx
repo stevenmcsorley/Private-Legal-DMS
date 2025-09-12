@@ -65,37 +65,37 @@ export const Sidebar = () => {
   const SidebarContent = () => (
     <>
       {/* Logo */}
-      <div className="flex items-center space-x-3 px-6 py-6 border-b border-gray-200">
-        <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center">
-          <Shield className="h-5 w-5 text-white" />
+      <div className="flex items-center space-x-3 px-6 py-6 border-b border-slate-800 bg-slate-900">
+        <div className="h-9 w-9 bg-amber-500 rounded-lg flex items-center justify-center shadow-sm">
+          <Shield className="h-5 w-5 text-slate-900" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-gray-900">Legal DMS</h1>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-100">Legal DMS</h1>
           {isClientUser && (
-            <p className="text-xs text-gray-500">Client Portal</p>
+            <p className="text-xs text-slate-400">Client Portal</p>
           )}
         </div>
       </div>
 
       {/* User Info */}
-      <div className="px-6 py-4 border-b border-gray-200">
+      <div className="px-6 py-4 border-b border-slate-800 bg-slate-900">
         <div className="flex items-center space-x-3">
-          <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-            <User className="h-4 w-4 text-gray-600" />
+          <div className="h-9 w-9 bg-slate-700 rounded-full flex items-center justify-center">
+            <User className="h-4 w-4 text-slate-300" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-900 truncate">
+            <p className="text-sm font-semibold text-slate-100 truncate">
               {user?.display_name}
             </p>
-            <p className="text-xs text-gray-500 truncate">
+            <p className="text-xs text-slate-400 truncate">
               {user?.email}
             </p>
             {user?.roles && (
-              <div className="flex flex-wrap gap-1 mt-1">
+              <div className="flex flex-wrap gap-1 mt-2">
                 {user.roles.map((role) => (
                   <span
                     key={role}
-                    className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-amber-400 border border-slate-700"
                   >
                     {role.replace('_', ' ')}
                   </span>
@@ -107,7 +107,7 @@ export const Sidebar = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto bg-slate-900">
         {navItems.map((item) => {
           const canAccess = !item.requiredRoles || hasAnyRole(item.requiredRoles);
           
@@ -119,18 +119,15 @@ export const Sidebar = () => {
               to={item.href}
               className={({ isActive }) =>
                 cn(
-                  'group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors',
+                  'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors border-l-4',
                   isActive
-                    ? 'bg-blue-100 text-blue-900'
-                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    ? 'bg-slate-800/60 text-amber-400 border-amber-500'
+                    : 'text-slate-300 hover:bg-slate-800 hover:text-slate-100 border-transparent'
                 )
               }
               onClick={() => setIsMobileMenuOpen(false)}
             >
-              <item.icon
-                className="mr-3 flex-shrink-0 h-5 w-5"
-                aria-hidden="true"
-              />
+              <item.icon className="mr-3 flex-shrink-0 h-5 w-5" aria-hidden="true" />
               {item.name}
             </NavLink>
           );
@@ -138,10 +135,10 @@ export const Sidebar = () => {
       </nav>
 
       {/* Logout */}
-      <div className="px-4 py-4 border-t border-gray-200">
+      <div className="px-4 py-4 border-t border-slate-800 bg-slate-900">
         <Button
           variant="ghost"
-          className="w-full justify-start text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+          className="w-full justify-start text-slate-300 hover:text-slate-100 hover:bg-slate-800"
           onClick={logout}
         >
           <LogOut className="mr-3 h-5 w-5" />
@@ -170,7 +167,7 @@ export const Sidebar = () => {
       </div>
 
       {/* Desktop sidebar */}
-      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-white shadow-sm border-r border-gray-200">
+      <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-slate-900 shadow-sm border-r border-slate-800">
         <SidebarContent />
       </div>
 
@@ -178,7 +175,7 @@ export const Sidebar = () => {
       {isMobileMenuOpen && (
         <div className="lg:hidden">
           <div className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75" onClick={toggleMobileMenu} />
-          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl">
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 shadow-xl border-r border-slate-800">
             <SidebarContent />
           </div>
         </div>

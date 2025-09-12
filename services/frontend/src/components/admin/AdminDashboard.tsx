@@ -59,8 +59,8 @@ export const AdminDashboard = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading admin dashboard...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
+          <p className="mt-2 text-slate-400">Loading admin dashboard...</p>
         </div>
       </div>
     );
@@ -70,11 +70,11 @@ export const AdminDashboard = () => {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-          <Shield className="h-6 w-6 mr-3 text-blue-600" />
+        <h1 className="text-2xl font-bold flex items-center">
+          <Shield className="h-6 w-6 mr-3 text-red-600" />
           Admin Dashboard
         </h1>
-        <p className="text-gray-600">Manage users, system settings, and firm operations</p>
+        <p className="text-slate-400">Manage users, system settings, and firm operations</p>
       </div>
 
       {/* Tabs */}
@@ -101,9 +101,9 @@ export const AdminDashboard = () => {
                         <Users className="h-5 w-5 text-blue-500" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">Total Users</p>
+                        <p className="text-sm font-medium text-slate-300">Total Users</p>
                         <div className="flex items-center">
-                          <p className="text-2xl font-bold text-gray-900">{stats.total_users}</p>
+                          <p className="text-2xl font-bold text-slate-100">{stats.total_users}</p>
                           <span className="ml-2 text-sm text-green-600">
                             ({stats.active_users} active)
                           </span>
@@ -120,9 +120,9 @@ export const AdminDashboard = () => {
                         <Archive className="h-5 w-5 text-green-500" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">Matters</p>
+                        <p className="text-sm font-medium text-slate-300">Matters</p>
                         <div className="flex items-center">
-                          <p className="text-2xl font-bold text-gray-900">{stats.total_matters}</p>
+                          <p className="text-2xl font-bold text-slate-100">{stats.total_matters}</p>
                           <span className="ml-2 text-sm text-green-600">
                             ({stats.active_matters} active)
                           </span>
@@ -139,9 +139,9 @@ export const AdminDashboard = () => {
                         <FileText className="h-5 w-5 text-orange-500" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">Documents</p>
+                        <p className="text-sm font-medium text-slate-300">Documents</p>
                         <div className="flex items-center">
-                          <p className="text-2xl font-bold text-gray-900">{stats.total_documents}</p>
+                          <p className="text-2xl font-bold text-slate-100">{stats.total_documents}</p>
                           {stats.documents_on_hold > 0 && (
                             <span className="ml-2 text-sm text-red-600">
                               ({stats.documents_on_hold} on hold)
@@ -160,9 +160,9 @@ export const AdminDashboard = () => {
                         <Building className="h-5 w-5 text-purple-500" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-900">Clients</p>
+                        <p className="text-sm font-medium text-slate-300">Clients</p>
                         <div className="flex items-center">
-                          <p className="text-2xl font-bold text-gray-900">{stats.total_clients}</p>
+                          <p className="text-2xl font-bold text-slate-100">{stats.total_clients}</p>
                           <span className="ml-2 text-sm text-green-600">
                             ({stats.active_clients} active)
                           </span>

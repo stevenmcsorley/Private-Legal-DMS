@@ -272,7 +272,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         
         {/* Search Bar with filter capabilities */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
           <Input
             placeholder="Search documents..."
             value={searchTerm}
@@ -283,7 +283,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
             <div>
               <label className="block text-sm font-medium mb-2">Document Type</label>
               <Select value={documentType} onValueChange={setDocumentType}>
@@ -333,33 +333,33 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       <CardContent>
         {loading ? (
           <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading documents...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
+            <p className="text-slate-400">Loading documents...</p>
           </div>
         ) : error ? (
           <div className="text-center py-8">
-            <p className="text-red-600 mb-2">{error}</p>
+            <p className="text-red-500 mb-2">{error}</p>
             <Button onClick={fetchDocuments} variant="outline">
               Retry
             </Button>
           </div>
         ) : documents.length === 0 ? (
           <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-600">No documents found</p>
+            <FileText className="h-12 w-12 text-slate-500 mx-auto mb-2" />
+            <p className="text-slate-400">No documents found</p>
           </div>
         ) : (
           <div className="space-y-2">
             {documents.map((document) => (
               <div
                 key={document.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex items-center justify-between p-4 border border-slate-700 rounded-lg hover:bg-slate-800 transition-colors"
               >
                 <div className="flex items-center space-x-4 flex-1">
                   <div className="text-2xl">{getFileIcon(document.mime_type)}</div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-medium text-gray-900 truncate">
+                      <h3 className="font-medium text-slate-100 truncate">
                         {document.title || document.original_filename}
                       </h3>
                       {document.legal_hold && (
@@ -374,7 +374,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center text-sm text-gray-500 space-x-4">
+                    <div className="flex items-center text-sm text-slate-400 space-x-4">
                       <span>{formatFileSize(document.size_bytes)}</span>
                       <span>
                         <Calendar className="h-3 w-3 inline mr-1" />
@@ -425,7 +425,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="flex items-center justify-between pt-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-slate-400">
                   Showing {(currentPage - 1) * limit + 1} to {Math.min(currentPage * limit, totalDocuments)} of {totalDocuments} documents
                 </p>
                 <div className="flex items-center space-x-2">

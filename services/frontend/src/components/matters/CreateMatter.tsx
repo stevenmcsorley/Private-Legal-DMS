@@ -133,7 +133,7 @@ export const CreateMatter = () => {
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Create New Matter</h1>
+          <h1 className="text-2xl font-bold">Create New Matter</h1>
           <p className="text-gray-600">Add a new legal matter to the system</p>
         </div>
       </div>

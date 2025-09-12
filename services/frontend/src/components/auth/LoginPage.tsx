@@ -30,7 +30,7 @@ export const LoginPage = () => {
           <div className="mx-auto h-16 w-16 bg-blue-600 rounded-xl flex items-center justify-center">
             <Shield className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">Legal DMS</h1>
+          <h1 className="text-3xl font-bold">Legal DMS</h1>
           <p className="text-gray-600">Secure Document Management System</p>
         </div>
 

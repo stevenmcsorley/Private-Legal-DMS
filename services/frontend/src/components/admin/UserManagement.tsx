@@ -105,16 +105,9 @@ export const UserManagement = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'bg-red-100 text-red-800';
-      case 'firm_admin': return 'bg-purple-100 text-purple-800';
-      case 'legal_manager': return 'bg-blue-100 text-blue-800';
-      case 'legal_professional': return 'bg-green-100 text-green-800';
-      case 'paralegal': return 'bg-yellow-100 text-yellow-800';
-      case 'client_user': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const getRoleColor = (_role: string) => {
+    // Unify role pill styling with dark palette + amber accent
+    return 'border-slate-700 bg-slate-800 text-amber-400';
   };
 
   const getRoleIcon = (role: string) => {
@@ -133,8 +126,8 @@ export const UserManagement = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading users...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
+          <p className="mt-2 text-slate-400">Loading users...</p>
         </div>
       </div>
     );
@@ -145,8 +138,8 @@ export const UserManagement = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">User Management</h2>
-          <p className="text-gray-600">Manage user accounts and permissions</p>
+          <h2 className="text-xl font-bold">User Management</h2>
+          <p className="text-slate-400">Manage user accounts and permissions</p>
         </div>
         
         <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
@@ -176,7 +169,7 @@ export const UserManagement = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search users..."
                   value={searchTerm}
@@ -214,7 +207,7 @@ export const UserManagement = () => {
       </Card>
 
       {/* Results Count */}
-      <div className="flex items-center text-sm text-gray-600">
+      <div className="flex items-center text-sm text-slate-400">
         <Filter className="h-4 w-4 mr-2" />
         Showing {filteredUsers.length} of {users.length} users
       </div>
@@ -224,32 +217,32 @@ export const UserManagement = () => {
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="border-b bg-gray-50">
+              <thead className="border-b border-slate-800 bg-slate-800/60">
                 <tr>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">User</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Roles</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Status</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Last Login</th>
-                  <th className="text-left py-3 px-6 font-medium text-gray-900">Actions</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">User</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">Roles</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">Status</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">Last Login</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredUsers.map((user) => (
-                  <tr key={user.id} className="border-b hover:bg-gray-50">
+                  <tr key={user.id} className="border-b border-slate-800 hover:bg-slate-800/60">
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-3">
-                        <div className="h-10 w-10 bg-gray-300 rounded-full flex items-center justify-center">
-                          <User className="h-5 w-5 text-gray-600" />
+                        <div className="h-10 w-10 bg-slate-700 rounded-full flex items-center justify-center">
+                          <User className="h-5 w-5 text-slate-300" />
                         </div>
                         <div>
                           <div className="flex items-center space-x-2">
-                            <p className="font-medium text-gray-900">{user.display_name}</p>
+                            <p className="font-medium text-slate-100">{user.display_name}</p>
                             {user.roles.includes('firm_admin') && (
                               <Crown className="h-4 w-4 text-yellow-600" />
                             )}
                           </div>
-                          <p className="text-sm text-gray-600">{user.email}</p>
-                          <p className="text-xs text-gray-500">ID: {user.id.slice(0, 8)}...</p>
+                          <p className="text-sm text-slate-400">{user.email}</p>
+                          <p className="text-xs text-slate-500">ID: {user.id.slice(0, 8)}...</p>
                         </div>
                       </div>
                     </td>
@@ -266,7 +259,7 @@ export const UserManagement = () => {
                           </Badge>
                         ))}
                       </div>
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 mt-1">
                         Firm: {user.firm.name}
                       </p>
                     </td>
@@ -274,17 +267,17 @@ export const UserManagement = () => {
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
                         {user.is_active ? (
-                          <UserCheck className="h-4 w-4 text-green-500" />
+                          <UserCheck className="h-4 w-4 text-green-400" />
                         ) : (
-                          <UserX className="h-4 w-4 text-red-500" />
+                          <UserX className="h-4 w-4 text-red-400" />
                         )}
-                        <Badge className={user.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                        <Badge className={user.is_active ? 'border border-green-700 bg-green-900/30 text-green-400' : 'border border-red-700 bg-red-900/30 text-red-400'}>
                           {user.is_active ? 'Active' : 'Inactive'}
                         </Badge>
                       </div>
                     </td>
                     
-                    <td className="py-4 px-6 text-sm text-gray-600">
+                    <td className="py-4 px-6 text-sm text-slate-400">
                       {new Date(user.created_at).toLocaleDateString()}
                     </td>
                     
@@ -321,9 +314,9 @@ export const UserManagement = () => {
       {filteredUsers.length === 0 && (
         <Card>
           <CardContent className="text-center py-12">
-            <User className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No users found</h3>
-            <p className="text-gray-600">
+            <User className="h-12 w-12 text-slate-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-100 mb-2">No users found</h3>
+            <p className="text-slate-400">
               {searchTerm || roleFilter !== 'all' || statusFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : 'No users have been created yet.'}

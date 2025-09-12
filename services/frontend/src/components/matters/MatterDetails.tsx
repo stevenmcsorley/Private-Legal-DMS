@@ -218,7 +218,7 @@ export const MatterDetails = () => {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-2xl font-bold flex items-center">
               {matter.title}
               {matter.legal_hold_active && (
                 <AlertCircle className="h-6 w-6 text-red-500 ml-2" />

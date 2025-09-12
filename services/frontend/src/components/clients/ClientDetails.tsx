@@ -184,7 +184,7 @@ export const ClientDetails = () => {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+            <h1 className="text-2xl font-bold flex items-center">
               <Building className="h-6 w-6 mr-3" />
               {client.name}
             </h1>

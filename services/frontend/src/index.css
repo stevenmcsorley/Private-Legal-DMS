@@ -73,4 +73,7 @@
   body {
     @apply bg-background text-foreground;
   }
+  h1, h2 {
+    @apply text-amber-400;
+  }
 }

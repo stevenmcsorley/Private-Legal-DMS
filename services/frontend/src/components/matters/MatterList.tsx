@@ -110,7 +110,7 @@ export const MatterList = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Matters</h1>
+          <h1 className="text-2xl font-bold">Matters</h1>
           <p className="text-gray-600">Manage legal matters and cases</p>
         </div>
         <Button asChild>
