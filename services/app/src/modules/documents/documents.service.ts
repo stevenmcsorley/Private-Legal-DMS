@@ -294,13 +294,36 @@ export class DocumentsService {
     filename: string;
     mimetype: string;
   }> {
-    const document = await this.findOne(id, user);
+    // Get the raw document entity (not DTO) to access object_key
+    const document = await this.documentRepository.findOne({
+      where: { id },
+      relations: ['metadata', 'matter', 'client', 'created_by_user', 'retention_class'],
+    });
+
+    if (!document) {
+      throw new NotFoundException(`Document with ID ${id} not found`);
+    }
+
+    // Check firm access
+    if (document.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Access denied to this document');
+    }
+
+    if (document.is_deleted) {
+      throw new NotFoundException('Document has been deleted');
+    }
     
     if (document.legal_hold && !user.roles.some(role => ['legal_manager', 'firm_admin'].includes(role))) {
       throw new ForbiddenException('Document is under legal hold and cannot be downloaded');
     }
 
-    const buffer = await this.minioService.downloadFile(document.object_key);
+    let buffer: Buffer;
+    try {
+      buffer = await this.minioService.downloadFile(document.object_key);
+    } catch (e) {
+      this.logger.error(`Failed to download file for document ${id}:`, e);
+      throw new NotFoundException('Document content not available');
+    }
     
     // Audit log the document download
     await this.auditService.logDocumentDownload(user, id, document.original_filename);

@@ -178,4 +178,22 @@ export class SharesController {
   ): Promise<OutgoingShareResponse> {
     return this.sharesService.revokeShare(shareId, user);
   }
+
+  @Get(':shareId')
+  @CanWrite('matter')
+  @ApiOperation({
+    summary: 'Get share details',
+    description: 'Retrieve detailed information about a specific share including documents and metadata'
+  })
+  @ApiParam({ name: 'shareId', type: 'string', description: 'Share ID' })
+  @ApiResponse({ 
+    status: HttpStatus.OK, 
+    description: 'Share details retrieved successfully'
+  })
+  async getShare(
+    @Param('shareId', ParseUUIDPipe) shareId: string,
+    @CurrentUser() user: User,
+  ) {
+    return this.sharesService.getShareDetails(shareId, user);
+  }
 }

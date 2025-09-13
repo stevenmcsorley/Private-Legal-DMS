@@ -14,11 +14,10 @@ import {
   User,
   Building,
   Clock,
-  Download,
   Share2,
   Archive,
-  Eye
 } from 'lucide-react';
+import { DocumentList } from '@/components/documents/DocumentList';
 
 interface Matter {
   id: string;
@@ -151,30 +150,7 @@ export const MatterDetails = () => {
     }
   };
 
-  const downloadDocument = async (document: Document) => {
-    try {
-      const response = await fetch(`/api/documents/${document.id}/download`, { credentials: 'include' });
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const link = window.document.createElement('a');
-        link.href = url;
-        link.download = document.original_filename;
-        link.click();
-        window.URL.revokeObjectURL(url);
-      }
-    } catch (error) {
-      console.error('Error downloading document:', error);
-    }
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
+  // Document upload, preview, and listing handled by DocumentList in the Documents tab
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -386,80 +362,7 @@ export const MatterDetails = () => {
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Documents</h3>
-            <Button asChild>
-              <Link to={`/matters/${matter.id}/documents/upload`}>
-                <FileText className="h-4 w-4 mr-2" />
-                Upload Document
-              </Link>
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {documents.map((doc) => (
-              <Card key={doc.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">
-                            {doc.original_filename}
-                          </p>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500">
-                            <span>v{doc.version}</span>
-                            <span>{formatFileSize(doc.file_size)}</span>
-                            <span>Uploaded by {doc.uploaded_by.display_name}</span>
-                            <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2 ml-4">
-                      {doc.is_confidential && (
-                        <Badge variant="destructive" className="text-xs">
-                          Confidential
-                        </Badge>
-                      )}
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => window.open(`/documents/${doc.id}/view`, '_blank')}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => downloadDocument(doc)}
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          {documents.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No documents</h3>
-                <p className="text-gray-600 mb-4">Upload documents to get started.</p>
-                <Button asChild>
-                  <Link to={`/matters/${matter.id}/documents/upload`}>
-                    <FileText className="h-4 w-4 mr-2" />
-                    Upload First Document
-                  </Link>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+          <DocumentList matterId={matter.id} />
         </TabsContent>
 
         <TabsContent value="people" className="space-y-4">

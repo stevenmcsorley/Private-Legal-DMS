@@ -15,6 +15,7 @@ import { SearchPage } from '@/components/search/SearchPage'
 import { AdminDashboard } from '@/components/admin/AdminDashboard'
 import { ClientPortal } from '@/components/portal/ClientPortal'
 import { CrossFirmSharing } from '@/components/sharing/CrossFirmSharing'
+import { SharedDocumentViewer } from '@/components/shares/SharedDocumentViewer'
 
 export const App = () => {
   return (
@@ -50,6 +51,9 @@ export const App = () => {
           
           {/* Cross-Firm Sharing */}
           <Route path="sharing" element={<CrossFirmSharing />} />
+          <Route path="sharing/new" element={<div className="p-8"><h1 className="text-2xl font-bold">Create New Share</h1><p className="mt-4 text-gray-600">Share creation functionality will be implemented in the next phase.</p></div>} />
+          <Route path="sharing/:shareId" element={<SharedDocumentViewer />} />
+          <Route path="sharing/:shareId/documents/:documentId" element={<SharedDocumentViewer />} />
         </Route>
       </Routes>
       <Toaster />

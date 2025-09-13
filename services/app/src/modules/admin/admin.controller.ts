@@ -216,6 +216,23 @@ export class AdminController {
     return this.adminService.getRetentionClasses(effectiveFirmId, user);
   }
 
+  // Alias for frontend compatibility
+  @Get('retention-policies')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Get retention policies (alias for retention-classes)' })
+  @ApiQuery({ name: 'firm_id', required: false, description: 'Filter by firm' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Retention policies retrieved successfully',
+  })
+  async getRetentionPolicies(
+    @Query('firm_id') firmId?: string,
+    @CurrentUser() user?: UserInfo,
+  ) {
+    const effectiveFirmId = firmId || user?.firm_id;
+    return this.adminService.getRetentionClasses(effectiveFirmId, user);
+  }
+
   @Get('retention-classes/:id')
   @CanRead('admin')
   @ApiOperation({ summary: 'Get retention class details' })

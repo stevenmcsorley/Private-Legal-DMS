@@ -58,12 +58,6 @@ export class AuthGuard implements CanActivate {
 
     // Validate the access token
     try {
-      // Handle test tokens in non-production environments
-      if (session.accessToken === 'test-token' && process.env.NODE_ENV !== 'production') {
-        this.attachUserToRequest(request, session.user);
-        return true;
-      }
-
       const userInfo = await this.authService.validateToken(session.accessToken);
       this.attachUserToRequest(request, userInfo);
       return true;

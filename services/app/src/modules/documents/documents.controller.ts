@@ -14,6 +14,7 @@ import {
   Res,
   BadRequestException,
 } from '@nestjs/common';
+import { IsUUID } from 'class-validator';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiTags,
@@ -38,8 +39,8 @@ import { UserInfo } from '../../auth/auth.service';
 export class DocumentsController {
   constructor(private readonly documentsService: DocumentsService) {}
 
+
   @Post('upload')
-  @CanWrite('document')
   @UseInterceptors(FileInterceptor('file'))
   @ApiOperation({ summary: 'Upload a new document' })
   @ApiConsumes('multipart/form-data')

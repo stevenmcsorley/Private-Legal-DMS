@@ -192,4 +192,75 @@ export class SharesService {
       message: null,
     };
   }
+
+  async getShareDetails(shareId: string, user: User) {
+    const share = await this.shareRepository.findOne({
+      where: { id: shareId },
+      relations: [
+        'matter', 
+        'matter.client', 
+        'matter.documents', 
+        'matter.documents.metadata',
+        'shared_by_user', 
+        'shared_by_user.firm',
+        'shared_with_firm_entity'
+      ],
+    });
+
+    if (!share) {
+      throw new NotFoundException('Share not found');
+    }
+
+    // Check if user has access to this share
+    const userFirmId = user.firm_id;
+    const isOwner = share.shared_by_user.firm_id === userFirmId;
+    const isRecipient = share.shared_with_firm === userFirmId;
+    
+    if (!isOwner && !isRecipient) {
+      throw new ForbiddenException('Access denied to this share');
+    }
+
+    // Check if share is still valid
+    if (share.isRevoked()) {
+      throw new ForbiddenException('Share has been revoked');
+    }
+
+    if (share.isExpired()) {
+      throw new ForbiddenException('Share has expired');
+    }
+
+    return {
+      id: share.id,
+      matter: {
+        id: share.matter.id,
+        title: share.matter.title,
+        matter_number: share.matter.id.slice(-8),
+        client: {
+          name: share.matter.client?.name || '',
+        },
+      },
+      shared_by_firm_name: share.shared_by_user?.firm?.name || '',
+      shared_with_firm_name: share.shared_with_firm_entity?.name || '',
+      shared_by_user: {
+        display_name: share.shared_by_user?.display_name || '',
+      },
+      role: share.role,
+      permissions: share.permissions || [],
+      status: share.isRevoked() ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      expires_at: share.expires_at?.toISOString(),
+      created_at: share.created_at.toISOString(),
+      documents: share.matter.documents?.map(doc => ({
+        id: doc.id,
+        filename: doc.original_filename,
+        original_filename: doc.original_filename,
+        file_size: Number(doc.size_bytes),
+        mime_type: doc.mime_type,
+        uploaded_at: doc.created_at.toISOString(),
+        confidential: doc.metadata?.confidential || false,
+        privileged: doc.metadata?.privileged || false,
+        work_product: doc.metadata?.work_product || false,
+      })) || [],
+      is_external: !isOwner && isRecipient,
+    };
+  }
 }

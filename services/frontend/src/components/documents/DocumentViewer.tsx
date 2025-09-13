@@ -5,8 +5,12 @@ import { Button } from '../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { toast } from '../ui/use-toast';
 
-// Set up PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+// Set up PDF.js worker (CSP-safe: load locally via Vite)
+// Using Vite asset import to avoid external CDN blocked by CSP
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - Vite's ?url returns a string URL at build time
+import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
+pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker as unknown as string;
 
 interface DocumentViewerProps {
   documentId: string;
@@ -14,6 +18,8 @@ interface DocumentViewerProps {
   mimeType: string;
   onClose?: () => void;
   className?: string;
+  previewUrl?: string; // Optional custom preview URL for watermarked documents
+  downloadUrl?: string; // Optional custom download URL for watermarked documents
 }
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({
@@ -22,6 +28,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   mimeType,
   onClose,
   className = '',
+  previewUrl: customPreviewUrl,
+  downloadUrl: customDownloadUrl,
 }) => {
   const [previewUrl, setPreviewUrl] = useState<string>('');
   const [numPages, setNumPages] = useState<number>(0);
@@ -31,8 +39,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    fetchPreviewUrl();
-  }, [documentId]);
+    if (customPreviewUrl) {
+      // Use custom preview URL directly (for watermarked documents)
+      setPreviewUrl(customPreviewUrl);
+      setLoading(false);
+    } else {
+      fetchPreviewUrl();
+    }
+  }, [documentId, customPreviewUrl]);
 
   const fetchPreviewUrl = async () => {
     try {
@@ -94,7 +108,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   const downloadDocument = async () => {
     try {
-      const response = await fetch(`/api/documents/${documentId}/download`, {
+      const downloadEndpoint = customDownloadUrl || `/api/documents/${documentId}/download`;
+      const response = await fetch(downloadEndpoint, {
         credentials: 'include',
       });
       
@@ -226,6 +241,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           {isPDF ? (
             <Document
               file={previewUrl}
+              options={{ withCredentials: true }}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={

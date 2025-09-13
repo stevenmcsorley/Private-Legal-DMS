@@ -9,7 +9,7 @@ WORKDIR /app
 # Install dependencies based on the preferred package manager
 COPY package.json package-lock.json* ./
 # Install all deps (including dev) for build
-RUN npm ci && npm cache clean --force
+RUN npm install && npm cache clean --force
 
 # Rebuild the source code only when needed
 FROM base AS builder

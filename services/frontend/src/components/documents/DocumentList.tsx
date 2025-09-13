@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Search, Filter, Upload, FileText, Eye, Download, Calendar, Tag, AlertTriangle } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Checkbox } from '../ui/checkbox';
 import { DocumentViewer } from './DocumentViewer';
 import { toast } from '../ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 // Using built-in date formatting instead of date-fns
 
 interface DocumentMeta {
@@ -102,6 +103,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   
   // Filter panel
   const [showFilters, setShowFilters] = useState<boolean>(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState<boolean>(false);
+  const [showMatterPicker, setShowMatterPicker] = useState<boolean>(false);
+  const [matters, setMatters] = useState<Array<{ id: string; title: string; matter_number?: string }>>([]);
+  const [loadingMatters, setLoadingMatters] = useState<boolean>(false);
+  const [selectedMatterId, setSelectedMatterId] = useState<string>('');
 
   useEffect(() => {
     fetchDocuments();
@@ -244,6 +251,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   }
 
   return (
+    <>
     <Card className={`w-full ${className}`}>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -263,9 +271,99 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               <Filter className="h-4 w-4 mr-1" />
               Filters
             </Button>
-            <Button size="sm">
+            <input
+              ref={fileInputRef}
+              type="file"
+              className="hidden"
+              onChange={async (e: React.ChangeEvent<HTMLInputElement>) => {
+                const inputEl = fileInputRef.current;
+                const file = e.target.files?.[0];
+                if (!file) return;
+                const targetMatterId = matterId || selectedMatterId;
+                console.log('Upload attempt - matterId:', matterId, 'selectedMatterId:', selectedMatterId, 'targetMatterId:', targetMatterId);
+                console.log('typeof targetMatterId:', typeof targetMatterId, 'length:', targetMatterId?.length);
+                
+                const uuidLike = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+                if (!targetMatterId || typeof targetMatterId !== 'string' || targetMatterId.trim() === '' || !uuidLike.test(targetMatterId)) {
+                  console.log('UUID validation failed - targetMatterId:', JSON.stringify(targetMatterId));
+                  toast({ title: 'Invalid matter selection', description: 'Please select a valid matter first.' , variant: 'destructive' });
+                  if (inputEl) inputEl.value = '';
+                  return;
+                }
+                try {
+                  setUploading(true);
+                  const form = new FormData();
+                  form.append('file', file);
+                  // DEBUG: Let's see what we're actually appending
+                  console.log('Appending matter_id to form:', targetMatterId, 'Type:', typeof targetMatterId);
+                  form.append('matter_id', targetMatterId);
+                  form.append('title', file.name);
+                  console.log('Sending form data - matter_id:', targetMatterId);
+
+                  const response = await fetch('/api/documents/upload', {
+                    method: 'POST',
+                    body: form,
+                    credentials: 'include',
+                  });
+
+                  if (!response.ok) {
+                    const text = await response.text().catch(() => '');
+                    throw new Error(text || 'Upload failed');
+                  }
+
+                  toast({ title: 'Uploaded', description: `${file.name} uploaded.` });
+                  await fetchDocuments();
+                } catch (err: any) {
+                  console.error('Upload error:', err);
+                  toast({
+                    title: 'Upload failed',
+                    description: err?.message || 'Could not upload document',
+                    variant: 'destructive',
+                  });
+                } finally {
+                  setUploading(false);
+                  if (inputEl) inputEl.value = '';
+                  setShowMatterPicker(false);
+                }
+              }}
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!matterId) {
+                  // Open matter picker dialog
+                  setShowMatterPicker(true);
+                  if (matters.length === 0) {
+                    // Fetch matters for selection
+                    (async () => {
+                      try {
+                        setLoadingMatters(true);
+                        const resp = await fetch('/api/matters?page=1&limit=50', { credentials: 'include' });
+                        if (resp.ok) {
+                          const data = await resp.json();
+                          const items = (data?.matters || data?.items || data?.results || []) as any[];
+                          const mapped = items.map((m) => ({ id: m.id, title: m.title || m.matter?.title || 'Untitled', matter_number: m.matter_number }));
+                          console.log('Loaded matters:', mapped);
+                          setMatters(mapped);
+                        } else {
+                          toast({ title: 'Failed to load matters', description: `Status ${resp.status}`, variant: 'destructive' });
+                        }
+                      } catch (err) {
+                        console.error('Failed to load matters', err);
+                        toast({ title: 'Failed to load matters', variant: 'destructive' });
+                      } finally {
+                        setLoadingMatters(false);
+                      }
+                    })();
+                  }
+                } else {
+                  fileInputRef.current?.click();
+                }
+              }}
+              disabled={uploading}
+            >
               <Upload className="h-4 w-4 mr-1" />
-              Upload
+              {uploading ? 'Uploading...' : 'Upload'}
             </Button>
           </div>
         </div>
@@ -453,7 +551,60 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             )}
           </div>
         )}
-      </CardContent>
+    </CardContent>
     </Card>
+
+    {/* Matter Picker Dialog for uploads from global view */}
+    <Dialog open={showMatterPicker} onOpenChange={setShowMatterPicker}>
+      <DialogContent aria-describedby="matter-picker-desc">
+        <DialogHeader>
+          <DialogTitle>Select a matter for upload</DialogTitle>
+        </DialogHeader>
+        <div id="matter-picker-desc" className="sr-only">Choose the matter this document belongs to.</div>
+        <div className="space-y-3">
+          {loadingMatters ? (
+            <div className="text-sm text-slate-400">Loading matters...</div>
+          ) : matters.length === 0 ? (
+            <div className="text-sm text-slate-400">No matters available.</div>
+          ) : (
+            <div className="max-h-64 overflow-auto divide-y divide-slate-800 border border-slate-800 rounded">
+              {matters.map((m) => (
+                <button
+                  key={m.id}
+                  className={`w-full text-left px-3 py-2 hover:bg-slate-800 ${selectedMatterId === m.id ? 'bg-slate-800' : ''}`}
+                  onClick={() => {
+                    console.log('Selected matter:', m.id, m.title);
+                    setSelectedMatterId(m.id);
+                  }}
+                >
+                  <div className="font-medium text-slate-100">{m.title}</div>
+                  {m.matter_number && (
+                    <div className="text-xs text-slate-400">{m.matter_number}</div>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => {
+              setSelectedMatterId('');
+              setShowMatterPicker(false);
+            }}>Cancel</Button>
+            <Button onClick={() => {
+              if (!selectedMatterId) {
+                toast({ title: 'Select a matter', description: 'Choose a matter to continue.', variant: 'destructive' });
+                return;
+              }
+              console.log('Continue clicked with selectedMatterId:', selectedMatterId);
+              setShowMatterPicker(false);
+              // Directly trigger file picker
+              console.log('Opening file picker...');
+              fileInputRef.current?.click();
+            }}>Continue</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
