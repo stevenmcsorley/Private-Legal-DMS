@@ -223,7 +223,7 @@ export const ClientPortal = () => {
                           <div className="flex items-center space-x-3 mb-2">
                             <Archive className="h-5 w-5 text-blue-500 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-lg font-medium text-gray-900 truncate">
+                              <h4 className="text-lg font-medium text-gray-200 truncate">
                                 {matter.title}
                               </h4>
                               <p className="text-sm text-gray-600 font-mono">

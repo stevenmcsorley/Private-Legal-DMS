@@ -393,7 +393,7 @@ export const CrossFirmSharing = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="text-lg font-medium text-gray-900 truncate">
+                          <h4 className="text-lg font-medium text-gray-200 truncate">
                             {share.matter.title}
                           </h4>
                           <Badge className={getStatusColor(share.status)}>
@@ -504,7 +504,7 @@ export const CrossFirmSharing = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="text-lg font-medium text-gray-900 truncate">
+                          <h4 className="text-lg font-medium text-gray-200 truncate">
                             {share.matter_title}
                           </h4>
                           <Badge className={getStatusColor(share.status)}>
