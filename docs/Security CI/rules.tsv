@@ -1,0 +1,4 @@
+# ZAP rules.tsv
+# ruleId	threshold	action
+# Example: ignore some passive info items; keep this minimal and reviewed.
+10035	WARN	IGNORE
