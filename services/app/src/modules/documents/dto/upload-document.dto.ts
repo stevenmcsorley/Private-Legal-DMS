@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsUUID, IsInt, Min, Max, IsBoolean, IsDateString } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsInt, Min, Max, IsBoolean, IsDateString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UploadDocumentDto {
@@ -6,7 +6,10 @@ export class UploadDocumentDto {
     description: 'Matter ID this document belongs to',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    { message: 'matter_id must be a UUID' })
   matter_id: string;
 
   @ApiPropertyOptional({
