@@ -1,3 +1,5 @@
+// TEMPORARILY DISABLED - Using new SharesController instead
+/*
 import {
   Controller,
   Get,
@@ -326,3 +328,4 @@ export class MatterShareController {
     return this.matterShareService.deleteShare(shareId, user.firm_id);
   }
 }
+*/

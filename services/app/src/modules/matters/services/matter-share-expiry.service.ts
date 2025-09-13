@@ -1,3 +1,5 @@
+// TEMPORARILY DISABLED - Dependencies not available
+/*
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { MatterShareService } from './matter-share.service';
@@ -38,3 +40,4 @@ export class MatterShareExpiryService {
     }
   }
 }
+*/

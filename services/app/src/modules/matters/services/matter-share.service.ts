@@ -1,3 +1,5 @@
+// TEMPORARILY DISABLED DUE TO SCHEMA MISMATCH - Using new SharesService instead
+/*
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -277,3 +279,4 @@ export class MatterShareService {
     };
   }
 }
+*/

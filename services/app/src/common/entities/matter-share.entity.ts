@@ -28,9 +28,9 @@ export enum ShareStatus {
 }
 
 @Entity('matter_shares')
-@Index(['matter_id', 'shared_with_firm_id'], { unique: true })
+@Index(['matter_id', 'shared_with_firm'], { unique: true })
 @Index(['matter_id', 'expires_at'])
-@Index(['shared_with_firm_id', 'status'])
+@Index(['shared_with_firm'])
 export class MatterShare {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -38,114 +38,67 @@ export class MatterShare {
   @Column('uuid')
   matter_id: string;
 
-  @Column('uuid') 
-  shared_by_firm_id: string;
+  @Column('uuid', { name: 'shared_with_firm' })
+  shared_with_firm: string;
 
-  @Column('uuid')
-  shared_with_firm_id: string;
-
-  @Column('uuid')
-  shared_by_user_id: string;
+  @Column('uuid', { name: 'shared_by' })
+  shared_by: string;
 
   @Column({
-    type: 'enum',
-    enum: ShareRole,
-    default: ShareRole.VIEWER,
+    type: 'varchar',
+    length: 50,
+    default: 'viewer',
   })
-  role: ShareRole;
+  role: string;
 
-  @Column({
-    type: 'enum', 
-    enum: ShareStatus,
-    default: ShareStatus.PENDING,
-  })
-  status: ShareStatus;
+  @Column({ type: 'text', array: true, default: [] })
+  permissions: string[];
 
-  @Column({ type: 'timestamp', nullable: true })
+  @Column({ type: 'timestamp with time zone', nullable: true })
   expires_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  accepted_at: Date;
+  @Column({ type: 'timestamp with time zone', nullable: true })
+  revoked_at: Date;
 
   @Column('uuid', { nullable: true })
-  accepted_by_user_id: string;
-
-  @Column({ type: 'text', nullable: true })
-  invitation_message: string;
-
-  @Column({ type: 'jsonb', default: {} })
-  permissions: {
-    can_download?: boolean;
-    can_upload?: boolean;
-    can_comment?: boolean;
-    can_view_audit?: boolean;
-    watermark_required?: boolean;
-    [key: string]: any;
-  };
-
-  @Column({ type: 'jsonb', nullable: true })
-  restrictions: {
-    allowed_document_types?: string[];
-    max_download_count?: number;
-    ip_whitelist?: string[];
-    time_restrictions?: {
-      start_time?: string;
-      end_time?: string;
-      timezone?: string;
-    };
-    [key: string]: any;
-  };
+  revoked_by: string;
 
   @CreateDateColumn()
   created_at: Date;
 
-  @UpdateDateColumn()
-  updated_at: Date;
-
   // Relations
-  @ManyToOne(() => Matter, matter => matter.shares, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Matter, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'matter_id' })
   matter: Matter;
 
   @ManyToOne(() => Firm, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'shared_by_firm_id' })
-  shared_by_firm: Firm;
-
-  @ManyToOne(() => Firm, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'shared_with_firm_id' })
-  shared_with_firm: Firm;
+  @JoinColumn({ name: 'shared_with_firm' })
+  shared_with_firm_entity: Firm;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'shared_by_user_id' })
+  @JoinColumn({ name: 'shared_by' })
   shared_by_user: User;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'accepted_by_user_id' })
-  accepted_by_user: User;
+  @JoinColumn({ name: 'revoked_by' })
+  revoked_by_user: User;
 
   // Helper methods
   isExpired(): boolean {
     return this.expires_at && new Date() > this.expires_at;
   }
 
+  isRevoked(): boolean {
+    return !!this.revoked_at;
+  }
+
   isActive(): boolean {
-    return this.status === ShareStatus.ACCEPTED && !this.isExpired();
+    return !this.isExpired() && !this.isRevoked();
   }
 
   canPerformAction(action: string): boolean {
     if (!this.isActive()) return false;
 
-    switch (action) {
-      case 'download':
-        return this.permissions.can_download !== false;
-      case 'upload':
-        return this.permissions.can_upload === true;
-      case 'comment':
-        return this.permissions.can_comment !== false;
-      case 'view_audit':
-        return this.permissions.can_view_audit === true;
-      default:
-        return false;
-    }
+    return this.permissions.includes(action);
   }
 }

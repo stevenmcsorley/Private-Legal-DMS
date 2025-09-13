@@ -24,6 +24,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { SearchModule } from './modules/search/search.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SharesModule } from './modules/shares';
 
 // Common
 import { LoggerModule } from './common/logger/logger.module';
@@ -85,6 +86,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
     SearchModule,
     AuditModule,
     DashboardModule,
+    SharesModule,
   ],
   controllers: [],
   providers: [],

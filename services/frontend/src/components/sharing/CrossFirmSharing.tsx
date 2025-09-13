@@ -94,14 +94,23 @@ export const CrossFirmSharing = () => {
       if (outgoingResponse.ok) {
         const outgoingData = await outgoingResponse.json();
         setOutgoingShares(outgoingData);
+      } else if (outgoingResponse.status === 404) {
+        // API not implemented yet (Phase 2 feature)
+        setOutgoingShares([]);
       }
 
       if (incomingResponse.ok) {
         const incomingData = await incomingResponse.json();
         setIncomingShares(incomingData);
+      } else if (incomingResponse.status === 404) {
+        // API not implemented yet (Phase 2 feature)
+        setIncomingShares([]);
       }
     } catch (error) {
       console.error('Error fetching shares:', error);
+      // Set empty arrays on error to avoid showing loading state indefinitely
+      setOutgoingShares([]);
+      setIncomingShares([]);
     } finally {
       setLoading(false);
     }

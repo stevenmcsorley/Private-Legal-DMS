@@ -75,8 +75,9 @@ export class AuthService {
         throw new Error('Token has expired');
       }
       
-      // Verify issuer matches our Keycloak realm
-      const expectedIssuer = `${this.getKeycloakBaseUrl()}`;
+      // Verify issuer matches our Keycloak realm (use public URL for JWT validation)
+      const expectedIssuer = `${this.getPublicKeycloakBaseUrl()}`;
+      this.logger.debug(`JWT validation - Expected issuer: ${expectedIssuer}, Token issuer: ${payload.iss}`);
       if (payload.iss !== expectedIssuer) {
         throw new Error(`Invalid issuer. Expected: ${expectedIssuer}, Got: ${payload.iss}`);
       }
@@ -112,16 +113,25 @@ export class AuthService {
     if (firmId === 'system') {
       return '22222222-2222-2222-2222-222222222222'; // Default Law Firm UUID
     }
+    // If no firm_id is provided, assign default firm
+    if (!firmId || firmId === 'undefined' || firmId === 'null') {
+      return '22222222-2222-2222-2222-222222222222'; // Default Law Firm UUID
+    }
     return firmId;
   }
 
   async exchangeCodeForTokens(code: string, redirectUri: string): Promise<Session> {
     const tokenEndpoint = `${this.getKeycloakBaseUrl()}/protocol/openid-connect/token`;
     
+    const clientId = this.configService.get('KEYCLOAK_CLIENT_ID', 'dms-api');
+    const clientSecret = this.configService.get('KEYCLOAK_CLIENT_SECRET', 'dms-secret');
+    
+    this.logger.debug(`Token exchange - Client ID: ${clientId}, Endpoint: ${tokenEndpoint}`);
+    
     const params = new URLSearchParams();
     params.append('grant_type', 'authorization_code');
-    params.append('client_id', this.configService.get('KEYCLOAK_CLIENT_ID', 'dms-api'));
-    params.append('client_secret', this.configService.get('KEYCLOAK_CLIENT_SECRET', 'dms-secret'));
+    params.append('client_id', clientId);
+    params.append('client_secret', clientSecret);
     params.append('code', code);
     params.append('redirect_uri', redirectUri);
 
@@ -135,6 +145,8 @@ export class AuthService {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
+        this.logger.error(`Token exchange failed - Status: ${response.status}, Response: ${errorText}`);
         throw new Error(`Token exchange failed: ${response.statusText}`);
       }
 
