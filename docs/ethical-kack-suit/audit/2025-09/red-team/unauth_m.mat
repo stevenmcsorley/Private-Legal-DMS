@@ -1,0 +1,21 @@
+HTTP/1.1 401 Unauthorized
+Access-Control-Allow-Credentials: true
+Content-Length: 76
+Content-Security-Policy: default-src 'self';style-src 'self' 'unsafe-inline';script-src 'self';img-src 'self' data: https:;connect-src 'self' ws: wss:;font-src 'self';object-src 'none';media-src 'self';frame-src 'self' http://localhost:8082;base-uri 'self';form-action 'self';frame-ancestors 'self';script-src-attr 'none';upgrade-insecure-requests
+Content-Type: application/json; charset=utf-8
+Cross-Origin-Opener-Policy: same-origin
+Cross-Origin-Resource-Policy: same-origin
+Date: Sat, 13 Sep 2025 00:24:15 GMT
+Etag: W/"4c-jkOM++XpogKnpqEsoINvfLhNZ8A"
+Origin-Agent-Cluster: ?1
+Referrer-Policy: no-referrer
+Strict-Transport-Security: max-age=15552000; includeSubDomains
+Vary: Origin, Accept-Encoding
+X-Content-Type-Options: nosniff
+X-Dns-Prefetch-Control: off
+X-Download-Options: noopen
+X-Frame-Options: SAMEORIGIN
+X-Permitted-Cross-Domain-Policies: none
+X-Xss-Protection: 0
+
+{"message":"No valid session found","error":"Unauthorized","statusCode":401}

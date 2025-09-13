@@ -1,0 +1,76 @@
+name: Red-Team Simulator (SAFE)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: "Target base URL (e.g., https://staging.example.com)"
+        required: true
+        default: "https://staging.example.com"
+      script_path:
+        description: "Path to red-team-sim.sh in repo"
+        required: true
+        default: "scripts/red-team-sim.sh"
+  schedule:
+    # Optional: weekly run (Monday 03:30 UTC)
+    - cron: "30 3 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  simulate:
+    name: Run red-team-sim and upload artifacts
+    runs-on: ubuntu-latest
+    env:
+      # If you prefer repo-level secret, set REDTEAM_TARGET in repo secrets and delete "target_url" input.
+      REDTEAM_TARGET: ${{ github.event.inputs.target_url != '' && github.event.inputs.target_url || secrets.REDTEAM_TARGET }}
+      SCRIPT_PATH: ${{ github.event.inputs.script_path != '' && github.event.inputs.script_path || 'scripts/red-team-sim.sh' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show config
+        run: |
+          echo "Target: ${REDTEAM_TARGET}"
+          echo "Script: ${SCRIPT_PATH}"
+
+      - name: Ensure script executable
+        run: chmod +x "${SCRIPT_PATH}"
+
+      - name: Run simulator (SAFE)
+        run: |
+          set -e
+          "${SCRIPT_PATH}" "${REDTEAM_TARGET}"
+
+      - name: Locate audit folder
+        id: audit
+        shell: bash
+        run: |
+          # Find newest monthly red-team folder created by the script
+          AUDIT_DIR=$(ls -d audit/*/red-team 2>/dev/null | tail -n 1 || true)
+          if [ -z "$AUDIT_DIR" ]; then
+            echo "No audit folder found; creating empty placeholder."
+            AUDIT_DIR="audit/$(date +%Y-%m)/red-team"
+            mkdir -p "$AUDIT_DIR"
+          fi
+          echo "audit_dir=$AUDIT_DIR" >> "$GITHUB_OUTPUT"
+          echo "Audit dir: $AUDIT_DIR"
+          ls -lah "$AUDIT_DIR" || true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: red-team-artifacts-${{ github.run_id }}
+          path: |
+            ${{ steps.audit.outputs.audit_dir }}/
+          if-no-files-found: warn
+
+      - name: Post summary
+        if: always()
+        run: |
+          echo "### Red-Team Simulator (SAFE) Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- Target: ${REDTEAM_TARGET}" >> $GITHUB_STEP_SUMMARY
+          echo "- Script: ${SCRIPT_PATH}" >> $GITHUB_STEP_SUMMARY
+          echo "- Artifacts: red-team-artifacts-${{ github.run_id }}" >> $GITHUB_STEP_SUMMARY
