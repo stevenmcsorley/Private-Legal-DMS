@@ -35,13 +35,14 @@ interface Matter {
   client?: {
     id: string;
     name: string;
-    external_ref?: string;
+    contact_email?: string;
   };
   created_by_user?: {
     id: string;
     display_name: string;
-    email: string;
+    email?: string;
   };
+  documents?: any[];
 }
 
 export const MatterList = () => {

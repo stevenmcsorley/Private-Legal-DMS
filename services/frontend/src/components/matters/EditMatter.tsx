@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,7 +21,6 @@ interface Client {
   contact_email?: string;
 }
 
-
 interface MatterFormData {
   title: string;
   description: string;
@@ -30,9 +29,11 @@ interface MatterFormData {
   security_class: number;
 }
 
-export const CreateMatter = () => {
+export const EditMatter = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [loadingMatter, setLoadingMatter] = useState(true);
   const [clients, setClients] = useState<Client[]>([]);
   const [formData, setFormData] = useState<MatterFormData>({
     title: '',
@@ -43,8 +44,33 @@ export const CreateMatter = () => {
   });
 
   useEffect(() => {
-    fetchClients();
-  }, []);
+    if (id) {
+      fetchMatter();
+      fetchClients();
+    }
+  }, [id]);
+
+  const fetchMatter = async () => {
+    try {
+      const response = await fetch(`/api/matters/${id}`, {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const matter = await response.json();
+        setFormData({
+          title: matter.title || '',
+          description: matter.description || '',
+          client_id: matter.client_id || '',
+          status: matter.status || 'active',
+          security_class: matter.security_class || 1,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching matter:', error);
+    } finally {
+      setLoadingMatter(false);
+    }
+  };
 
   const fetchClients = async () => {
     try {
@@ -53,7 +79,6 @@ export const CreateMatter = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        console.log('Clients API response:', data);
         setClients(Array.isArray(data) ? data : data.clients || []);
       }
     } catch (error) {
@@ -61,7 +86,6 @@ export const CreateMatter = () => {
       setClients([]);
     }
   };
-
 
   const handleInputChange = (field: keyof MatterFormData, value: string | number) => {
     setFormData(prev => ({
@@ -75,8 +99,8 @@ export const CreateMatter = () => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/matters', {
-        method: 'POST',
+      const response = await fetch(`/api/matters/${id}`, {
+        method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -85,32 +109,42 @@ export const CreateMatter = () => {
       });
 
       if (response.ok) {
-        const matter = await response.json();
-        navigate(`/matters/${matter.id}`);
+        navigate(`/matters/${id}`);
       } else {
         const error = await response.json();
-        console.error('Error creating matter:', error);
+        console.error('Error updating matter:', error);
       }
     } catch (error) {
-      console.error('Error creating matter:', error);
+      console.error('Error updating matter:', error);
     } finally {
       setLoading(false);
     }
   };
+
+  if (loadingMatter) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading matter...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center space-x-4">
         <Button variant="outline" size="sm" asChild>
-          <Link to="/matters">
+          <Link to={`/matters/${id}`}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Matters
+            Back to Matter
           </Link>
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">Create New Matter</h1>
-          <p className="text-gray-600">Add a new legal matter to the system</p>
+          <h1 className="text-2xl font-bold">Edit Matter</h1>
+          <p className="text-gray-600">Update matter information</p>
         </div>
       </div>
 
@@ -203,15 +237,12 @@ export const CreateMatter = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="on_hold">On Hold</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
                     <SelectItem value="closed">Closed</SelectItem>
-                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
-
-
-
             </CardContent>
           </Card>
         </div>
@@ -219,18 +250,18 @@ export const CreateMatter = () => {
         {/* Actions */}
         <div className="flex items-center justify-end space-x-4">
           <Button type="button" variant="outline" asChild>
-            <Link to="/matters">Cancel</Link>
+            <Link to={`/matters/${id}`}>Cancel</Link>
           </Button>
           <Button type="submit" disabled={loading}>
             {loading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Creating...
+                Updating...
               </>
             ) : (
               <>
                 <Save className="h-4 w-4 mr-2" />
-                Create Matter
+                Update Matter
               </>
             )}
           </Button>

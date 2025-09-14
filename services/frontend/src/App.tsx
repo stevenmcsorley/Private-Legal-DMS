@@ -7,6 +7,7 @@ import { Dashboard } from '@/components/dashboard/Dashboard'
 import { MatterList } from '@/components/matters/MatterList'
 import { MatterDetails } from '@/components/matters/MatterDetails'
 import { CreateMatter } from '@/components/matters/CreateMatter'
+import { EditMatter } from '@/components/matters/EditMatter'
 import { ClientList } from '@/components/clients/ClientList'
 import { ClientDetails } from '@/components/clients/ClientDetails'
 import { CreateClient } from '@/components/clients/CreateClient'
@@ -30,6 +31,7 @@ export const App = () => {
           <Route path="matters" element={<MatterList />} />
           <Route path="matters/new" element={<CreateMatter />} />
           <Route path="matters/:id" element={<MatterDetails />} />
+          <Route path="matters/:id/edit" element={<EditMatter />} />
           
           {/* Clients */}
           <Route path="clients" element={<ClientList />} />

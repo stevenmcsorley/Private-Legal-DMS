@@ -21,6 +21,7 @@ import {
 } from '@nestjs/swagger';
 import { MattersService, MatterQuery } from './matters.service';
 import { MatterExportService, MatterExportOptions } from './services/matter-export.service';
+import { DocumentsService } from '../documents/documents.service';
 import { CreateMatterDto } from './dto/create-matter.dto';
 import { UpdateMatterDto } from './dto/update-matter.dto';
 import { MatterResponseDto } from './dto/matter-response.dto';
@@ -36,6 +37,7 @@ export class MattersController {
   constructor(
     private readonly mattersService: MattersService,
     private readonly matterExportService: MatterExportService,
+    private readonly documentsService: DocumentsService,
   ) {}
 
   @Post()
@@ -196,9 +198,7 @@ export class MattersController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserInfo,
   ) {
-    // This will be implemented when we have the documents service
-    // For now, return empty array
-    return { documents: [], total: 0 };
+    return this.documentsService.findAll({ matter_id: id }, user);
   }
 
   @Post(':id/export')

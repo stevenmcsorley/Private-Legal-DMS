@@ -9,7 +9,6 @@ import {
   Edit,
   FileText,
   Users,
-  AlertCircle,
   Calendar,
   User,
   Building,
@@ -21,27 +20,26 @@ import { DocumentList } from '@/components/documents/DocumentList';
 
 interface Matter {
   id: string;
-  matter_number: string;
+  firm_id: string;
+  client_id: string;
   title: string;
   description?: string;
-  client_id: string;
-  client: {
-    id: string;
-    name: string;
-    email: string;
-  };
-  matter_type: string;
   status: string;
-  priority: string;
+  security_class: number;
+  created_by: string;
   created_at: string;
   updated_at: string;
-  assigned_lawyer?: {
+  client?: {
+    id: string;
+    name: string;
+    contact_email?: string;
+  };
+  created_by_user?: {
     id: string;
     display_name: string;
-    email: string;
+    email?: string;
   };
-  legal_hold_active: boolean;
-  retention_years: number;
+  documents?: Document[];
 }
 
 interface Document {
@@ -119,10 +117,11 @@ export const MatterDetails = () => {
       const response = await fetch(`/api/matters/${id}/documents`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setDocuments(data);
+        setDocuments(Array.isArray(data.documents) ? data.documents : []);
       }
     } catch (error) {
       console.error('Error fetching documents:', error);
+      setDocuments([]);
     }
   };
 
@@ -131,10 +130,14 @@ export const MatterDetails = () => {
       const response = await fetch(`/api/matters/${id}/team`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setTeamMembers(data);
+        setTeamMembers(Array.isArray(data) ? data : []);
+      } else if (response.status === 404) {
+        console.log('Team endpoint not implemented yet');
+        setTeamMembers([]);
       }
     } catch (error) {
       console.error('Error fetching team members:', error);
+      setTeamMembers([]);
     }
   };
 
@@ -143,10 +146,14 @@ export const MatterDetails = () => {
       const response = await fetch(`/api/audit/matter/${id}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setAuditEntries(data);
+        setAuditEntries(Array.isArray(data) ? data : []);
+      } else if (response.status === 404) {
+        console.log('Audit endpoint not implemented yet');
+        setAuditEntries([]);
       }
     } catch (error) {
       console.error('Error fetching audit entries:', error);
+      setAuditEntries([]);
     }
   };
 
@@ -162,14 +169,6 @@ export const MatterDetails = () => {
     }
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
 
   if (loading || !matter) {
     return (
@@ -196,11 +195,8 @@ export const MatterDetails = () => {
           <div>
             <h1 className="text-2xl font-bold flex items-center">
               {matter.title}
-              {matter.legal_hold_active && (
-                <AlertCircle className="h-6 w-6 text-red-500 ml-2" />
-              )}
             </h1>
-            <p className="text-gray-600 font-mono">{matter.matter_number}</p>
+            <p className="text-gray-600 font-mono">Matter ID: {matter.id.slice(0, 8)}</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -227,7 +223,7 @@ export const MatterDetails = () => {
               </div>
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-900">Client</p>
-                <p className="text-sm text-gray-600">{matter.client.name}</p>
+                <p className="text-sm text-gray-600">{matter.client?.name || 'Unknown Client'}</p>
               </div>
             </div>
           </CardContent>
@@ -240,9 +236,9 @@ export const MatterDetails = () => {
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Assigned Lawyer</p>
+                <p className="text-sm font-medium text-gray-900">Created By</p>
                 <p className="text-sm text-gray-600">
-                  {matter.assigned_lawyer?.display_name || 'Unassigned'}
+                  {matter.created_by_user?.display_name || 'Unknown'}
                 </p>
               </div>
             </div>
@@ -307,19 +303,12 @@ export const MatterDetails = () => {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Priority</label>
+                  <label className="text-sm font-medium text-gray-700">Security Class</label>
                   <div className="mt-1">
-                    <Badge className={getPriorityColor(matter.priority)}>
-                      {matter.priority}
+                    <Badge variant="outline">
+                      Level {matter.security_class}
                     </Badge>
                   </div>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Matter Type</label>
-                  <p className="mt-1 text-sm text-gray-900">
-                    {matter.matter_type.replace('_', ' ')}
-                  </p>
                 </div>
                 
                 {matter.description && (
@@ -330,8 +319,17 @@ export const MatterDetails = () => {
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Retention Period</label>
-                  <p className="mt-1 text-sm text-gray-900">{matter.retention_years} years</p>
+                  <label className="text-sm font-medium text-gray-700">Created</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {new Date(matter.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Last Updated</label>
+                  <p className="mt-1 text-sm text-gray-900">
+                    {new Date(matter.updated_at).toLocaleDateString()}
+                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -344,17 +342,19 @@ export const MatterDetails = () => {
               <CardContent className="space-y-4">
                 <div>
                   <label className="text-sm font-medium text-gray-700">Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{matter.client.name}</p>
+                  <p className="mt-1 text-sm text-gray-900">{matter.client?.name || 'Unknown Client'}</p>
                 </div>
                 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Email</label>
-                  <p className="mt-1 text-sm text-gray-900">{matter.client.email}</p>
-                </div>
+                {matter.client?.contact_email && (
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    <p className="mt-1 text-sm text-gray-900">{matter.client.contact_email}</p>
+                  </div>
+                )}
                 
                 <div>
                   <label className="text-sm font-medium text-gray-700">Client ID</label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono">{matter.client.id}</p>
+                  <p className="mt-1 text-sm text-gray-900 font-mono">{matter.client?.id || matter.client_id}</p>
                 </div>
               </CardContent>
             </Card>
