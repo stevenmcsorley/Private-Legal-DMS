@@ -12,6 +12,16 @@ import { toast } from '../ui/use-toast';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.js?url';
 pdfjs.GlobalWorkerOptions.workerSrc = pdfWorker as unknown as string;
 
+// Suppress PDF.js font warnings (TT: undefined function errors)
+const originalConsoleWarn = console.warn;
+console.warn = (...args: any[]) => {
+  const message = args[0];
+  if (typeof message === 'string' && message.includes('TT: undefined function')) {
+    return; // Suppress these harmless PDF.js font warnings
+  }
+  originalConsoleWarn.apply(console, args);
+};
+
 interface DocumentViewerProps {
   documentId: string;
   documentName: string;
@@ -37,8 +47,14 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [scale, setScale] = useState<number>(1.0);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
+  const isPDF = mimeType === 'application/pdf';
 
   useEffect(() => {
+    // Reset to initial load state when document changes
+    setIsInitialLoad(true);
+    setPageNumber(1);
+    
     if (customPreviewUrl) {
       // Use custom preview URL directly (for watermarked documents)
       setPreviewUrl(customPreviewUrl);
@@ -47,6 +63,37 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       fetchPreviewUrl();
     }
   }, [documentId, customPreviewUrl]);
+
+  // Add keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!isPDF || numPages === 0) return;
+      
+      switch (event.key) {
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          event.preventDefault();
+          goToPrevPage();
+          break;
+        case 'ArrowRight':
+        case 'ArrowDown':
+          event.preventDefault();
+          goToNextPage();
+          break;
+        case 'Home':
+          event.preventDefault();
+          setPageNumber(1);
+          break;
+        case 'End':
+          event.preventDefault();
+          setPageNumber(numPages);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPDF, numPages, pageNumber]);
 
   const fetchPreviewUrl = async () => {
     try {
@@ -76,7 +123,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
     setNumPages(numPages);
-    setPageNumber(1);
+    // Only reset to page 1 on the initial document load, not on re-renders
+    if (isInitialLoad) {
+      setPageNumber(1);
+      setIsInitialLoad(false);
+    }
     setError('');
   };
 
@@ -104,6 +155,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   const zoomOut = () => {
     setScale(prev => Math.max(0.5, prev - 0.2));
+  };
+
+  const fitToWidth = () => {
+    setScale(1.0);
   };
 
   const downloadDocument = async () => {
@@ -140,8 +195,6 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       });
     }
   };
-
-  const isPDF = mimeType === 'application/pdf';
 
   if (loading) {
     return (
@@ -184,8 +237,18 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   variant="outline"
                   size="sm"
                   disabled={scale <= 0.5}
+                  title="Zoom Out (Ctrl+-)"
                 >
                   <ZoomOut className="h-4 w-4" />
+                </Button>
+                <Button
+                  onClick={fitToWidth}
+                  variant="outline"
+                  size="sm"
+                  title="Fit to Width"
+                  className="px-2"
+                >
+                  <span className="text-xs">Fit</span>
                 </Button>
                 <span className="text-sm font-medium min-w-[4rem] text-center">
                   {Math.round(scale * 100)}%
@@ -195,6 +258,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   variant="outline"
                   size="sm"
                   disabled={scale >= 3.0}
+                  title="Zoom In (Ctrl++)"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
@@ -212,54 +276,82 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
         
         {isPDF && numPages > 0 && (
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="flex items-center justify-center gap-4 pt-3 border-t border-slate-200">
             <Button
               onClick={goToPrevPage}
               variant="outline"
               size="sm"
               disabled={pageNumber <= 1}
+              className="bg-white hover:bg-slate-50"
+              title="Previous Page (Left Arrow)"
             >
-              <ChevronLeft className="h-4 w-4" />
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Previous
             </Button>
-            <span className="text-sm font-medium">
-              Page {pageNumber} of {numPages}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-600">Page</span>
+              <input
+                type="number"
+                min="1"
+                max={numPages}
+                value={pageNumber}
+                onChange={(e) => {
+                  const page = parseInt(e.target.value);
+                  if (page >= 1 && page <= numPages) {
+                    setPageNumber(page);
+                  }
+                }}
+                className="w-16 px-2 py-1 text-sm text-center border border-slate-300 rounded"
+              />
+              <span className="text-sm text-slate-600">of {numPages}</span>
+            </div>
             <Button
               onClick={goToNextPage}
               variant="outline"
               size="sm"
               disabled={pageNumber >= numPages}
+              className="bg-white hover:bg-slate-50"
+              title="Next Page (Right Arrow)"
             >
-              <ChevronRight className="h-4 w-4" />
+              Next
+              <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
         )}
       </CardHeader>
       
       <CardContent>
-        <div className="border rounded-lg bg-gray-50 min-h-[600px] flex items-center justify-center overflow-auto">
+        <div className="border rounded-lg bg-white min-h-[600px] flex items-center justify-center overflow-auto">
           {isPDF ? (
             <Document
               file={previewUrl}
-              options={{ withCredentials: true }}
+              options={{ 
+                withCredentials: true,
+                verbosity: 0, // Suppress warnings
+                standardFontDataUrl: undefined, // Prevent font loading warnings
+              }}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               loading={
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-gray-600">Loading PDF...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
+                  <p className="text-slate-600">Loading PDF...</p>
                 </div>
               }
+              className="flex flex-col items-center"
             >
               <Page
                 pageNumber={pageNumber}
                 scale={scale}
                 loading={
                   <div className="text-center p-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                    <p className="text-gray-600">Loading page...</p>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500 mx-auto mb-2"></div>
+                    <p className="text-slate-600">Loading page...</p>
                   </div>
                 }
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+                className="border border-gray-200 shadow-sm"
               />
             </Document>
           ) : mimeType.startsWith('image/') ? (
