@@ -18,29 +18,12 @@ export class CreateUserDto {
   @MaxLength(100)
   display_name: string;
 
-  @ApiProperty({
-    description: 'User first name',
-    example: 'John',
-  })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  first_name: string;
-
-  @ApiProperty({
-    description: 'User last name',
-    example: 'Doe',
-  })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(50)
-  last_name: string;
 
   @ApiProperty({
     description: 'Firm ID the user belongs to',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  @IsUUID(4)
   firm_id: string;
 
   @ApiProperty({
@@ -64,34 +47,12 @@ export class CreateUserDto {
   client_ids?: string[];
 
   @ApiProperty({
-    description: 'Job title',
-    example: 'Senior Associate',
+    description: 'Additional user attributes (first_name, last_name, job_title, etc.)',
+    example: { first_name: 'John', last_name: 'Doe', job_title: 'Senior Associate' },
     required: false,
   })
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  job_title?: string;
-
-  @ApiProperty({
-    description: 'Department',
-    example: 'Corporate Law',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  department?: string;
-
-  @ApiProperty({
-    description: 'Phone number',
-    example: '+1-555-123-4567',
-    required: false,
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20)
-  phone?: string;
+  attributes?: Record<string, any>;
 
   @ApiProperty({
     description: 'Whether user account is active',

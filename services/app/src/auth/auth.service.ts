@@ -1,6 +1,9 @@
 import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from '../common/entities/user.entity';
 import * as crypto from 'crypto';
 
 export interface UserInfo {
@@ -34,6 +37,8 @@ export class AuthService {
   constructor(
     private configService: ConfigService,
     private jwtService: JwtService,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async validateToken(token: string): Promise<UserInfo> {
@@ -41,7 +46,13 @@ export class AuthService {
       // Verify JWT signature using Keycloak public key
       const payload = await this.verifyJWT(token);
 
-      // Extract user information from JWT payload
+      // Look up user from database to get real firm_id and roles
+      const user = await this.userRepository.findOne({
+        where: { keycloak_id: payload.sub },
+        relations: ['firm'],
+      });
+
+      // Extract user information from JWT payload and database
       const userInfo: UserInfo = {
         sub: payload.sub as string,
         email: payload.email as string,
@@ -49,9 +60,10 @@ export class AuthService {
         given_name: payload.given_name as string,
         family_name: payload.family_name as string,
         name: payload.name as string,
-        roles: this.extractRoles(payload),
-        firm_id: this.mapFirmId(payload.firm_id as string),
+        roles: user?.roles || this.extractRoles(payload),
+        firm_id: user?.firm_id || this.mapFirmId(payload.firm_id as string),
         attributes: payload.attributes as Record<string, any>,
+        display_name: user?.display_name || payload.name as string,
       };
 
       return userInfo;

@@ -21,6 +21,9 @@ export class Team {
   @Column({ type: 'varchar', length: 100 })
   name: string;
 
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  description?: string;
+
   // Relations
   @ManyToOne(() => Firm, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'firm_id' })

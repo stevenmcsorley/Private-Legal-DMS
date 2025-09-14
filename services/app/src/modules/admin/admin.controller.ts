@@ -22,6 +22,10 @@ import {
 import { AdminService } from './admin.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { BulkUserOperationDto } from './dto/bulk-user-operation.dto';
+import { SystemSettingsDto } from './dto/system-settings.dto';
 import { CreateRetentionClassDto } from './dto/create-retention-class.dto';
 import { UpdateRetentionClassDto } from './dto/update-retention-class.dto';
 import { CurrentUser } from '../../auth/decorators/user.decorator';
@@ -359,6 +363,61 @@ export class AdminController {
   })
   async getSystemStats(@CurrentUser() user: UserInfo): Promise<any> {
     return this.adminService.getSystemStats(user);
+  }
+
+  // Team Management
+  @Get('teams')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Get teams' })
+  @ApiQuery({ name: 'firm_id', required: false, description: 'Filter by firm' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Teams retrieved successfully',
+  })
+  async getTeams(
+    @Query('firm_id') firmId?: string,
+    @CurrentUser() user?: UserInfo,
+  ) {
+    return this.adminService.getTeams(firmId, user);
+  }
+
+  @Post('teams')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Create a new team' })
+  @ApiBody({ type: CreateTeamDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Team created successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid team data',
+  })
+  async createTeam(
+    @Body() createTeamDto: CreateTeamDto,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.createTeam(createTeamDto, user);
+  }
+
+  // Bulk Operations
+  @Post('bulk-operations/users')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Perform bulk operations on users' })
+  @ApiBody({ type: BulkUserOperationDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Bulk operation completed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid bulk operation data',
+  })
+  async performBulkUserOperation(
+    @Body() bulkOperation: BulkUserOperationDto,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.performBulkUserOperation(bulkOperation, user);
   }
 
   // Audit Logs

@@ -6,10 +6,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Not, IsNull } from 'typeorm';
-import { User, Firm, RetentionClass, Document, Matter, Client, AuditLog } from '../../common/entities';
+import { Repository, Not, IsNull, In } from 'typeorm';
+import { User, Firm, Role, Team, RetentionClass, Document, Matter, Client, AuditLog } from '../../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { CreateTeamDto } from './dto/create-team.dto';
+import { UpdateTeamDto } from './dto/update-team.dto';
+import { BulkUserOperationDto, BulkOperationType } from './dto/bulk-user-operation.dto';
+import { SystemSettingsDto } from './dto/system-settings.dto';
 import { CreateRetentionClassDto } from './dto/create-retention-class.dto';
 import { UpdateRetentionClassDto } from './dto/update-retention-class.dto';
 import { UserInfo } from '../../auth/auth.service';
@@ -41,45 +45,15 @@ interface SystemStats {
 export class AdminService {
   private readonly logger = new Logger(AdminService.name);
 
-  // Define available roles with their descriptions and permissions
-  private readonly roles = [
-    {
-      name: 'super_admin',
-      description: 'System-wide administrator with full access',
-      permissions: ['admin', 'user_management', 'firm_management', 'system_config'],
-    },
-    {
-      name: 'firm_admin',
-      description: 'Firm administrator with firm-wide access',
-      permissions: ['admin', 'user_management', 'client_management', 'matter_management', 'document_management', 'retention', 'legal_hold'],
-    },
-    {
-      name: 'legal_manager',
-      description: 'Legal manager with elevated permissions',
-      permissions: ['document_management', 'matter_management', 'client_management', 'legal_hold', 'retention'],
-    },
-    {
-      name: 'legal_professional',
-      description: 'Lawyer or legal professional',
-      permissions: ['document', 'matter', 'client', 'document_upload', 'legal_review'],
-    },
-    {
-      name: 'paralegal',
-      description: 'Paralegal with document and case management access',
-      permissions: ['document', 'matter', 'client', 'document_upload'],
-    },
-    {
-      name: 'client_user',
-      description: 'Client portal user with limited access',
-      permissions: ['client_portal', 'document_view'],
-    },
-  ];
-
   constructor(
     @InjectRepository(User)
     private userRepository: Repository<User>,
     @InjectRepository(Firm)
     private firmRepository: Repository<Firm>,
+    @InjectRepository(Role)
+    private roleRepository: Repository<Role>,
+    @InjectRepository(Team)
+    private teamRepository: Repository<Team>,
     @InjectRepository(RetentionClass)
     private retentionClassRepository: Repository<RetentionClass>,
     @InjectRepository(Document)
@@ -135,6 +109,7 @@ export class AdminService {
         email: user.email,
         display_name: user.display_name,
         roles: user.roles,
+        attributes: user.attributes,
         firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
         is_active: user.is_active,
         created_at: user.created_at,
@@ -167,6 +142,7 @@ export class AdminService {
       email: user.email,
       display_name: user.display_name,
       roles: user.roles,
+      attributes: user.attributes,
       firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
       is_active: user.is_active,
       created_at: user.created_at,
@@ -201,11 +177,7 @@ export class AdminService {
     }
 
     // Validate roles
-    const validRoles = this.roles.map(r => r.name);
-    const invalidRoles = createUserDto.roles.filter(role => !validRoles.includes(role));
-    if (invalidRoles.length > 0) {
-      throw new BadRequestException(`Invalid roles: ${invalidRoles.join(', ')}`);
-    }
+    await this.validateRoles(createUserDto.roles);
 
     // Create user
     const user = this.userRepository.create({
@@ -241,11 +213,7 @@ export class AdminService {
 
     // Validate roles if provided
     if (updateUserDto.roles) {
-      const validRoles = this.roles.map(r => r.name);
-      const invalidRoles = updateUserDto.roles.filter(role => !validRoles.includes(role));
-      if (invalidRoles.length > 0) {
-        throw new BadRequestException(`Invalid roles: ${invalidRoles.join(', ')}`);
-      }
+      await this.validateRoles(updateUserDto.roles);
     }
 
     // Update user
@@ -314,8 +282,24 @@ export class AdminService {
   }
 
   // Role Management
-  async getRoles(): Promise<any[]> {
-    return this.roles;
+  async getRoles(): Promise<Role[]> {
+    return await this.roleRepository.find({
+      where: { is_active: true },
+      order: { hierarchy_level: 'ASC' },
+    });
+  }
+
+  async validateRoles(roleNames: string[]): Promise<void> {
+    const validRoles = await this.roleRepository.find({
+      where: { is_active: true },
+      select: ['name'],
+    });
+    const validRoleNames = validRoles.map(r => r.name);
+    const invalidRoles = roleNames.filter(role => !validRoleNames.includes(role));
+    
+    if (invalidRoles.length > 0) {
+      throw new BadRequestException(`Invalid roles: ${invalidRoles.join(', ')}`);
+    }
   }
 
   async updateUserRoles(userId: string, roles: string[], currentUser: UserInfo): Promise<any> {
@@ -335,11 +319,7 @@ export class AdminService {
     }
 
     // Validate roles
-    const validRoles = this.roles.map(r => r.name);
-    const invalidRoles = roles.filter(role => !validRoles.includes(role));
-    if (invalidRoles.length > 0) {
-      throw new BadRequestException(`Invalid roles: ${invalidRoles.join(', ')}`);
-    }
+    await this.validateRoles(roles);
 
     await this.userRepository.update(userId, { roles });
 
@@ -351,6 +331,149 @@ export class AdminService {
     });
 
     return this.getUser(userId, currentUser);
+  }
+
+  // Team Management
+  async getTeams(firmId?: string, currentUser?: UserInfo): Promise<Team[]> {
+    const effectiveFirmId = firmId || currentUser?.firm_id;
+    
+    if (!currentUser?.roles.includes('super_admin') && effectiveFirmId !== currentUser?.firm_id) {
+      throw new ForbiddenException('Cannot access teams from different firm');
+    }
+
+    return await this.teamRepository.find({
+      where: effectiveFirmId ? { firm_id: effectiveFirmId } : {},
+      relations: ['firm', 'members'],
+      order: { name: 'ASC' },
+    });
+  }
+
+  async createTeam(createTeamDto: CreateTeamDto, currentUser: UserInfo): Promise<Team> {
+    this.validateAdminAccess(currentUser);
+
+    if (!currentUser.roles.includes('super_admin') && createTeamDto.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot create team in different firm');
+    }
+
+    // Verify firm exists
+    const firm = await this.firmRepository.findOne({ where: { id: createTeamDto.firm_id } });
+    if (!firm) {
+      throw new BadRequestException('Firm not found');
+    }
+
+    // Create team
+    const teamData = {
+      name: createTeamDto.name,
+      description: createTeamDto.description,
+      firm_id: createTeamDto.firm_id,
+    };
+    
+    const team = this.teamRepository.create(teamData);
+    const savedTeam = await this.teamRepository.save(team);
+
+    this.logger.log(`Team created: ${team.name} by ${currentUser.email}`, {
+      teamId: savedTeam.id,
+      firmId: createTeamDto.firm_id,
+    });
+
+    return await this.teamRepository.findOne({
+      where: { id: savedTeam.id },
+      relations: ['firm', 'members'],
+    });
+  }
+
+  // Bulk Operations
+  async performBulkUserOperation(bulkOperation: BulkUserOperationDto, currentUser: UserInfo): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    const { operation, user_ids, role_name, confirm_destructive, reason } = bulkOperation;
+
+    // Get users to operate on
+    const users = await this.userRepository.find({
+      where: { id: In(user_ids) },
+      relations: ['firm'],
+    });
+
+    if (users.length !== user_ids.length) {
+      throw new BadRequestException('Some users not found');
+    }
+
+    // Verify firm access
+    if (!currentUser.roles.includes('super_admin')) {
+      const wrongFirmUsers = users.filter(user => user.firm_id !== currentUser.firm_id);
+      if (wrongFirmUsers.length > 0) {
+        throw new ForbiddenException('Cannot perform bulk operations on users from different firm');
+      }
+    }
+
+    let results = [];
+
+    switch (operation) {
+      case BulkOperationType.ENABLE_USERS:
+        await this.userRepository.update({ id: In(user_ids) }, { is_active: true });
+        results = users.map(user => ({ userId: user.id, email: user.email, action: 'enabled' }));
+        break;
+
+      case BulkOperationType.DISABLE_USERS:
+        await this.userRepository.update({ id: In(user_ids) }, { is_active: false });
+        results = users.map(user => ({ userId: user.id, email: user.email, action: 'disabled' }));
+        break;
+
+      case BulkOperationType.ADD_ROLE:
+        if (!role_name) {
+          throw new BadRequestException('Role name is required for add_role operation');
+        }
+        await this.validateRoles([role_name]);
+        
+        for (const user of users) {
+          if (!user.roles.includes(role_name)) {
+            const newRoles = [...user.roles, role_name];
+            await this.userRepository.update(user.id, { roles: newRoles });
+            results.push({ userId: user.id, email: user.email, action: `added role: ${role_name}` });
+          }
+        }
+        break;
+
+      case BulkOperationType.REMOVE_ROLE:
+        if (!role_name) {
+          throw new BadRequestException('Role name is required for remove_role operation');
+        }
+        
+        for (const user of users) {
+          if (user.roles.includes(role_name)) {
+            const newRoles = user.roles.filter(role => role !== role_name);
+            await this.userRepository.update(user.id, { roles: newRoles });
+            results.push({ userId: user.id, email: user.email, action: `removed role: ${role_name}` });
+          }
+        }
+        break;
+
+      case BulkOperationType.DELETE_USERS:
+        if (!confirm_destructive) {
+          throw new BadRequestException('Destructive operation requires confirmation');
+        }
+        
+        await this.userRepository.remove(users);
+        results = users.map(user => ({ userId: user.id, email: user.email, action: 'deleted' }));
+        break;
+
+      default:
+        throw new BadRequestException(`Unsupported bulk operation: ${operation}`);
+    }
+
+    // Log bulk operation
+    this.logger.log(`Bulk operation performed: ${operation} on ${user_ids.length} users by ${currentUser.email}`, {
+      operation,
+      userCount: user_ids.length,
+      reason,
+      results,
+    });
+
+    return {
+      operation,
+      processed_count: results.length,
+      results,
+    };
   }
 
   // Retention Class Management

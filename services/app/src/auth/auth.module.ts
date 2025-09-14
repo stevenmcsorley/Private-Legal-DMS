@@ -1,5 +1,6 @@
 import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
@@ -8,10 +9,12 @@ import { AuthzGuard } from './guards/authz.guard';
 import { OpaService } from './opa.service';
 import { KeycloakConfig } from '../config/keycloak.config';
 import { OpaConfig } from '../config/opa.config';
+import { User } from '../common/entities/user.entity';
 
 @Global()
 @Module({
   imports: [
+    TypeOrmModule.forFeature([User]),
     JwtModule.register({
       // JWT configuration - mainly used for internal token operations
       secret: process.env.JWT_SECRET || 'dev-jwt-secret',

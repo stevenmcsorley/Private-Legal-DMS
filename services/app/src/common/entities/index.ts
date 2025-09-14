@@ -3,6 +3,7 @@ export { User } from './user.entity';
 export { Client } from './client.entity';
 export { Matter, MatterStatus } from './matter.entity';
 export { Team } from './team.entity';
+export { Role } from './role.entity';
 export { RetentionClass } from './retention-class.entity';
 export { Document } from './document.entity';
 export { DocumentMeta } from './document-meta.entity';
