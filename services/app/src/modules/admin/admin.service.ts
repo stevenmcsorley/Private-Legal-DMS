@@ -382,6 +382,106 @@ export class AdminService {
     });
   }
 
+  async getTeam(teamId: string, currentUser: UserInfo): Promise<Team> {
+    this.validateAdminAccess(currentUser);
+
+    const team = await this.teamRepository.findOne({
+      where: { id: teamId },
+      relations: ['firm', 'members'],
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    if (!currentUser.roles.includes('super_admin') && team.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot access team from different firm');
+    }
+
+    return team;
+  }
+
+  async updateTeam(teamId: string, updateTeamDto: UpdateTeamDto, currentUser: UserInfo): Promise<Team> {
+    this.validateAdminAccess(currentUser);
+
+    const team = await this.teamRepository.findOne({
+      where: { id: teamId },
+      relations: ['firm', 'members'],
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    if (!currentUser.roles.includes('super_admin') && team.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot update team from different firm');
+    }
+
+    // Update basic team data
+    if (updateTeamDto.name !== undefined) {
+      team.name = updateTeamDto.name;
+    }
+    if (updateTeamDto.description !== undefined) {
+      team.description = updateTeamDto.description;
+    }
+
+    // Handle member updates if provided
+    if (updateTeamDto.member_ids !== undefined) {
+      // Get members by IDs
+      const members = await this.userRepository.find({
+        where: { id: In(updateTeamDto.member_ids) },
+      });
+
+      if (members.length !== updateTeamDto.member_ids.length) {
+        throw new BadRequestException('Some members not found');
+      }
+
+      // Verify all members belong to the same firm
+      const invalidMembers = members.filter(member => member.firm_id !== team.firm_id);
+      if (invalidMembers.length > 0) {
+        throw new BadRequestException('All team members must belong to the same firm');
+      }
+
+      team.members = members;
+    }
+
+    const updatedTeam = await this.teamRepository.save(team);
+
+    this.logger.log(`Team updated: ${team.name} by ${currentUser.email}`, {
+      teamId: team.id,
+      changes: updateTeamDto,
+    });
+
+    return await this.teamRepository.findOne({
+      where: { id: updatedTeam.id },
+      relations: ['firm', 'members'],
+    });
+  }
+
+  async deleteTeam(teamId: string, currentUser: UserInfo): Promise<void> {
+    this.validateAdminAccess(currentUser);
+
+    const team = await this.teamRepository.findOne({
+      where: { id: teamId },
+      relations: ['firm'],
+    });
+
+    if (!team) {
+      throw new NotFoundException('Team not found');
+    }
+
+    if (!currentUser.roles.includes('super_admin') && team.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot delete team from different firm');
+    }
+
+    await this.teamRepository.remove(team);
+
+    this.logger.log(`Team deleted: ${team.name} by ${currentUser.email}`, {
+      teamId: team.id,
+      firmId: team.firm_id,
+    });
+  }
+
   // Bulk Operations
   async performBulkUserOperation(bulkOperation: BulkUserOperationDto, currentUser: UserInfo): Promise<any> {
     this.validateAdminAccess(currentUser);
@@ -730,6 +830,75 @@ export class AdminService {
       page,
       limit,
     };
+  }
+
+  // System Settings Management
+  async getSystemSettings(currentUser: UserInfo): Promise<SystemSettingsDto> {
+    this.validateAdminAccess(currentUser);
+
+    // For now, return default settings
+    // In a real application, these would be stored in the database
+    const defaultSettings: SystemSettingsDto = {
+      firm_name: 'Legal Document Management System',
+      default_retention_years: 7,
+      max_file_size_mb: 100,
+      enable_ocr: true,
+      enable_legal_holds: true,
+      enable_cross_firm_sharing: false,
+      backup_config: {
+        frequency: 'daily',
+        retention_days: 30,
+        enabled: true,
+      },
+      smtp_config: {
+        host: 'smtp.example.com',
+        port: 587,
+        secure: false,
+        enabled: false,
+      },
+      watermark_config: {
+        enabled: true,
+        text: 'CONFIDENTIAL - {firm_name}',
+        opacity: 0.3,
+      },
+      security_policy: {
+        session_timeout_minutes: 60,
+        require_mfa_for_admins: true,
+        max_login_attempts: 5,
+        password_expiry_days: 90,
+      },
+    };
+
+    // If not super admin, get firm-specific settings
+    if (!currentUser.roles.includes('super_admin')) {
+      const firm = await this.firmRepository.findOne({
+        where: { id: currentUser.firm_id },
+      });
+      if (firm) {
+        defaultSettings.firm_name = firm.name;
+      }
+    }
+
+    return defaultSettings;
+  }
+
+  async updateSystemSettings(
+    systemSettingsDto: SystemSettingsDto,
+    currentUser: UserInfo,
+  ): Promise<SystemSettingsDto> {
+    this.validateAdminAccess(currentUser);
+
+    // For now, we'll just validate and return the updated settings
+    // In a real application, these would be persisted to the database
+    
+    this.logger.log(`System settings updated by ${currentUser.email}`, {
+      settings: systemSettingsDto,
+      userId: currentUser.sub,
+      firmId: currentUser.firm_id,
+    });
+
+    // Return the updated settings
+    return systemSettingsDto;
   }
 
   private validateAdminAccess(user: UserInfo): void {

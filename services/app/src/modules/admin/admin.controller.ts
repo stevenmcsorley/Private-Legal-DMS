@@ -365,6 +365,37 @@ export class AdminController {
     return this.adminService.getSystemStats(user);
   }
 
+  // System Settings
+  @Get('system-settings')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Get system settings' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'System settings retrieved successfully',
+  })
+  async getSystemSettings(@CurrentUser() user: UserInfo) {
+    return this.adminService.getSystemSettings(user);
+  }
+
+  @Put('system-settings')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Update system settings' })
+  @ApiBody({ type: SystemSettingsDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'System settings updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid system settings data',
+  })
+  async updateSystemSettings(
+    @Body() systemSettingsDto: SystemSettingsDto,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.updateSystemSettings(systemSettingsDto, user);
+  }
+
   // Team Management
   @Get('teams')
   @CanRead('admin')
@@ -398,6 +429,62 @@ export class AdminController {
     @CurrentUser() user: UserInfo,
   ) {
     return this.adminService.createTeam(createTeamDto, user);
+  }
+
+  @Get('teams/:id')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Get team details' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Team details retrieved successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Team not found',
+  })
+  async getTeam(
+    @Param('id', ParseUUIDPipe) teamId: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.getTeam(teamId, user);
+  }
+
+  @Put('teams/:id')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Update team details' })
+  @ApiBody({ type: UpdateTeamDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Team updated successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Team not found',
+  })
+  async updateTeam(
+    @Param('id', ParseUUIDPipe) teamId: string,
+    @Body() updateTeamDto: UpdateTeamDto,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.updateTeam(teamId, updateTeamDto, user);
+  }
+
+  @Delete('teams/:id')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Delete team' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Team deleted successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Team not found',
+  })
+  async deleteTeam(
+    @Param('id', ParseUUIDPipe) teamId: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.deleteTeam(teamId, user);
   }
 
   // Bulk Operations

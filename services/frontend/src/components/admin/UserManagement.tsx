@@ -16,7 +16,9 @@ import {
   UserCheck,
   UserX,
   Crown,
-  Loader2
+  Loader2,
+  Users,
+  Zap
 } from 'lucide-react';
 import {
   Select,
@@ -79,6 +81,12 @@ export const UserManagement = () => {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
+  const [showBulkDialog, setShowBulkDialog] = useState(false);
+  const [bulkOperation, setBulkOperation] = useState<string>('');
+  const [bulkReason, setBulkReason] = useState('');
+  const [bulkRole, setBulkRole] = useState('');
+  const [isPerformingBulk, setIsPerformingBulk] = useState(false);
   const [editUserForm, setEditUserForm] = useState<CreateUserFormData>({
     email: '',
     display_name: '',
@@ -330,6 +338,70 @@ export const UserManagement = () => {
     }
   };
 
+  // Bulk Operations Functions
+  const handleSelectUser = (userId: string, checked: boolean) => {
+    const newSelected = new Set(selectedUsers);
+    if (checked) {
+      newSelected.add(userId);
+    } else {
+      newSelected.delete(userId);
+    }
+    setSelectedUsers(newSelected);
+  };
+
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedUsers(new Set(filteredUsers.map(user => user.id)));
+    } else {
+      setSelectedUsers(new Set());
+    }
+  };
+
+  const performBulkOperation = async () => {
+    if (selectedUsers.size === 0 || !bulkOperation) return;
+
+    setIsPerformingBulk(true);
+
+    try {
+      const operationData: any = {
+        operation: bulkOperation,
+        user_ids: Array.from(selectedUsers),
+        reason: bulkReason,
+      };
+
+      if (['add_role', 'remove_role'].includes(bulkOperation) && bulkRole) {
+        operationData.role_name = bulkRole;
+      }
+
+      const response = await fetch('/api/admin/bulk-operations/users', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(operationData),
+      });
+
+      if (response.ok) {
+        await fetchUsers(); // Refresh users list
+        setSelectedUsers(new Set());
+        setShowBulkDialog(false);
+        setBulkOperation('');
+        setBulkReason('');
+        setBulkRole('');
+        alert('Bulk operation completed successfully');
+      } else {
+        const error = await response.json();
+        alert(`Bulk operation failed: ${error.message || 'Unknown error'}`);
+      }
+    } catch (error) {
+      console.error('Error performing bulk operation:', error);
+      alert('Failed to perform bulk operation. Please try again.');
+    } finally {
+      setIsPerformingBulk(false);
+    }
+  };
+
   const filteredUsers = users.filter((user) => {
     const matchesSearch = 
       user.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -380,14 +452,118 @@ export const UserManagement = () => {
           <p className="text-slate-400">Manage user accounts and permissions</p>
         </div>
         
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button data-testid="admin-user-create-button">
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[600px]" data-testid="admin-user-create-dialog">
+        <div className="flex items-center space-x-2">
+          {selectedUsers.size > 0 && (
+            <Dialog open={showBulkDialog} onOpenChange={setShowBulkDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <Users className="h-4 w-4 mr-2" />
+                  Bulk Actions ({selectedUsers.size})
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Bulk Operations</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div>
+                    <Label htmlFor="bulk-operation">Operation</Label>
+                    <Select value={bulkOperation} onValueChange={setBulkOperation}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select operation" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="enable_users">Enable Users</SelectItem>
+                        <SelectItem value="disable_users">Disable Users</SelectItem>
+                        <SelectItem value="add_role">Add Role</SelectItem>
+                        <SelectItem value="remove_role">Remove Role</SelectItem>
+                        <SelectItem value="delete_users" className="text-red-600">Delete Users</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {(['add_role', 'remove_role'].includes(bulkOperation)) && (
+                    <div>
+                      <Label htmlFor="bulk-role">Role</Label>
+                      <Select value={bulkRole} onValueChange={setBulkRole}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {roles.map((role) => (
+                            <SelectItem key={role.name} value={role.name}>
+                              {role.description || role.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="bulk-reason">Reason (optional)</Label>
+                    <Input
+                      id="bulk-reason"
+                      value={bulkReason}
+                      onChange={(e) => setBulkReason(e.target.value)}
+                      placeholder="Enter reason for audit trail"
+                    />
+                  </div>
+
+                  {bulkOperation === 'delete_users' && (
+                    <div className="bg-red-50 border border-red-200 rounded-md p-3">
+                      <div className="flex">
+                        <Trash2 className="h-5 w-5 text-red-400" />
+                        <div className="ml-3">
+                          <h3 className="text-sm font-medium text-red-800">
+                            Destructive Operation
+                          </h3>
+                          <p className="text-sm text-red-700">
+                            This will permanently delete {selectedUsers.size} users. This action cannot be undone.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setShowBulkDialog(false)}
+                    disabled={isPerformingBulk}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={performBulkOperation} 
+                    disabled={!bulkOperation || isPerformingBulk || (['add_role', 'remove_role'].includes(bulkOperation) && !bulkRole)}
+                    className={bulkOperation === 'delete_users' ? 'bg-red-600 hover:bg-red-700' : ''}
+                  >
+                    {isPerformingBulk ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Execute
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button data-testid="admin-user-create-button">
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[600px]" data-testid="admin-user-create-dialog">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
             </DialogHeader>
@@ -550,6 +726,7 @@ export const UserManagement = () => {
           </DialogContent>
         </Dialog>
       </div>
+      </div>
 
       {/* Filters */}
       <Card data-testid="admin-user-filters">
@@ -608,6 +785,12 @@ export const UserManagement = () => {
             <table className="w-full" data-testid="admin-user-list">
               <thead className="border-b border-slate-800 bg-slate-800/60">
                 <tr>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300 w-12">
+                    <Checkbox
+                      checked={selectedUsers.size === filteredUsers.length && filteredUsers.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">User</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Roles</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Status</th>
@@ -618,6 +801,12 @@ export const UserManagement = () => {
               <tbody>
                 {filteredUsers.map((user) => (
                   <tr key={user.id} className="border-b border-slate-800 hover:bg-slate-800/60" data-testid={`admin-user-row-${user.id}`}>
+                    <td className="py-4 px-6">
+                      <Checkbox
+                        checked={selectedUsers.has(user.id)}
+                        onCheckedChange={(checked) => handleSelectUser(user.id, !!checked)}
+                      />
+                    </td>
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-3">
                         <div className="h-10 w-10 bg-slate-700 rounded-full flex items-center justify-center">
