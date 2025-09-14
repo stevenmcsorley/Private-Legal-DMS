@@ -21,19 +21,22 @@ import {
 interface Client {
   id: string;
   name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  contact_person?: string;
-  client_type: string;
-  status: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: any;
+  metadata?: {
+    contact_person?: string;
+    client_type?: string;
+    status?: string;
+    notes?: string;
+    tax_id?: string;
+    billing_address?: string;
+    preferred_communication?: string;
+  };
+  external_ref?: string;
   created_at: string;
   updated_at: string;
   firm_id: string;
-  notes?: string;
-  tax_id?: string;
-  billing_address?: string;
-  preferred_communication?: string;
 }
 
 interface Matter {
@@ -189,11 +192,11 @@ export const ClientDetails = () => {
               {client.name}
             </h1>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge className={getStatusColor(client.status)}>
-                {client.status}
+              <Badge className={getStatusColor(client.metadata?.status || 'active')}>
+                {client.metadata?.status || 'active'}
               </Badge>
-              <Badge className={getTypeColor(client.client_type)}>
-                {client.client_type.replace('_', ' ')}
+              <Badge className={getTypeColor(client.metadata?.client_type || 'individual')}>
+                {(client.metadata?.client_type || 'individual').replace('_', ' ')}
               </Badge>
             </div>
           </div>
@@ -279,30 +282,32 @@ export const ClientDetails = () => {
                 <CardTitle>Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center space-x-3">
-                  <Mail className="h-4 w-4 text-gray-400" />
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <p className="text-sm text-gray-900">{client.email}</p>
-                  </div>
-                </div>
-                
-                {client.phone && (
+                {client.contact_email && (
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-4 w-4 text-gray-400" />
+                    <Mail className="h-4 w-4 text-gray-400" />
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Phone</label>
-                      <p className="text-sm text-gray-900">{client.phone}</p>
+                      <label className="text-sm font-medium text-gray-700">Email</label>
+                      <p className="text-sm text-gray-900">{client.contact_email}</p>
                     </div>
                   </div>
                 )}
                 
-                {client.contact_person && (
+                {client.contact_phone && (
+                  <div className="flex items-center space-x-3">
+                    <Phone className="h-4 w-4 text-gray-400" />
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">Phone</label>
+                      <p className="text-sm text-gray-900">{client.contact_phone}</p>
+                    </div>
+                  </div>
+                )}
+                
+                {client.metadata?.contact_person && (
                   <div className="flex items-center space-x-3">
                     <User className="h-4 w-4 text-gray-400" />
                     <div>
                       <label className="text-sm font-medium text-gray-700">Contact Person</label>
-                      <p className="text-sm text-gray-900">{client.contact_person}</p>
+                      <p className="text-sm text-gray-900">{client.metadata.contact_person}</p>
                     </div>
                   </div>
                 )}
@@ -312,7 +317,9 @@ export const ClientDetails = () => {
                     <MapPin className="h-4 w-4 text-gray-400 mt-1" />
                     <div>
                       <label className="text-sm font-medium text-gray-700">Address</label>
-                      <p className="text-sm text-gray-900 whitespace-pre-line">{client.address}</p>
+                      <p className="text-sm text-gray-900 whitespace-pre-line">
+                        {typeof client.address === 'string' ? client.address : client.address.street}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -325,24 +332,24 @@ export const ClientDetails = () => {
                 <CardTitle>Additional Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {client.tax_id && (
+                {client.metadata?.tax_id && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">Tax ID</label>
-                    <p className="mt-1 text-sm text-gray-900 font-mono">{client.tax_id}</p>
+                    <p className="mt-1 text-sm text-gray-900 font-mono">{client.metadata.tax_id}</p>
                   </div>
                 )}
                 
-                {client.billing_address && (
+                {client.metadata?.billing_address && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">Billing Address</label>
-                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{client.billing_address}</p>
+                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{client.metadata.billing_address}</p>
                   </div>
                 )}
                 
-                {client.preferred_communication && (
+                {client.metadata?.preferred_communication && (
                   <div>
                     <label className="text-sm font-medium text-gray-700">Preferred Communication</label>
-                    <p className="mt-1 text-sm text-gray-900">{client.preferred_communication}</p>
+                    <p className="mt-1 text-sm text-gray-900">{client.metadata.preferred_communication}</p>
                   </div>
                 )}
                 
@@ -356,13 +363,13 @@ export const ClientDetails = () => {
             </Card>
           </div>
 
-          {client.notes && (
+          {client.metadata?.notes && (
             <Card>
               <CardHeader>
                 <CardTitle>Notes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-900 whitespace-pre-line">{client.notes}</p>
+                <p className="text-sm text-gray-900 whitespace-pre-line">{client.metadata.notes}</p>
               </CardContent>
             </Card>
           )}

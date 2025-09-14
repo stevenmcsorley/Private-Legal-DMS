@@ -10,6 +10,7 @@ import { CreateMatter } from '@/components/matters/CreateMatter'
 import { ClientList } from '@/components/clients/ClientList'
 import { ClientDetails } from '@/components/clients/ClientDetails'
 import { CreateClient } from '@/components/clients/CreateClient'
+import { EditClient } from '@/components/clients/EditClient'
 import { DocumentsPage } from '@/pages/DocumentsPage'
 import { SearchPage } from '@/components/search/SearchPage'
 import { AdminDashboard } from '@/components/admin/AdminDashboard'
@@ -34,6 +35,7 @@ export const App = () => {
           <Route path="clients" element={<ClientList />} />
           <Route path="clients/new" element={<CreateClient />} />
           <Route path="clients/:id" element={<ClientDetails />} />
+          <Route path="clients/:id/edit" element={<EditClient />} />
           
           {/* Documents */}
           <Route path="documents" element={<DocumentsPage />} />

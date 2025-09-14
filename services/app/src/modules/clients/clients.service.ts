@@ -78,11 +78,13 @@ export class ClientsService {
 
     const queryBuilder = this.clientRepository
       .createQueryBuilder('client')
+      .leftJoinAndSelect('client.matters', 'matter')
+      .leftJoinAndSelect('client.documents', 'document')
       .where('client.firm_id = :firm_id', { firm_id });
 
     if (search) {
       queryBuilder.andWhere(
-        '(client.name ILIKE :search OR client.external_ref ILIKE :search)',
+        '(client.name ILIKE :search OR client.contact_email ILIKE :search OR client.external_ref ILIKE :search)',
         { search: `%${search}%` },
       );
     }
@@ -95,7 +97,12 @@ export class ClientsService {
     const [clients, total] = await queryBuilder.getManyAndCount();
 
     return {
-      clients: clients.map(client => new ClientResponseDto(client)),
+      clients: clients.map(client => new ClientResponseDto({
+        ...client,
+        matter_count: client.matters?.length || 0,
+        document_count: client.documents?.length || 0,
+        last_activity: client.updated_at,
+      })),
       total,
       page,
       limit,
@@ -105,7 +112,7 @@ export class ClientsService {
   async findOne(id: string, user: UserInfo): Promise<ClientResponseDto> {
     const client = await this.clientRepository.findOne({
       where: { id },
-      relations: ['matters'],
+      relations: ['matters', 'documents'],
     });
 
     if (!client) {
@@ -119,7 +126,9 @@ export class ClientsService {
 
     return new ClientResponseDto({
       ...client,
-      matters_count: client.matters?.length || 0,
+      matter_count: client.matters?.length || 0,
+      document_count: client.documents?.length || 0,
+      last_activity: client.updated_at,
     });
   }
 
@@ -175,8 +184,72 @@ export class ClientsService {
     const clients = await this.clientRepository.find({
       where: { firm_id: firmId },
       order: { name: 'ASC' },
+      relations: ['matters', 'documents'],
     });
 
-    return clients.map(client => new ClientResponseDto(client));
+    return clients.map(client => new ClientResponseDto({
+      ...client,
+      matter_count: client.matters?.length || 0,
+      document_count: client.documents?.length || 0,
+      last_activity: client.updated_at,
+    }));
+  }
+
+  async getClientMatters(clientId: string, user: UserInfo) {
+    // First verify client access
+    const client = await this.findOne(clientId, user);
+    
+    // Get client matters
+    const clientWithMatters = await this.clientRepository.findOne({
+      where: { id: clientId },
+      relations: ['matters', 'matters.created_by_user', 'matters.documents'],
+    });
+
+    const matters = clientWithMatters?.matters || [];
+
+    return matters.map(matter => ({
+      id: matter.id,
+      matter_number: matter.id.slice(0, 8), // Use first 8 chars of ID as matter number
+      title: matter.title,
+      matter_type: 'general', // Default since matter_type doesn't exist in entity
+      status: matter.status,
+      priority: 'medium', // Default since priority doesn't exist in entity
+      created_at: matter.created_at,
+      assigned_lawyer: matter.created_by_user ? {
+        display_name: matter.created_by_user.display_name,
+      } : null,
+      document_count: matter.documents?.length || 0,
+    }));
+  }
+
+  async getClientDocuments(clientId: string, user: UserInfo) {
+    // First verify client access
+    const client = await this.findOne(clientId, user);
+    
+    // Get client documents
+    const clientWithDocuments = await this.clientRepository.findOne({
+      where: { id: clientId },
+      relations: ['documents', 'documents.created_by_user', 'documents.matter'],
+    });
+
+    const documents = clientWithDocuments?.documents || [];
+
+    return documents.map(doc => ({
+      id: doc.id,
+      filename: doc.object_key, // Use object_key as filename
+      original_filename: doc.original_filename,
+      file_size: doc.size_bytes,
+      mime_type: doc.mime_type,
+      uploaded_at: doc.created_at, // Use created_at as uploaded_at
+      uploaded_by: {
+        display_name: doc.created_by_user?.display_name || 'Unknown',
+      },
+      matter: doc.matter ? {
+        title: doc.matter.title,
+        matter_number: doc.matter.id.slice(0, 8), // Use first 8 chars of ID as matter number
+      } : null,
+      version: doc.version,
+      is_confidential: doc.legal_hold, // Use legal_hold as confidential indicator
+    }));
   }
 }

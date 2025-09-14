@@ -23,6 +23,18 @@ export class Client {
   @Column({ type: 'varchar', length: 255 })
   name: string;
 
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  contact_email: string;
+
+  @Column({ type: 'varchar', length: 50, nullable: true })
+  contact_phone: string;
+
+  @Column({ type: 'jsonb', nullable: true })
+  address: any;
+
+  @Column({ type: 'jsonb', default: {} })
+  metadata: any;
+
   @Column({ type: 'varchar', length: 100, nullable: true })
   external_ref: string;
 

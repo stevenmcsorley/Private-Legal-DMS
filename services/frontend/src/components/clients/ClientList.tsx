@@ -27,12 +27,19 @@ import {
 interface Client {
   id: string;
   name: string;
-  email: string;
-  phone?: string;
-  address?: string;
-  contact_person?: string;
-  client_type: string;
-  status: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: any;
+  metadata?: {
+    contact_person?: string;
+    client_type?: string;
+    status?: string;
+    notes?: string;
+    tax_id?: string;
+    billing_address?: string;
+    preferred_communication?: string;
+  };
+  external_ref?: string;
   created_at: string;
   updated_at: string;
   matter_count: number;
@@ -69,11 +76,11 @@ export const ClientList = () => {
   const filteredClients = clients.filter((client) => {
     const matchesSearch = 
       client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.contact_person && client.contact_person.toLowerCase().includes(searchTerm.toLowerCase()));
+      (client.contact_email && client.contact_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (client.metadata?.contact_person && client.metadata.contact_person.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = statusFilter === 'all' || client.status === statusFilter;
-    const matchesType = typeFilter === 'all' || client.client_type === typeFilter;
+    const matchesStatus = statusFilter === 'all' || client.metadata?.status === statusFilter;
+    const matchesType = typeFilter === 'all' || client.metadata?.client_type === typeFilter;
 
     return matchesSearch && matchesStatus && matchesType;
   });
@@ -172,9 +179,9 @@ export const ClientList = () => {
                       {client.name}
                     </Link>
                   </CardTitle>
-                  {client.contact_person && (
+                  {client.metadata?.contact_person && (
                     <p className="text-sm text-gray-600 mt-1">
-                      Contact: {client.contact_person}
+                      Contact: {client.metadata.contact_person}
                     </p>
                   )}
                 </div>
@@ -192,22 +199,24 @@ export const ClientList = () => {
             
             <CardContent>
               <div className="space-y-3">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
-                  <span className="truncate">{client.email}</span>
-                </div>
+                {client.contact_email && (
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                    <span className="truncate">{client.contact_email}</span>
+                  </div>
+                )}
                 
-                {client.phone && (
+                {client.contact_phone && (
                   <div className="flex items-center text-sm text-gray-600">
                     <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
-                    <span>{client.phone}</span>
+                    <span>{client.contact_phone}</span>
                   </div>
                 )}
                 
                 {client.address && (
                   <div className="flex items-start text-sm text-gray-600">
                     <Building className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="line-clamp-2">{client.address}</span>
+                    <span className="line-clamp-2">{typeof client.address === 'string' ? client.address : client.address.street}</span>
                   </div>
                 )}
                 

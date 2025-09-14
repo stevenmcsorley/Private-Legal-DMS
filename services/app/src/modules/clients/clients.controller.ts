@@ -167,8 +167,28 @@ export class ClientsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() user: UserInfo,
   ) {
-    // This will be implemented when we have the matters service
-    // For now, return empty array
-    return { matters: [], total: 0 };
+    return this.clientsService.getClientMatters(id, user);
+  }
+
+  @Get(':id/documents')
+  @CanRead('document')
+  @ApiOperation({ summary: 'Get all documents for a client' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Documents retrieved successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Client not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied to this client',
+  })
+  async getClientDocuments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.clientsService.getClientDocuments(id, user);
   }
 }
