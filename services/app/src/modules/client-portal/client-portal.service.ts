@@ -11,6 +11,8 @@ interface ClientDashboard {
     name: string;
     type: string;
     status: string;
+    email?: string;
+    assigned_user_email?: string;
   };
   stats: {
     active_matters: number;
@@ -87,20 +89,18 @@ export class ClientPortalService {
       select: ['id', 'title', 'status', 'created_at', 'updated_at'],
     });
 
-    // Get recent documents (non-confidential for client users)
+    // Get recent documents (only non-confidential, non-privileged for client users)
     const recentDocumentsQuery = this.documentRepository
       .createQueryBuilder('document')
       .leftJoinAndSelect('document.metadata', 'meta')
       .leftJoinAndSelect('document.matter', 'matter')
       .where('document.client_id = :clientId', { clientId: client.id })
       .andWhere('document.is_deleted = false')
+      .andWhere('(meta.confidential IS NULL OR meta.confidential = false)')
+      .andWhere('(meta.privileged IS NULL OR meta.privileged = false)')
+      .andWhere('(meta.work_product IS NULL OR meta.work_product = false)')
       .orderBy('document.created_at', 'DESC')
       .take(10);
-
-    // Only show non-confidential documents unless user has higher privileges
-    if (!user.roles.some(role => ['legal_professional', 'firm_admin'].includes(role))) {
-      recentDocumentsQuery.andWhere('(meta.confidential IS NULL OR meta.confidential = false)');
-    }
 
     const recentDocuments = await recentDocumentsQuery.getMany();
 
@@ -110,6 +110,8 @@ export class ClientPortalService {
         name: client.name,
         type: 'client',
         status: 'active',
+        email: client.contact_email,
+        assigned_user_email: user.email,
       },
       stats: {
         active_matters: activeMattersCount,
@@ -156,8 +158,29 @@ export class ClientPortalService {
 
     const [matters, total] = await queryBuilder.getManyAndCount();
 
+    // Calculate client-accessible document count for each matter
+    const mattersWithAccessibleDocCount = await Promise.all(
+      matters.map(async (matter) => {
+        // Count only non-confidential, non-privileged, non-work-product documents
+        const accessibleDocCount = await this.documentRepository
+          .createQueryBuilder('document')
+          .leftJoin('document.metadata', 'meta')
+          .where('document.matter_id = :matterId', { matterId: matter.id })
+          .andWhere('document.is_deleted = false')
+          .andWhere('(meta.confidential IS NULL OR meta.confidential = false)')
+          .andWhere('(meta.privileged IS NULL OR meta.privileged = false)')
+          .andWhere('(meta.work_product IS NULL OR meta.work_product = false)')
+          .getCount();
+
+        return {
+          ...matter,
+          document_count: accessibleDocCount,
+        };
+      })
+    );
+
     return {
-      matters,
+      matters: mattersWithAccessibleDocCount,
       total,
       page,
       limit,
@@ -205,23 +228,40 @@ export class ClientPortalService {
 
       // Check if document belongs to client
       if (document.client_id !== client.id) {
+        this.logger.warn(`Client ${client.id} trying to access document ${document.id} belonging to client ${document.client_id}`);
         return false;
       }
 
-      // Check if document is confidential and user doesn't have permission to view
-      if (document.metadata?.confidential && 
-          !user.roles.some(role => ['legal_professional', 'firm_admin'].includes(role))) {
+      // Check if document is confidential (client users can never see confidential docs)
+      if (document.metadata?.confidential) {
+        this.logger.debug(`Document ${document.id} is confidential, denying client access`);
         return false;
       }
 
-      // Check if document is privileged (only legal professionals can view)
-      if (document.metadata?.privileged && 
-          !user.roles.some(role => ['legal_professional', 'firm_admin'].includes(role))) {
+      // Check if document is privileged (client users can never see privileged docs)
+      if (document.metadata?.privileged) {
+        this.logger.debug(`Document ${document.id} is privileged, denying client access`);
         return false;
+      }
+
+      // Check if document is work product (client users can never see work product)
+      if (document.metadata?.work_product) {
+        this.logger.debug(`Document ${document.id} is work product, denying client access`);
+        return false;
+      }
+
+      // Additional validation: document must belong to a matter that the client has access to
+      if (document.matter_id) {
+        const canAccessMatter = await this.canClientAccessMatter(user, document.matter_id);
+        if (!canAccessMatter) {
+          this.logger.warn(`Client ${client.id} trying to access document ${document.id} from inaccessible matter ${document.matter_id}`);
+          return false;
+        }
       }
 
       return true;
     } catch (error) {
+      this.logger.error(`Error checking client document access: ${error.message}`);
       return false;
     }
   }
@@ -256,10 +296,11 @@ export class ClientPortalService {
     };
   }
 
-  private async getClientForUser(user: UserInfo): Promise<Client> {
+  async getClientForUser(user: UserInfo): Promise<Client> {
     // For client portal access, user should have client_ids
     if (!user.client_ids || user.client_ids.length === 0) {
-      throw new ForbiddenException('User does not have client access');
+      this.logger.warn(`Client portal access denied for user ${user.email}: No client assignments found`);
+      throw new ForbiddenException('Your account is not assigned to any clients. Please contact your administrator to set up client access.');
     }
 
     // Use the first client ID - in practice, client users typically have access to one client
@@ -270,7 +311,8 @@ export class ClientPortalService {
     });
 
     if (!client) {
-      throw new NotFoundException('Client not found');
+      this.logger.error(`Client not found for user ${user.email}: client_id ${clientId}`);
+      throw new NotFoundException('Your assigned client could not be found. Please contact your administrator.');
     }
 
     return client;

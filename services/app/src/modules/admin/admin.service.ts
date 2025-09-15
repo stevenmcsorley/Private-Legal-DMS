@@ -111,6 +111,8 @@ export class AdminService {
         firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
         is_active: user.is_active,
         created_at: user.created_at,
+        client_count: user.attributes?.client_ids?.length || 0,
+        has_client_access: !!(user.attributes?.client_ids && user.attributes.client_ids.length > 0),
       })),
       total,
       page,
@@ -135,6 +137,21 @@ export class AdminService {
       throw new ForbiddenException('Cannot access user from different firm');
     }
 
+    // Get detailed client information if user has client_ids
+    let assignedClients = null;
+    if (user.attributes?.client_ids && Array.isArray(user.attributes.client_ids)) {
+      const clients = await this.clientRepository.find({
+        where: { id: In(user.attributes.client_ids) },
+        select: ['id', 'name', 'contact_email', 'firm_id'],
+      });
+      assignedClients = clients.map(client => ({
+        id: client.id,
+        name: client.name,
+        contact_email: client.contact_email,
+        firm_match: client.firm_id === user.firm_id,
+      }));
+    }
+
     return {
       id: user.id,
       email: user.email,
@@ -145,6 +162,11 @@ export class AdminService {
       is_active: user.is_active,
       created_at: user.created_at,
       updated_at: user.updated_at,
+      client_assignments: {
+        client_ids: user.attributes?.client_ids || [],
+        assigned_clients: assignedClients,
+        total_assignments: assignedClients?.length || 0,
+      },
     };
   }
 
@@ -178,9 +200,14 @@ export class AdminService {
     await this.validateRoles(createUserDto.roles);
 
     // Create user
+    const { client_ids, ...userWithoutClientIds } = createUserDto;
     const user = this.userRepository.create({
-      ...createUserDto,
+      ...userWithoutClientIds,
       keycloak_id: null, // Will be set when user first logs in
+      attributes: {
+        ...createUserDto.attributes,
+        ...(client_ids && client_ids.length > 0 ? { client_ids } : {}),
+      },
     });
 
     const savedUser = await this.userRepository.save(user);
@@ -215,7 +242,16 @@ export class AdminService {
     }
 
     // Update user
-    await this.userRepository.update(userId, updateUserDto);
+    const { client_ids, ...userUpdateWithoutClientIds } = updateUserDto;
+    const updateData = {
+      ...userUpdateWithoutClientIds,
+      attributes: {
+        ...user.attributes,
+        ...updateUserDto.attributes,
+        ...(client_ids !== undefined ? { client_ids } : {}),
+      },
+    };
+    await this.userRepository.update(userId, updateData);
 
     this.logger.log(`User updated: ${user.email} by ${currentUser.email}`, {
       userId,
@@ -332,6 +368,156 @@ export class AdminService {
     });
 
     return this.getUser(userId, currentUser);
+  }
+
+  async updateUserClients(userId: string, clientIds: string[], currentUser: UserInfo): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Firm admins can only update users from their firm
+    if (!currentUser.roles.includes('super_admin') && user.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot update user from different firm');
+    }
+
+    // Validate that all client IDs exist and belong to the same firm
+    if (clientIds.length > 0) {
+      const clients = await this.clientRepository.find({
+        where: { id: In(clientIds) },
+      });
+
+      if (clients.length !== clientIds.length) {
+        throw new BadRequestException('One or more client IDs are invalid');
+      }
+
+      // Check firm access for each client
+      const effectiveFirmId = currentUser.roles.includes('super_admin') ? user.firm_id : currentUser.firm_id;
+      const invalidClients = clients.filter(client => client.firm_id !== effectiveFirmId);
+      if (invalidClients.length > 0) {
+        throw new ForbiddenException('Cannot assign clients from different firm');
+      }
+    }
+
+    // Update user attributes with client_ids
+    const updatedAttributes = {
+      ...user.attributes,
+      client_ids: clientIds,
+    };
+
+    await this.userRepository.update(userId, { attributes: updatedAttributes });
+
+    this.logger.log(`User client assignments updated: ${user.email} by ${currentUser.email}`, {
+      userId,
+      adminId: currentUser.sub,
+      newClientIds: clientIds,
+      oldClientIds: user.attributes?.client_ids || [],
+    });
+
+    return this.getUser(userId, currentUser);
+  }
+
+  async getClientPortalIssues(currentUser: UserInfo): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    const effectiveFirmId = currentUser.roles.includes('super_admin') ? undefined : currentUser.firm_id;
+
+    // Find users with client_user role
+    const queryBuilder = this.userRepository
+      .createQueryBuilder('user')
+      .leftJoinAndSelect('user.firm', 'firm')
+      .where(':role = ANY(user.roles)', { role: 'client_user' });
+
+    if (effectiveFirmId) {
+      queryBuilder.andWhere('user.firm_id = :firmId', { firmId: effectiveFirmId });
+    }
+
+    const clientUsers = await queryBuilder.getMany();
+
+    const issues = [];
+
+    for (const user of clientUsers) {
+      const userIssues = [];
+      
+      // Check if user has client_ids assigned
+      if (!user.attributes?.client_ids || !Array.isArray(user.attributes.client_ids) || user.attributes.client_ids.length === 0) {
+        userIssues.push({
+          type: 'no_client_assignment',
+          severity: 'high',
+          message: 'User has client_user role but no client assignments',
+        });
+      } else {
+        // Check if assigned clients exist and belong to correct firm
+        const assignedClientIds = user.attributes.client_ids;
+        const existingClients = await this.clientRepository.find({
+          where: { id: In(assignedClientIds) },
+        });
+
+        if (existingClients.length !== assignedClientIds.length) {
+          const missingIds = assignedClientIds.filter(id => !existingClients.find(c => c.id === id));
+          userIssues.push({
+            type: 'invalid_client_ids',
+            severity: 'high',
+            message: `User assigned to non-existent clients: ${missingIds.join(', ')}`,
+          });
+        }
+
+        // Check firm mismatch
+        const wrongFirmClients = existingClients.filter(client => client.firm_id !== user.firm_id);
+        if (wrongFirmClients.length > 0) {
+          userIssues.push({
+            type: 'firm_mismatch',
+            severity: 'medium',
+            message: `User assigned to clients from different firm: ${wrongFirmClients.map(c => c.name).join(', ')}`,
+          });
+        }
+      }
+
+      // Check if user has Keycloak ID (can log in)
+      if (!user.keycloak_id) {
+        userIssues.push({
+          type: 'no_keycloak_id',
+          severity: 'medium',
+          message: 'User has no Keycloak ID - may not be able to log in',
+        });
+      }
+
+      if (userIssues.length > 0) {
+        issues.push({
+          user: {
+            id: user.id,
+            email: user.email,
+            display_name: user.display_name,
+            firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
+            client_ids: user.attributes?.client_ids || [],
+          },
+          issues: userIssues,
+        });
+      }
+    }
+
+    // General statistics
+    const stats = {
+      total_client_users: clientUsers.length,
+      users_with_issues: issues.length,
+      users_without_client_assignment: issues.filter(i => i.issues.some(issue => issue.type === 'no_client_assignment')).length,
+      users_with_invalid_clients: issues.filter(i => i.issues.some(issue => issue.type === 'invalid_client_ids')).length,
+    };
+
+    return {
+      stats,
+      issues,
+      recommendations: [
+        'Users with client_user role should have at least one client assignment',
+        'All assigned client IDs should exist and belong to the same firm',
+        'Users should have Keycloak IDs to enable login',
+      ],
+    };
   }
 
   // Team Management

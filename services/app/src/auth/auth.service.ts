@@ -47,10 +47,26 @@ export class AuthService {
       const payload = await this.verifyJWT(token);
 
       // Look up user from database to get real firm_id and roles
-      const user = await this.userRepository.findOne({
+      let user = await this.userRepository.findOne({
         where: { keycloak_id: payload.sub },
         relations: ['firm'],
       });
+
+      // Fallback: if no user found by keycloak_id, try finding by email
+      // This handles cases where users were created in admin but haven't logged in yet
+      if (!user && payload.email) {
+        user = await this.userRepository.findOne({
+          where: { email: payload.email },
+          relations: ['firm'],
+        });
+        
+        // If found by email, update the keycloak_id for future lookups
+        if (user) {
+          user.keycloak_id = payload.sub;
+          await this.userRepository.save(user);
+          this.logger.log(`Updated keycloak_id for user ${user.email}`);
+        }
+      }
 
       // Extract user information from JWT payload and database
       const userInfo: UserInfo = {
@@ -64,7 +80,13 @@ export class AuthService {
         firm_id: user?.firm_id || this.mapFirmId(payload.firm_id as string),
         attributes: payload.attributes as Record<string, any>,
         display_name: user?.display_name || payload.name as string,
+        client_ids: user?.attributes?.client_ids || [],
       };
+
+      // Debug logging for client portal access
+      if (user?.email === 'demo@client.com') {
+        this.logger.debug(`Auth service debug for ${user.email}: client_ids = ${JSON.stringify(user?.attributes?.client_ids)}, roles = ${JSON.stringify(user?.roles)}`);
+      }
 
       return userInfo;
     } catch (error) {

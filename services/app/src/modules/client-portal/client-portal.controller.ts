@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   HttpStatus,
   ForbiddenException,
+  Res,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -129,10 +130,15 @@ export class ClientPortalController {
     @Query() query: DocumentQuery & { tags?: string },
     @CurrentUser() user: UserInfo,
   ) {
-    // Filter to only show documents the client has access to
+    // Get the client for this user to ensure they have access
+    const client = await this.clientPortalService.getClientForUser(user);
+    
+    // Filter to only show documents for this specific client
     const clientQuery = {
       ...query,
-      ...(user.client_ids && { client_id: user.client_ids[0] }), // Use first client ID if available
+      client_id: client.id, // Force client_id to be the user's assigned client
+      confidential: false,  // Always hide confidential docs from client users
+      privileged: false,    // Always hide privileged docs from client users
     };
 
     // Parse tags from comma-separated string
@@ -140,12 +146,33 @@ export class ClientPortalController {
       (clientQuery as any).tags = clientQuery.tags.split(',').map(tag => tag.trim());
     }
 
-    // Only show non-confidential documents unless user has higher privileges
-    if (!user.roles.some(role => ['legal_professional', 'firm_admin'].includes(role))) {
-      clientQuery.confidential = false;
+    // Get documents using the documents service
+    const result = await this.documentsService.findAll(clientQuery, user);
+    
+    // Additional client access validation for each document
+    const accessibleDocuments = [];
+    for (const doc of result.documents) {
+      if (await this.clientPortalService.canClientAccessDocument(user, doc)) {
+        accessibleDocuments.push(doc);
+      }
     }
 
-    return this.documentsService.findAll(clientQuery, user);
+    // Provide helpful message if no documents are accessible
+    if (accessibleDocuments.length === 0 && result.documents.length > 0) {
+      // There were documents but none were accessible due to permission restrictions
+      return {
+        ...result,
+        documents: [],
+        total: 0,
+        message: 'No documents are currently available for your review. Documents may be confidential, privileged, or under attorney work product.',
+      };
+    }
+
+    return {
+      ...result,
+      documents: accessibleDocuments,
+      total: accessibleDocuments.length,
+    };
   }
 
   @Get('documents/:id')
@@ -176,21 +203,25 @@ export class ClientPortalController {
 
   @Get('documents/:id/preview')
   @CanRead('client_portal')
-  @ApiOperation({ summary: 'Get document preview URL accessible to the client' })
+  @ApiOperation({ summary: 'Stream document preview accessible to the client' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Preview URL generated successfully',
-    schema: {
-      type: 'object',
-      properties: {
-        url: { type: 'string' },
-        expires_at: { type: 'string', format: 'date-time' },
+    description: 'Document preview streamed successfully',
+    headers: {
+      'Content-Type': {
+        description: 'Document MIME type',
+        schema: { type: 'string' }
       },
-    },
+      'Content-Length': {
+        description: 'Document size',
+        schema: { type: 'string' }
+      }
+    }
   })
   async getDocumentPreview(
     @Param('id', ParseUUIDPipe) documentId: string,
     @CurrentUser() user: UserInfo,
+    @Res() response: any,
   ) {
     const document = await this.documentsService.findOne(documentId, user);
     
@@ -199,7 +230,8 @@ export class ClientPortalController {
       throw new ForbiddenException('Access denied to this document');
     }
 
-    return this.documentsService.getPreviewUrl(documentId, user);
+    // Stream the document directly
+    return this.documentsService.streamDocument(documentId, user, response);
   }
 
   @Get('documents/:id/download')

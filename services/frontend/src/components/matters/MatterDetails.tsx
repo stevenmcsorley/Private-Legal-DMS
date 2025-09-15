@@ -251,7 +251,7 @@ export const MatterDetails = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading matter details...</p>
+          <p className="mt-2 text-muted-foreground">Loading matter details...</p>
         </div>
       </div>
     );
@@ -272,7 +272,7 @@ export const MatterDetails = () => {
             <h1 className="text-2xl font-bold flex items-center">
               {matter.title}
             </h1>
-            <p className="text-gray-600 font-mono">Matter ID: {matter.id.slice(0, 8)}</p>
+            <p className="text-muted-foreground font-mono">Matter ID: {matter.id.slice(0, 8)}</p>
           </div>
         </div>
         <div className="flex space-x-2">
@@ -298,8 +298,8 @@ export const MatterDetails = () => {
                 <Building className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Client</p>
-                <p className="text-sm text-gray-600">{matter.client?.name || 'Unknown Client'}</p>
+                <p className="text-sm font-medium text-foreground">Client</p>
+                <p className="text-sm text-muted-foreground">{matter.client?.name || 'Unknown Client'}</p>
               </div>
             </div>
           </CardContent>
@@ -312,8 +312,8 @@ export const MatterDetails = () => {
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Created By</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-medium text-foreground">Created By</p>
+                <p className="text-sm text-muted-foreground">
                   {matter.created_by_user?.display_name || 'Unknown'}
                 </p>
               </div>
@@ -328,8 +328,8 @@ export const MatterDetails = () => {
                 <FileText className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Documents</p>
-                <p className="text-sm text-gray-600">{documents.length} files</p>
+                <p className="text-sm font-medium text-foreground">Documents</p>
+                <p className="text-sm text-muted-foreground">{documents.length} files</p>
               </div>
             </div>
           </CardContent>
@@ -342,8 +342,8 @@ export const MatterDetails = () => {
                 <Calendar className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Created</p>
-                <p className="text-sm text-gray-600">
+                <p className="text-sm font-medium text-foreground">Created</p>
+                <p className="text-sm text-muted-foreground">
                   {new Date(matter.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -370,7 +370,7 @@ export const MatterDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Status</label>
+                  <label className="text-sm font-medium text-foreground">Status</label>
                   <div className="mt-1">
                     <Badge className={getStatusColor(matter.status)}>
                       {matter.status.replace('_', ' ')}
@@ -379,7 +379,7 @@ export const MatterDetails = () => {
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Security Class</label>
+                  <label className="text-sm font-medium text-foreground">Security Class</label>
                   <div className="mt-1">
                     <Badge variant="outline">
                       Level {matter.security_class}
@@ -389,21 +389,21 @@ export const MatterDetails = () => {
                 
                 {matter.description && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Description</label>
-                    <p className="mt-1 text-sm text-gray-900">{matter.description}</p>
+                    <label className="text-sm font-medium text-foreground">Description</label>
+                    <p className="mt-1 text-sm text-foreground">{matter.description}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Created</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="text-sm font-medium text-foreground">Created</label>
+                  <p className="mt-1 text-sm text-foreground">
                     {new Date(matter.created_at).toLocaleDateString()}
                   </p>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Last Updated</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="text-sm font-medium text-foreground">Last Updated</label>
+                  <p className="mt-1 text-sm text-foreground">
                     {new Date(matter.updated_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -417,20 +417,20 @@ export const MatterDetails = () => {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Name</label>
-                  <p className="mt-1 text-sm text-gray-900">{matter.client?.name || 'Unknown Client'}</p>
+                  <label className="text-sm font-medium text-foreground">Name</label>
+                  <p className="mt-1 text-sm text-foreground">{matter.client?.name || 'Unknown Client'}</p>
                 </div>
                 
                 {matter.client?.contact_email && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Email</label>
-                    <p className="mt-1 text-sm text-gray-900">{matter.client.contact_email}</p>
+                    <label className="text-sm font-medium text-foreground">Email</label>
+                    <p className="mt-1 text-sm text-foreground">{matter.client.contact_email}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Client ID</label>
-                  <p className="mt-1 text-sm text-gray-900 font-mono">{matter.client?.id || matter.client_id}</p>
+                  <label className="text-sm font-medium text-foreground">Client ID</label>
+                  <p className="mt-1 text-sm text-muted-foreground font-mono">{matter.client?.id || matter.client_id}</p>
                 </div>
               </CardContent>
             </Card>
@@ -533,17 +533,17 @@ export const MatterDetails = () => {
                         <User className="h-4 w-4 text-gray-600" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-gray-900">
+                        <p className="text-sm font-medium text-foreground">
                           {member.user.display_name}
                         </p>
-                        <p className="text-xs text-gray-500">{member.user.email}</p>
+                        <p className="text-xs text-muted-foreground">{member.user.email}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-3">
                       <Badge variant="outline">{member.role}</Badge>
                       <Badge variant="outline">{member.access_level}</Badge>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-muted-foreground">
                         Added {new Date(member.added_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -564,14 +564,14 @@ export const MatterDetails = () => {
                   <div className="flex items-start space-x-3">
                     <Clock className="h-4 w-4 text-gray-400 mt-1" />
                     <div className="flex-1">
-                      <p className="text-sm text-gray-900">
+                      <p className="text-sm text-foreground">
                         <span className="font-medium">{entry.user.display_name}</span> {entry.action}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(entry.timestamp).toLocaleString()}
                       </p>
                       {entry.details && (
-                        <pre className="text-xs text-gray-600 mt-2 bg-gray-50 p-2 rounded">
+                        <pre className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded">
                           {JSON.stringify(entry.details, null, 2)}
                         </pre>
                       )}
@@ -586,8 +586,8 @@ export const MatterDetails = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No audit entries</h3>
-                <p className="text-gray-600">Audit trail will appear here as actions are performed.</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">No audit entries</h3>
+                <p className="text-muted-foreground">Audit trail will appear here as actions are performed.</p>
               </CardContent>
             </Card>
           )}

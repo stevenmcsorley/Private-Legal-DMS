@@ -212,6 +212,45 @@ export class AdminController {
     return this.adminService.updateUserRoles(userId, roles, user);
   }
 
+  @Put('users/:id/clients')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Update user client assignments' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        client_ids: {
+          type: 'array',
+          items: { type: 'string', format: 'uuid' },
+          description: 'Array of client IDs the user should have access to',
+        },
+      },
+      required: ['client_ids'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User client assignments updated successfully',
+  })
+  async updateUserClients(
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Body('client_ids') clientIds: string[],
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.updateUserClients(userId, clientIds, user);
+  }
+
+  @Get('debug/client-portal-issues')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Debug client portal access issues' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of potential client portal access issues',
+  })
+  async getClientPortalIssues(@CurrentUser() user: UserInfo) {
+    return this.adminService.getClientPortalIssues(user);
+  }
+
   // Retention Class Management
   @Get('retention-classes')
   @CanRead('admin')

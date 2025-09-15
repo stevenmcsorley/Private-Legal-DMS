@@ -169,7 +169,7 @@ export const ClientDetails = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading client details...</p>
+          <p className="mt-2 text-muted-foreground">Loading client details...</p>
         </div>
       </div>
     );
@@ -226,8 +226,8 @@ export const ClientDetails = () => {
                 <Archive className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Active Matters</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-foreground">Active Matters</p>
+                <p className="text-2xl font-bold text-foreground">
                   {matters.filter(m => m.status === 'active').length}
                 </p>
               </div>
@@ -242,8 +242,8 @@ export const ClientDetails = () => {
                 <FileText className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Total Documents</p>
-                <p className="text-2xl font-bold text-gray-900">{documents.length}</p>
+                <p className="text-sm font-medium text-foreground">Total Documents</p>
+                <p className="text-2xl font-bold text-foreground">{documents.length}</p>
               </div>
             </div>
           </CardContent>
@@ -256,8 +256,8 @@ export const ClientDetails = () => {
                 <Calendar className="h-5 w-5 text-gray-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Client Since</p>
-                <p className="text-sm text-gray-900">
+                <p className="text-sm font-medium text-foreground">Client Since</p>
+                <p className="text-sm text-foreground">
                   {new Date(client.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -286,8 +286,8 @@ export const ClientDetails = () => {
                   <div className="flex items-center space-x-3">
                     <Mail className="h-4 w-4 text-gray-400" />
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Email</label>
-                      <p className="text-sm text-gray-900">{client.contact_email}</p>
+                      <label className="text-sm font-medium text-foreground">Email</label>
+                      <p className="text-sm text-foreground">{client.contact_email}</p>
                     </div>
                   </div>
                 )}
@@ -296,8 +296,8 @@ export const ClientDetails = () => {
                   <div className="flex items-center space-x-3">
                     <Phone className="h-4 w-4 text-gray-400" />
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Phone</label>
-                      <p className="text-sm text-gray-900">{client.contact_phone}</p>
+                      <label className="text-sm font-medium text-foreground">Phone</label>
+                      <p className="text-sm text-foreground">{client.contact_phone}</p>
                     </div>
                   </div>
                 )}
@@ -306,8 +306,8 @@ export const ClientDetails = () => {
                   <div className="flex items-center space-x-3">
                     <User className="h-4 w-4 text-gray-400" />
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Contact Person</label>
-                      <p className="text-sm text-gray-900">{client.metadata.contact_person}</p>
+                      <label className="text-sm font-medium text-foreground">Contact Person</label>
+                      <p className="text-sm text-foreground">{client.metadata.contact_person}</p>
                     </div>
                   </div>
                 )}
@@ -316,8 +316,8 @@ export const ClientDetails = () => {
                   <div className="flex items-start space-x-3">
                     <MapPin className="h-4 w-4 text-gray-400 mt-1" />
                     <div>
-                      <label className="text-sm font-medium text-gray-700">Address</label>
-                      <p className="text-sm text-gray-900 whitespace-pre-line">
+                      <label className="text-sm font-medium text-foreground">Address</label>
+                      <p className="text-sm text-foreground whitespace-pre-line">
                         {typeof client.address === 'string' ? client.address : client.address.street}
                       </p>
                     </div>
@@ -334,28 +334,28 @@ export const ClientDetails = () => {
               <CardContent className="space-y-4">
                 {client.metadata?.tax_id && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Tax ID</label>
-                    <p className="mt-1 text-sm text-gray-900 font-mono">{client.metadata.tax_id}</p>
+                    <label className="text-sm font-medium text-foreground">Tax ID</label>
+                    <p className="mt-1 text-sm text-foreground font-mono">{client.metadata.tax_id}</p>
                   </div>
                 )}
                 
                 {client.metadata?.billing_address && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Billing Address</label>
-                    <p className="mt-1 text-sm text-gray-900 whitespace-pre-line">{client.metadata.billing_address}</p>
+                    <label className="text-sm font-medium text-foreground">Billing Address</label>
+                    <p className="mt-1 text-sm text-foreground whitespace-pre-line">{client.metadata.billing_address}</p>
                   </div>
                 )}
                 
                 {client.metadata?.preferred_communication && (
                   <div>
-                    <label className="text-sm font-medium text-gray-700">Preferred Communication</label>
-                    <p className="mt-1 text-sm text-gray-900">{client.metadata.preferred_communication}</p>
+                    <label className="text-sm font-medium text-foreground">Preferred Communication</label>
+                    <p className="mt-1 text-sm text-foreground">{client.metadata.preferred_communication}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-gray-700">Last Updated</label>
-                  <p className="mt-1 text-sm text-gray-900">
+                  <label className="text-sm font-medium text-foreground">Last Updated</label>
+                  <p className="mt-1 text-sm text-foreground">
                     {new Date(client.updated_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -369,7 +369,7 @@ export const ClientDetails = () => {
                 <CardTitle>Notes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-900 whitespace-pre-line">{client.metadata.notes}</p>
+                <p className="text-sm text-foreground whitespace-pre-line">{client.metadata.notes}</p>
               </CardContent>
             </Card>
           )}
@@ -395,7 +395,7 @@ export const ClientDetails = () => {
                       <div className="flex items-center space-x-3">
                         <Archive className="h-5 w-5 text-gray-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-gray-900 truncate">
+                          <h4 className="text-sm font-medium text-foreground truncate">
                             <Link 
                               to={`/matters/${matter.id}`}
                               className="hover:text-blue-600 transition-colors"
@@ -403,7 +403,7 @@ export const ClientDetails = () => {
                               {matter.title}
                             </Link>
                           </h4>
-                          <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                          <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
                             <span className="font-mono">{matter.matter_number}</span>
                             <span>{matter.matter_type.replace('_', ' ')}</span>
                             {matter.assigned_lawyer && (
@@ -419,7 +419,7 @@ export const ClientDetails = () => {
                       <Badge className={getMatterStatusColor(matter.status)}>
                         {matter.status.replace('_', ' ')}
                       </Badge>
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-muted-foreground">
                         {matter.document_count} docs
                       </div>
                     </div>
@@ -433,8 +433,8 @@ export const ClientDetails = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No matters</h3>
-                <p className="text-gray-600 mb-4">Create the first matter for this client.</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">No matters</h3>
+                <p className="text-muted-foreground mb-4">Create the first matter for this client.</p>
                 <Button asChild>
                   <Link to={`/matters/new?client_id=${client.id}`}>
                     <Plus className="h-4 w-4 mr-2" />
@@ -457,10 +457,10 @@ export const ClientDetails = () => {
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
                       <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 truncate">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {doc.original_filename}
                         </p>
-                        <div className="flex items-center space-x-4 text-xs text-gray-500 mt-1">
+                        <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
                           <span>v{doc.version}</span>
                           <span>{formatFileSize(doc.file_size)}</span>
                           <span>{doc.matter.title} ({doc.matter.matter_number})</span>
@@ -487,8 +487,8 @@ export const ClientDetails = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No documents</h3>
-                <p className="text-gray-600">Documents will appear here when matters are created and documents are uploaded.</p>
+                <h3 className="text-lg font-medium text-foreground mb-2">No documents</h3>
+                <p className="text-muted-foreground">Documents will appear here when matters are created and documents are uploaded.</p>
               </CardContent>
             </Card>
           )}

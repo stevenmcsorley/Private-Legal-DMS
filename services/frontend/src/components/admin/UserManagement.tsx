@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
+import { SearchableMultiSelect } from '@/components/ui/searchable-multiselect';
 import { 
   Search, 
   Plus, 
@@ -58,6 +59,7 @@ interface CreateUserFormData {
   department: string;
   phone: string;
   roles: string[];
+  client_ids: string[];
   is_active: boolean;
 }
 
@@ -71,6 +73,8 @@ interface Role {
 export const UserManagement = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -96,6 +100,7 @@ export const UserManagement = () => {
     department: '',
     phone: '',
     roles: [],
+    client_ids: [],
     is_active: true,
   });
   const [createUserForm, setCreateUserForm] = useState<CreateUserFormData>({
@@ -107,6 +112,7 @@ export const UserManagement = () => {
     department: '',
     phone: '',
     roles: [],
+    client_ids: [],
     is_active: true,
   });
 
@@ -114,6 +120,7 @@ export const UserManagement = () => {
     fetchCurrentUser();
     fetchUsers();
     fetchRoles();
+    fetchClients();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -144,6 +151,23 @@ export const UserManagement = () => {
     }
   };
 
+  const fetchClients = async () => {
+    setLoadingClients(true);
+    try {
+      const response = await fetch('/api/clients', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setClients(data.clients || []);
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await fetch('/api/admin/users', {
@@ -171,6 +195,11 @@ export const UserManagement = () => {
       return;
     }
 
+    if (createUserForm.roles.includes('client_user') && createUserForm.client_ids.length === 0) {
+      alert('Please assign at least one client for client users');
+      return;
+    }
+
     if (!currentUser?.firmId) {
       alert('Unable to determine your firm. Please refresh the page and try again.');
       return;
@@ -186,6 +215,7 @@ export const UserManagement = () => {
         roles: createUserForm.roles,
         is_active: createUserForm.is_active,
         firm_id: currentUser.firmId,
+        client_ids: createUserForm.client_ids.length > 0 ? createUserForm.client_ids : undefined,
         attributes: {
           first_name: createUserForm.first_name,
           last_name: createUserForm.last_name,
@@ -218,6 +248,7 @@ export const UserManagement = () => {
           department: '',
           phone: '',
           roles: [],
+          client_ids: [],
           is_active: true,
         });
         alert('User created successfully!');
@@ -283,6 +314,7 @@ export const UserManagement = () => {
       department: user.attributes?.department || '',
       phone: user.attributes?.phone || '',
       roles: user.roles || [],
+      client_ids: user.attributes?.client_ids || user.client_ids || [],
       is_active: user.is_active,
     });
     setShowEditDialog(true);
@@ -314,6 +346,7 @@ export const UserManagement = () => {
           display_name: editUserForm.display_name,
           roles: editUserForm.roles,
           is_active: editUserForm.is_active,
+          client_ids: editUserForm.client_ids.length > 0 ? editUserForm.client_ids : undefined,
           attributes: {
             first_name: editUserForm.first_name,
             last_name: editUserForm.last_name,
@@ -690,6 +723,28 @@ export const UserManagement = () => {
                 </div>
               </div>
 
+              {/* Client Assignment (for client_user role) */}
+              {createUserForm.roles.includes('client_user') && (
+                <SearchableMultiSelect
+                  label="Client Assignment *"
+                  options={clients.map(client => ({
+                    id: client.id,
+                    name: client.name,
+                    subtitle: client.contact_email,
+                    icon: <Users className="h-4 w-4 text-blue-600" />
+                  }))}
+                  selectedValues={createUserForm.client_ids}
+                  onSelectionChange={(clientIds) => setCreateUserForm({
+                    ...createUserForm,
+                    client_ids: clientIds
+                  })}
+                  placeholder="Search and select clients..."
+                  emptyMessage="No clients available. Create a client first to assign users."
+                  loading={loadingClients}
+                  maxHeight="250px"
+                />
+              )}
+
               {/* Status */}
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -1034,6 +1089,29 @@ export const UserManagement = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Client Assignment (for client_user role) */}
+              {editUserForm.roles.includes('client_user') && (
+                <SearchableMultiSelect
+                  label="Client Assignment *"
+                  options={clients.map(client => ({
+                    id: client.id,
+                    name: client.name,
+                    subtitle: client.contact_email,
+                    icon: <Users className="h-4 w-4 text-blue-600" />
+                  }))}
+                  selectedValues={editUserForm.client_ids}
+                  onSelectionChange={(clientIds) => setEditUserForm({
+                    ...editUserForm,
+                    client_ids: clientIds
+                  })}
+                  placeholder="Search and select clients..."
+                  emptyMessage="No clients available. Create a client first to assign users."
+                  loading={loadingClients}
+                  maxHeight="250px"
+                />
+              )}
+
               {/* Status */}
               <div className="flex items-center space-x-2">
                 <Checkbox

@@ -13,9 +13,11 @@ import {
   User,
   CheckCircle,
   AlertCircle,
-  Building
+  Building,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { DocumentViewer } from '@/components/documents/DocumentViewer';
 
 interface ClientMatter {
   id: string;
@@ -55,6 +57,7 @@ export const ClientPortal = () => {
   const [documents, setDocuments] = useState<ClientDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('matters');
+  const [selectedDocument, setSelectedDocument] = useState<ClientDocument | null>(null);
 
   useEffect(() => {
     fetchClientData();
@@ -103,7 +106,8 @@ export const ClientPortal = () => {
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (!bytes || bytes === 0) return '0 Bytes';
+    if (typeof bytes !== 'number' || isNaN(bytes)) return 'Unknown size';
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -138,6 +142,39 @@ export const ClientPortal = () => {
     );
   }
 
+  // If viewing a document, show the document viewer
+  if (selectedDocument) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center space-x-4">
+          <Button
+            onClick={() => setSelectedDocument(null)}
+            variant="outline"
+            size="sm"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Documents
+          </Button>
+          <div>
+            <h1 className="text-xl font-semibold">{selectedDocument.original_filename}</h1>
+            <p className="text-muted-foreground text-sm">
+              {selectedDocument.matter.title} • {formatFileSize(selectedDocument.file_size)}
+            </p>
+          </div>
+        </div>
+        
+        <DocumentViewer
+          documentId={selectedDocument.id}
+          documentName={selectedDocument.original_filename}
+          mimeType={selectedDocument.mime_type}
+          previewUrl={`/api/client-portal/documents/${selectedDocument.id}/preview`}
+          downloadUrl={`/api/client-portal/documents/${selectedDocument.id}/download`}
+          className="min-h-[600px]"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
@@ -155,43 +192,52 @@ export const ClientPortal = () => {
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setActiveTab('matters')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <Archive className="h-5 w-5 text-blue-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Your Matters</p>
-                <p className="text-2xl font-bold text-gray-900">{matters.length}</p>
+                <p className="text-sm font-medium text-foreground">Your Matters</p>
+                <p className="text-2xl font-bold text-foreground">{matters.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setActiveTab('documents')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <FileText className="h-5 w-5 text-green-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Available Documents</p>
-                <p className="text-2xl font-bold text-gray-900">{documents.length}</p>
+                <p className="text-sm font-medium text-foreground">Available Documents</p>
+                <p className="text-2xl font-bold text-foreground">{documents.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card 
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => setActiveTab('documents')}
+        >
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <CheckCircle className="h-5 w-5 text-orange-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Pending Signatures</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-foreground">Pending Signatures</p>
+                <p className="text-2xl font-bold text-foreground">
                   {documents.filter(d => d.requires_signature && !d.signed_at).length}
                 </p>
               </div>
@@ -223,26 +269,26 @@ export const ClientPortal = () => {
                           <div className="flex items-center space-x-3 mb-2">
                             <Archive className="h-5 w-5 text-blue-500 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
-                              <h4 className="text-lg font-medium text-gray-200 truncate">
+                              <h4 className="text-lg font-medium text-foreground truncate">
                                 {matter.title}
                               </h4>
-                              <p className="text-sm text-gray-600 font-mono">
+                              <p className="text-sm text-muted-foreground font-mono">
                                 {matter.matter_number}
                               </p>
                             </div>
                           </div>
                           
                           {matter.description && (
-                            <p className="text-sm text-gray-700 mb-3">
+                            <p className="text-sm text-muted-foreground mb-3">
                               {matter.description}
                             </p>
                           )}
                           
-                          <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                          <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                             <Badge className={getStatusColor(matter.status)}>
-                              {matter.status.replace('_', ' ')}
+                              {matter.status?.replace('_', ' ') || 'Unknown Status'}
                             </Badge>
-                            <span>{matter.matter_type.replace('_', ' ')}</span>
+                            <span>{matter.matter_type?.replace('_', ' ') || 'General Matter'}</span>
                             {matter.assigned_lawyer && (
                               <span className="flex items-center">
                                 <User className="h-4 w-4 mr-1" />
@@ -251,11 +297,11 @@ export const ClientPortal = () => {
                             )}
                             <span className="flex items-center">
                               <FileText className="h-4 w-4 mr-1" />
-                              {matter.document_count} documents
+                              {matter.document_count || 0} documents
                             </span>
                             <span className="flex items-center">
                               <Clock className="h-4 w-4 mr-1" />
-                              Created {new Date(matter.created_at).toLocaleDateString()}
+                              Created {matter.created_at ? new Date(matter.created_at).toLocaleDateString() : 'Unknown date'}
                             </span>
                           </div>
                         </div>
@@ -296,8 +342,8 @@ export const ClientPortal = () => {
                           
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center space-x-2 mb-1">
-                              <h4 className="text-sm font-medium text-gray-900 truncate">
-                                {doc.original_filename}
+                              <h4 className="text-sm font-medium text-foreground truncate">
+                                {doc.original_filename || doc.filename || 'Unnamed Document'}
                               </h4>
                               {doc.requires_signature && !doc.signed_at && (
                                 <Badge variant="destructive" className="text-xs">
@@ -314,12 +360,12 @@ export const ClientPortal = () => {
                             </div>
                             
                             <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              <span>v{doc.version}</span>
+                              <span>v{doc.version || 1}</span>
                               <span>{formatFileSize(doc.file_size)}</span>
-                              <span>{doc.matter.title} ({doc.matter.matter_number})</span>
+                              <span>{doc.matter?.title || 'Unknown Matter'} ({doc.matter?.matter_number || 'N/A'})</span>
                               <span className="flex items-center">
                                 <Clock className="h-3 w-3 mr-1" />
-                                {new Date(doc.uploaded_at).toLocaleDateString()}
+                                {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'Unknown date'}
                               </span>
                             </div>
                           </div>
@@ -329,7 +375,7 @@ export const ClientPortal = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => window.open(`/api/client-portal/documents/${doc.id}/preview`, '_blank')}
+                            onClick={() => setSelectedDocument(doc)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
