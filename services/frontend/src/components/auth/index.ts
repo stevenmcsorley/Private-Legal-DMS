@@ -1,1 +1,10 @@
-export { RoleGuard, AdminOnly, RequireRoles, RequirePermissions } from './RoleGuard';
+export { 
+  RoleGuard, 
+  AdminOnly, 
+  RequireRoles, 
+  RequirePermissions,
+  LegalStaffOnly,
+  SuperAdminOnly,
+  ClientOnly,
+  RequirePermission
+} from './RoleGuard';

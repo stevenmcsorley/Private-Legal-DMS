@@ -3,6 +3,7 @@ import { Toaster } from '@/components/ui/toaster'
 
 import { Layout } from '@/components/layout/Layout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { AdminOnly, LegalStaffOnly, ClientOnly, RoleGuard } from '@/components/auth'
 import { Dashboard } from '@/components/dashboard/Dashboard'
 import { MatterList } from '@/components/matters/MatterList'
 import { MatterDetails } from '@/components/matters/MatterDetails'
@@ -27,35 +28,95 @@ export const App = () => {
           <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           
-          {/* Matters */}
-          <Route path="matters" element={<MatterList />} />
-          <Route path="matters/new" element={<CreateMatter />} />
-          <Route path="matters/:id" element={<MatterDetails />} />
-          <Route path="matters/:id/edit" element={<EditMatter />} />
+          {/* Matters - Legal staff (includes super admin) */}
+          <Route path="matters" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to access matters management.</p></div>}>
+              <MatterList />
+            </LegalStaffOnly>
+          } />
+          <Route path="matters/new" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to create matters.</p></div>}>
+              <CreateMatter />
+            </LegalStaffOnly>
+          } />
+          <Route path="matters/:id" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to view matter details.</p></div>}>
+              <MatterDetails />
+            </LegalStaffOnly>
+          } />
+          <Route path="matters/:id/edit" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to edit matters.</p></div>}>
+              <EditMatter />
+            </LegalStaffOnly>
+          } />
           
-          {/* Clients */}
-          <Route path="clients" element={<ClientList />} />
-          <Route path="clients/new" element={<CreateClient />} />
-          <Route path="clients/:id" element={<ClientDetails />} />
-          <Route path="clients/:id/edit" element={<EditClient />} />
+          {/* Clients - Legal staff (includes super admin) */}
+          <Route path="clients" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to access client management.</p></div>}>
+              <ClientList />
+            </LegalStaffOnly>
+          } />
+          <Route path="clients/new" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to create clients.</p></div>}>
+              <CreateClient />
+            </LegalStaffOnly>
+          } />
+          <Route path="clients/:id" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to view client details.</p></div>}>
+              <ClientDetails />
+            </LegalStaffOnly>
+          } />
+          <Route path="clients/:id/edit" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to edit clients.</p></div>}>
+              <EditClient />
+            </LegalStaffOnly>
+          } />
           
-          {/* Documents */}
+          {/* Documents - Available to legal staff, limited for clients */}
           <Route path="documents" element={<DocumentsPage />} />
           
-          {/* Search */}
-          <Route path="search" element={<SearchPage />} />
+          {/* Search - Legal staff (includes super admin) */}
+          <Route path="search" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to access search functionality.</p></div>}>
+              <SearchPage />
+            </LegalStaffOnly>
+          } />
           
-          {/* Admin */}
-          <Route path="admin" element={<AdminDashboard />} />
+          {/* Admin - Admin only */}
+          <Route path="admin/*" element={
+            <AdminOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to access admin panel.</p></div>}>
+              <AdminDashboard />
+            </AdminOnly>
+          } />
           
-          {/* Client Portal */}
-          <Route path="portal/documents" element={<ClientPortal />} />
-          <Route path="portal/matters" element={<ClientPortal />} />
-          <Route path="portal/upload" element={<ClientPortal />} />
+          {/* Client Portal - Client users only */}
+          <Route path="portal/documents" element={
+            <ClientOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">Client portal access only.</p></div>}>
+              <ClientPortal />
+            </ClientOnly>
+          } />
+          <Route path="portal/matters" element={
+            <ClientOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">Client portal access only.</p></div>}>
+              <ClientPortal />
+            </ClientOnly>
+          } />
+          <Route path="portal/upload" element={
+            <ClientOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">Client portal access only.</p></div>}>
+              <ClientPortal />
+            </ClientOnly>
+          } />
           
-          {/* Cross-Firm Sharing */}
-          <Route path="sharing" element={<CrossFirmSharing />} />
-          <Route path="sharing/new" element={<div className="p-8"><h1 className="text-2xl font-bold">Create New Share</h1><p className="mt-4 text-gray-600">Share creation functionality will be implemented in the next phase.</p></div>} />
+          {/* Cross-Firm Sharing - Legal staff only */}
+          <Route path="sharing" element={
+            <RoleGuard roles={['legal_professional', 'legal_manager', 'firm_admin', 'super_admin']} fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to access cross-firm sharing.</p></div>}>
+              <CrossFirmSharing />
+            </RoleGuard>
+          } />
+          <Route path="sharing/new" element={
+            <RoleGuard roles={['legal_professional', 'legal_manager', 'firm_admin', 'super_admin']} fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to create shares.</p></div>}>
+              <div className="p-8"><h1 className="text-2xl font-bold">Create New Share</h1><p className="mt-4 text-gray-600">Share creation functionality will be implemented in the next phase.</p></div>
+            </RoleGuard>
+          } />
           <Route path="sharing/:shareId" element={<SharedDocumentViewer />} />
           <Route path="sharing/:shareId/documents/:documentId" element={<SharedDocumentViewer />} />
         </Route>

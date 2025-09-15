@@ -22,12 +22,16 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (role: string) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
-  // Permission helpers
+  hasPermission: (permission: string) => boolean;
+  // Permission helpers from RBAC spec
   isAdmin: () => boolean;
+  isSuperAdmin: () => boolean;
   canManageUsers: () => boolean;
   canAccessAdmin: () => boolean;
   canManageDocuments: () => boolean;
   canManageMatters: () => boolean;
+  isClient: () => boolean;
+  isExternalPartner: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -104,9 +108,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return roles.some(role => hasRole(role));
   };
 
+  // Permission checker for generic permissions
+  const hasPermission = (permission: string): boolean => {
+    switch (permission) {
+      case 'user_management':
+        return canManageUsers();
+      case 'admin_access':
+        return canAccessAdmin();
+      case 'document_management':
+        return canManageDocuments();
+      case 'matter_management':
+        return canManageMatters();
+      default:
+        return false;
+    }
+  };
+
   // Permission helpers
   const isAdmin = (): boolean => {
     return hasAnyRole(['super_admin', 'firm_admin']);
+  };
+
+  const isSuperAdmin = (): boolean => {
+    return hasRole('super_admin');
   };
 
   const canManageUsers = (): boolean => {
@@ -125,6 +149,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return hasAnyRole(['super_admin', 'firm_admin', 'legal_manager', 'legal_professional']);
   };
 
+  const isClient = (): boolean => {
+    return hasRole('client_user');
+  };
+
+  const isExternalPartner = (): boolean => {
+    return hasRole('external_partner');
+  };
+
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -139,11 +171,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     hasRole,
     hasAnyRole,
+    hasPermission,
     isAdmin,
+    isSuperAdmin,
     canManageUsers,
     canAccessAdmin,
     canManageDocuments,
     canManageMatters,
+    isClient,
+    isExternalPartner,
   };
 
   return (

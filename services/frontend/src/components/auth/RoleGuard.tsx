@@ -107,3 +107,43 @@ export const RequirePermissions: React.FC<{
     {children}
   </RoleGuard>
 );
+
+// Additional convenience components from RBAC spec
+export const LegalStaffOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+  children, 
+  fallback 
+}) => (
+  <RoleGuard roles={['super_admin', 'firm_admin', 'legal_manager', 'legal_professional']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const SuperAdminOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+  children, 
+  fallback 
+}) => (
+  <RoleGuard roles={['super_admin']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const ClientOnly: React.FC<{ children: React.ReactNode; fallback?: React.ReactNode }> = ({ 
+  children, 
+  fallback 
+}) => (
+  <RoleGuard roles={['client_user']} fallback={fallback}>
+    {children}
+  </RoleGuard>
+);
+
+export const RequirePermission: React.FC<{
+  children: React.ReactNode;
+  permission: string;
+  fallback?: React.ReactNode;
+}> = ({ children, permission, fallback }) => {
+  const { hasPermission } = useAuth();
+  
+  const allowed = hasPermission(permission);
+  
+  return allowed ? <>{children}</> : <>{fallback}</>;
+};

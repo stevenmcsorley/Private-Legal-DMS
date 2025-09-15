@@ -202,6 +202,37 @@ export class ClientPortalController {
     return this.documentsService.getPreviewUrl(documentId, user);
   }
 
+  @Get('documents/:id/download')
+  @CanRead('client_portal')
+  @ApiOperation({ summary: 'Download document accessible to the client' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document downloaded successfully',
+    headers: {
+      'Content-Type': {
+        description: 'Document MIME type',
+        schema: { type: 'string' }
+      },
+      'Content-Disposition': {
+        description: 'Attachment filename',
+        schema: { type: 'string' }
+      }
+    }
+  })
+  async downloadDocument(
+    @Param('id', ParseUUIDPipe) documentId: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    const document = await this.documentsService.findOne(documentId, user);
+    
+    // Additional client access validation
+    if (!await this.clientPortalService.canClientAccessDocument(user, document)) {
+      throw new ForbiddenException('Access denied to this document');
+    }
+
+    return this.documentsService.downloadDocument(documentId, user);
+  }
+
   @Post('documents/upload')
   @CanWrite('client_portal')
   @UseInterceptors(FileInterceptor('file'))

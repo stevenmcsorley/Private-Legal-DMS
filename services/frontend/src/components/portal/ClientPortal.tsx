@@ -63,8 +63,8 @@ export const ClientPortal = () => {
   const fetchClientData = async () => {
     try {
       const [mattersResponse, documentsResponse] = await Promise.all([
-        fetch('/api/portal/matters', { credentials: 'include' }),
-        fetch('/api/portal/documents', { credentials: 'include' })
+        fetch('/api/client-portal/matters', { credentials: 'include' }),
+        fetch('/api/client-portal/documents', { credentials: 'include' })
       ]);
 
       if (mattersResponse.ok) {
@@ -85,7 +85,7 @@ export const ClientPortal = () => {
 
   const downloadDocument = async (doc: ClientDocument) => {
     try {
-      const response = await fetch(`/api/portal/documents/${doc.id}/download`, {
+      const response = await fetch(`/api/client-portal/documents/${doc.id}/download`, {
         credentials: 'include',
       });
       if (response.ok) {
@@ -329,7 +329,7 @@ export const ClientPortal = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => window.open(`/portal/documents/${doc.id}/view`, '_blank')}
+                            onClick={() => window.open(`/api/client-portal/documents/${doc.id}/preview`, '_blank')}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

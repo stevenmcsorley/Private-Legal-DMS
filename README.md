@@ -10,6 +10,75 @@ A private, on-premise legal document management system with secure storage, matt
 - 🏢 **Multi-tenant**: Firm isolation with controlled sharing
 - 📊 **Observability**: Complete audit trails, metrics, and monitoring
 
+## Role-Based Access Control (RBAC)
+
+The system implements comprehensive role-based access control with the following roles:
+
+### User Roles
+
+| Role | Description | Access Level |
+|------|-------------|--------------|
+| `super_admin` | System-wide administrator | **Full access to everything** |
+| `firm_admin` | Firm administrator | Manage users, teams, and firm settings |
+| `legal_manager` | Legal team manager | Supervise teams, manage matters |
+| `legal_professional` | Lawyer/attorney | Create/edit matters, upload documents |
+| `client_user` | Client portal user | View assigned matters and documents only |
+| `external_partner` | External firm partner | Time-boxed access to shared matters |
+| `support_staff` | Support staff | Limited upload/edit access |
+
+### Access Matrix
+
+| Feature | super_admin | firm_admin | legal_manager | legal_professional | client_user |
+|---------|-------------|------------|---------------|-------------------|-------------|
+| **Dashboard** | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **Matters Management** | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Client Management** | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Document Management** | ✅ | ✅ | ✅ | ✅ | ✅ (limited) |
+| **Search** | ✅ | ✅ | ✅ | ✅ | ❌ |
+| **Admin Panel** | ✅ | ✅ | ❌ | ❌ | ❌ |
+| **Client Portal** | ❌ | ❌ | ❌ | ❌ | ✅ |
+| **Cross-Firm Sharing** | ✅ | ✅ | ✅ | ✅ | ❌ |
+
+### Frontend Components
+
+The system provides reusable React components for role-based UI control:
+
+```jsx
+// Generic role guard
+<RoleGuard roles={['super_admin', 'firm_admin']}>
+  <AdminContent />
+</RoleGuard>
+
+// Convenience components
+<AdminOnly>
+  <AdminPanel />
+</AdminOnly>
+
+<LegalStaffOnly>
+  <MatterManagement />
+</LegalStaffOnly>
+
+<ClientOnly>
+  <ClientPortal />
+</ClientOnly>
+
+// Permission-based access
+<RequirePermission permission="user_management">
+  <UserSettings />
+</RequirePermission>
+```
+
+### Implementation Details
+
+- **Authentication**: Keycloak OIDC with JWT tokens
+- **Role Storage**: Simple string arrays in `user.roles` field
+- **Frontend Guards**: React components with role-based conditional rendering
+- **Route Protection**: Page-level access control with fallback messages
+- **API Security**: Backend decorators and guards for endpoint protection
+- **Client Isolation**: Documents filtered by client accessibility and matter assignment
+
+For detailed RBAC specifications, see [RBAC_SPECIFICATION.md](./RBAC_SPECIFICATION.md).
+
 ## Quick Start
 
 1. **Prerequisites**: Docker and Docker Compose
