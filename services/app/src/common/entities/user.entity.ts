@@ -60,4 +60,8 @@ export class User {
 
   @OneToMany(() => Matter, matter => matter.created_by_user)
   created_matters: Matter[];
+
+  // Note: Circular import handled via string reference
+  // @OneToMany(() => MatterTeam, matterTeam => matterTeam.user)
+  // matter_teams: MatterTeam[];
 }

@@ -25,6 +25,8 @@ import { DocumentsService } from '../documents/documents.service';
 import { CreateMatterDto } from './dto/create-matter.dto';
 import { UpdateMatterDto } from './dto/update-matter.dto';
 import { MatterResponseDto } from './dto/matter-response.dto';
+import { AddTeamMemberDto } from './dto/add-team-member.dto';
+import { TeamMemberResponseDto } from './dto/team-member-response.dto';
 import { CurrentUser } from '../../auth/decorators/user.decorator';
 import { CanRead, CanWrite, CanDelete } from '../../auth/decorators/permission.decorator';
 import { UserInfo } from '../../auth/auth.service';
@@ -199,6 +201,80 @@ export class MattersController {
     @CurrentUser() user: UserInfo,
   ) {
     return this.documentsService.findAll({ matter_id: id }, user);
+  }
+
+  @Get(':id/team')
+  @CanRead('matter')
+  @ApiOperation({ summary: 'Get team members for a matter' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Team members retrieved successfully',
+    type: [TeamMemberResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Matter not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied to this matter',
+  })
+  async getMatterTeam(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ): Promise<TeamMemberResponseDto[]> {
+    return this.mattersService.getMatterTeam(id, user);
+  }
+
+  @Post(':id/team')
+  @CanWrite('matter')
+  @ApiOperation({ summary: 'Add a team member to a matter' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Team member added successfully',
+    type: TeamMemberResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Matter or user not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'User is already a team member',
+  })
+  async addTeamMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() addTeamMemberDto: AddTeamMemberDto,
+    @CurrentUser() user: UserInfo,
+  ): Promise<TeamMemberResponseDto> {
+    return this.mattersService.addTeamMember(id, addTeamMemberDto, user);
+  }
+
+  @Delete(':id/team/:teamMemberId')
+  @CanWrite('matter')
+  @ApiOperation({ summary: 'Remove a team member from a matter' })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Team member removed successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Matter or team member not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied',
+  })
+  async removeTeamMember(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('teamMemberId', ParseUUIDPipe) teamMemberId: string,
+    @CurrentUser() user: UserInfo,
+  ): Promise<void> {
+    return this.mattersService.removeTeamMember(id, teamMemberId, user);
   }
 
   @Post(':id/export')

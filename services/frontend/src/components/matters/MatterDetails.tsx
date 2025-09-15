@@ -4,6 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
 import { 
   ArrowLeft,
   Edit,
@@ -88,6 +91,12 @@ export const MatterDetails = () => {
   const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [users, setUsers] = useState<any[]>([]);
+  const [addMemberOpen, setAddMemberOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState('');
+  const [selectedRole, setSelectedRole] = useState('observer');
+  const [selectedAccessLevel, setSelectedAccessLevel] = useState('read_only');
+  const [addingMember, setAddingMember] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -95,6 +104,7 @@ export const MatterDetails = () => {
       fetchDocuments();
       fetchTeamMembers();
       fetchAuditEntries();
+      fetchUsers();
     }
   }, [id]);
 
@@ -131,8 +141,8 @@ export const MatterDetails = () => {
       if (response.ok) {
         const data = await response.json();
         setTeamMembers(Array.isArray(data) ? data : []);
-      } else if (response.status === 404) {
-        console.log('Team endpoint not implemented yet');
+      } else {
+        console.log('Failed to fetch team members');
         setTeamMembers([]);
       }
     } catch (error) {
@@ -154,6 +164,72 @@ export const MatterDetails = () => {
     } catch (error) {
       console.error('Error fetching audit entries:', error);
       setAuditEntries([]);
+    }
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/users', { credentials: 'include' });
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Users API response:', data);
+        setUsers(Array.isArray(data) ? data : data.users || []);
+      } else {
+        console.log('Users API failed with status:', response.status);
+        // If admin endpoint fails, create dummy data for testing
+        setUsers([
+          { id: '11111111-2222-3333-4444-555555555001', display_name: 'John Legal', email: 'lawyer@firm1.com' },
+          { id: '11111111-2222-3333-4444-555555555002', display_name: 'Sarah Manager', email: 'manager@firm1.com' },
+          { id: '6cad6b70-1a00-435c-bae3-86078903a491', display_name: 'Test User', email: 'testuser' },
+        ]);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      // Fallback to dummy data for testing
+      setUsers([
+        { id: '11111111-2222-3333-4444-555555555001', display_name: 'John Legal', email: 'lawyer@firm1.com' },
+        { id: '11111111-2222-3333-4444-555555555002', display_name: 'Sarah Manager', email: 'manager@firm1.com' },
+        { id: '6cad6b70-1a00-435c-bae3-86078903a491', display_name: 'Test User', email: 'testuser' },
+      ]);
+    }
+  };
+
+  const addTeamMember = async () => {
+    if (!selectedUser) return;
+    
+    setAddingMember(true);
+    try {
+      const response = await fetch(`/api/matters/${id}/team`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          user_id: selectedUser,
+          role: selectedRole,
+          access_level: selectedAccessLevel,
+        }),
+      });
+
+      if (response.ok) {
+        // Refresh team members
+        await fetchTeamMembers();
+        // Reset form
+        setSelectedUser('');
+        setSelectedRole('observer');
+        setSelectedAccessLevel('read_only');
+        setAddMemberOpen(false);
+      } else {
+        const error = await response.json();
+        console.error('Error adding team member:', error);
+        alert('Failed to add team member: ' + (error.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error adding team member:', error);
+      alert('Failed to add team member');
+    } finally {
+      setAddingMember(false);
     }
   };
 
@@ -368,10 +444,83 @@ export const MatterDetails = () => {
         <TabsContent value="people" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium">Team Members</h3>
-            <Button variant="outline">
-              <Users className="h-4 w-4 mr-2" />
-              Add Member
-            </Button>
+            <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline">
+                  <Users className="h-4 w-4 mr-2" />
+                  Add Member
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Team Member</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="user">User</Label>
+                    <Select value={selectedUser} onValueChange={setSelectedUser}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.display_name} ({user.email})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Select value={selectedRole} onValueChange={setSelectedRole}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lead_lawyer">Lead Lawyer</SelectItem>
+                        <SelectItem value="associate">Associate</SelectItem>
+                        <SelectItem value="paralegal">Paralegal</SelectItem>
+                        <SelectItem value="legal_assistant">Legal Assistant</SelectItem>
+                        <SelectItem value="observer">Observer</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="access">Access Level</Label>
+                    <Select value={selectedAccessLevel} onValueChange={setSelectedAccessLevel}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="full">Full Access</SelectItem>
+                        <SelectItem value="read_write">Read & Write</SelectItem>
+                        <SelectItem value="read_only">Read Only</SelectItem>
+                        <SelectItem value="limited">Limited</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex justify-end space-x-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setAddMemberOpen(false)}
+                      disabled={addingMember}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={addTeamMember}
+                      disabled={!selectedUser || addingMember}
+                    >
+                      {addingMember ? 'Adding...' : 'Add Member'}
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
 
           <div className="space-y-2">

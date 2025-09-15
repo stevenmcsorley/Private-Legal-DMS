@@ -13,6 +13,7 @@ import { Client } from './client.entity';
 import { User } from './user.entity';
 import { Document } from './document.entity';
 import { MatterShare } from './matter-share.entity';
+import { MatterTeam } from './matter-team.entity';
 
 export enum MatterStatus {
   ACTIVE = 'active',
@@ -75,4 +76,7 @@ export class Matter {
 
   @OneToMany(() => MatterShare, share => share.matter)
   shares: MatterShare[];
+
+  @OneToMany(() => MatterTeam, teamMember => teamMember.matter)
+  team_members: MatterTeam[];
 }

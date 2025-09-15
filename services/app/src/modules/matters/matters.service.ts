@@ -7,10 +7,12 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Matter, MatterStatus, Client } from '../../common/entities';
+import { Matter, MatterStatus, Client, MatterTeam, User, AccessLevel } from '../../common/entities';
 import { CreateMatterDto } from './dto/create-matter.dto';
 import { UpdateMatterDto } from './dto/update-matter.dto';
 import { MatterResponseDto } from './dto/matter-response.dto';
+import { AddTeamMemberDto } from './dto/add-team-member.dto';
+import { TeamMemberResponseDto } from './dto/team-member-response.dto';
 import { UserInfo } from '../../auth/auth.service';
 
 export interface MatterQuery {
@@ -31,6 +33,10 @@ export class MattersService {
     private matterRepository: Repository<Matter>,
     @InjectRepository(Client)
     private clientRepository: Repository<Client>,
+    @InjectRepository(MatterTeam)
+    private matterTeamRepository: Repository<MatterTeam>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async create(createMatterDto: CreateMatterDto, user: UserInfo): Promise<MatterResponseDto> {
@@ -264,5 +270,108 @@ export class MattersService {
     this.logger.log(`Matter status updated: ${id} to ${status} by user ${user.sub}`);
     
     return this.findOne(id, user);
+  }
+
+  // Team Management Methods
+
+  async getMatterTeam(matterId: string, user: UserInfo): Promise<TeamMemberResponseDto[]> {
+    // Verify user has access to the matter
+    await this.findOne(matterId, user);
+
+    const teamMembers = await this.matterTeamRepository.find({
+      where: { matter_id: matterId },
+      relations: ['user'],
+      order: { added_at: 'ASC' },
+    });
+
+    return teamMembers.map(member => new TeamMemberResponseDto(member));
+  }
+
+  async addTeamMember(matterId: string, addTeamMemberDto: AddTeamMemberDto, user: UserInfo): Promise<TeamMemberResponseDto> {
+    // Verify user has access to the matter
+    const matter = await this.findOne(matterId, user);
+
+    // Verify the user to be added exists and belongs to the same firm
+    const userToAdd = await this.userRepository.findOne({
+      where: { id: addTeamMemberDto.user_id },
+    });
+
+    if (!userToAdd) {
+      throw new NotFoundException(`User with ID ${addTeamMemberDto.user_id} not found`);
+    }
+
+    if (userToAdd.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Cannot add user from different firm to matter team');
+    }
+
+    // Check if user is already on the team
+    const existingMember = await this.matterTeamRepository.findOne({
+      where: { matter_id: matterId, user_id: addTeamMemberDto.user_id },
+    });
+
+    if (existingMember) {
+      throw new BadRequestException('User is already a member of this matter team');
+    }
+
+    // Create team member
+    const teamMember = this.matterTeamRepository.create({
+      matter_id: matterId,
+      user_id: addTeamMemberDto.user_id,
+      role: addTeamMemberDto.role,
+      access_level: addTeamMemberDto.access_level || AccessLevel.READ_ONLY,
+      added_by: user.sub,
+    });
+
+    const savedTeamMember = await this.matterTeamRepository.save(teamMember);
+
+    // Fetch with relations for response
+    const teamMemberWithUser = await this.matterTeamRepository.findOne({
+      where: { id: (savedTeamMember as MatterTeam).id },
+      relations: ['user'],
+    });
+
+    this.logger.log(`User ${addTeamMemberDto.user_id} added to matter ${matterId} team by ${user.sub}`);
+
+    return new TeamMemberResponseDto(teamMemberWithUser);
+  }
+
+  async removeTeamMember(matterId: string, teamMemberId: string, user: UserInfo): Promise<void> {
+    // Verify user has access to the matter
+    await this.findOne(matterId, user);
+
+    const teamMember = await this.matterTeamRepository.findOne({
+      where: { id: teamMemberId, matter_id: matterId },
+    });
+
+    if (!teamMember) {
+      throw new NotFoundException('Team member not found');
+    }
+
+    await this.matterTeamRepository.remove(teamMember);
+
+    this.logger.log(`Team member ${teamMemberId} removed from matter ${matterId} by ${user.sub}`);
+  }
+
+  async updateTeamMemberRole(matterId: string, teamMemberId: string, role: string, accessLevel: string, user: UserInfo): Promise<TeamMemberResponseDto> {
+    // Verify user has access to the matter
+    await this.findOne(matterId, user);
+
+    const teamMember = await this.matterTeamRepository.findOne({
+      where: { id: teamMemberId, matter_id: matterId },
+      relations: ['user'],
+    });
+
+    if (!teamMember) {
+      throw new NotFoundException('Team member not found');
+    }
+
+    teamMember.role = role as any;
+    teamMember.access_level = accessLevel as any;
+
+    const updatedTeamMember = await this.matterTeamRepository.save(teamMember);
+
+    this.logger.log(`Team member ${teamMemberId} role updated in matter ${matterId} by ${user.sub}`);
+
+    return new TeamMemberResponseDto(updatedTeamMember);
   }
 }
