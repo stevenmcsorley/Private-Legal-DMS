@@ -10,7 +10,10 @@ import {
   ParseUUIDPipe,
   HttpStatus,
   BadRequestException,
+  Res,
+  Header,
 } from '@nestjs/common';
+import { Response } from 'express';
 import {
   ApiTags,
   ApiOperation,
@@ -533,5 +536,30 @@ export class AdminController {
     @CurrentUser() user: UserInfo,
   ) {
     return this.adminService.getAuditLogs(query, user);
+  }
+
+  @Get('audit-logs/export')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Export audit logs' })
+  @ApiQuery({ name: 'format', required: true, description: 'Export format (csv, json)' })
+  @ApiQuery({ name: 'user_id', required: false, description: 'Filter by user' })
+  @ApiQuery({ name: 'action', required: false, description: 'Filter by action' })
+  @ApiQuery({ name: 'resource_type', required: false, description: 'Filter by resource type' })
+  @ApiQuery({ name: 'from_date', required: false, description: 'Start date filter (ISO 8601)' })
+  @ApiQuery({ name: 'to_date', required: false, description: 'End date filter (ISO 8601)' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Audit logs exported successfully',
+  })
+  async exportAuditLogs(
+    @Query() query: any,
+    @CurrentUser() user: UserInfo,
+    @Res() res: Response,
+  ) {
+    const exportData = await this.adminService.exportAuditLogs(query, user);
+    
+    res.setHeader('Content-Type', exportData.contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${exportData.filename}"`);
+    res.send(exportData.content);
   }
 }

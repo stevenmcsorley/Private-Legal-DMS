@@ -18,6 +18,7 @@ import { RetentionPolicies } from './RetentionPolicies';
 import { LegalHoldManagement } from './LegalHoldManagement';
 import { ShareManagement } from './ShareManagement';
 import { SystemSettings } from './SystemSettings';
+import { AuditLogs } from './AuditLogs';
 
 interface AdminStats {
   total_users: number;
@@ -79,13 +80,14 @@ export const AdminDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="teams">Teams</TabsTrigger>
           <TabsTrigger value="retention">Retention</TabsTrigger>
           <TabsTrigger value="holds">Legal Holds</TabsTrigger>
           <TabsTrigger value="shares">Shares</TabsTrigger>
+          <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
@@ -268,6 +270,10 @@ export const AdminDashboard = () => {
 
         <TabsContent value="shares">
           <ShareManagement />
+        </TabsContent>
+
+        <TabsContent value="audit-logs">
+          <AuditLogs />
         </TabsContent>
 
         <TabsContent value="settings">

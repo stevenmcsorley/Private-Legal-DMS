@@ -832,6 +832,80 @@ export class AdminService {
     };
   }
 
+  async exportAuditLogs(query: any, currentUser: UserInfo): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    const { format = 'csv', user_id, action, resource_type, from_date, to_date } = query;
+
+    const queryBuilder = this.auditLogRepository
+      .createQueryBuilder('audit')
+      .leftJoinAndSelect('audit.user', 'user')
+      .orderBy('audit.timestamp', 'DESC');
+
+    // Firm admins can only export audit logs from their firm
+    if (!currentUser.roles.includes('super_admin')) {
+      queryBuilder.andWhere('audit.firm_id = :firmId', { firmId: currentUser.firm_id });
+    }
+
+    if (user_id) {
+      queryBuilder.andWhere('audit.user_id = :userId', { userId: user_id });
+    }
+
+    if (action) {
+      queryBuilder.andWhere('audit.action = :action', { action });
+    }
+
+    if (resource_type) {
+      queryBuilder.andWhere('audit.resource_type = :resourceType', { resourceType: resource_type });
+    }
+
+    if (from_date) {
+      queryBuilder.andWhere('audit.timestamp >= :fromDate', { fromDate: new Date(from_date) });
+    }
+
+    if (to_date) {
+      queryBuilder.andWhere('audit.timestamp <= :toDate', { toDate: new Date(to_date) });
+    }
+
+    const auditLogs = await queryBuilder.getMany();
+
+    if (format === 'csv') {
+      // Convert to CSV format
+      const csvHeaders = ['Timestamp', 'User Email', 'User Name', 'Action', 'Resource Type', 'Resource ID', 'Outcome', 'Risk Level', 'IP Address', 'Details'];
+      const csvRows = auditLogs.map(log => [
+        log.timestamp.toISOString(),
+        log.user?.email || 'Unknown',
+        log.user?.display_name || 'Unknown',
+        log.action,
+        log.resource_type,
+        log.resource_id,
+        log.outcome,
+        log.risk_level,
+        log.ip_address,
+        JSON.stringify(log.details)
+      ]);
+
+      const csvContent = [csvHeaders, ...csvRows]
+        .map(row => row.map(field => `"${String(field).replace(/"/g, '""')}"`).join(','))
+        .join('\n');
+
+      return {
+        content: csvContent,
+        contentType: 'text/csv',
+        filename: `audit-logs-${new Date().toISOString().split('T')[0]}.csv`
+      };
+    } else if (format === 'json') {
+      // Return JSON format
+      return {
+        content: JSON.stringify(auditLogs, null, 2),
+        contentType: 'application/json',
+        filename: `audit-logs-${new Date().toISOString().split('T')[0]}.json`
+      };
+    } else {
+      throw new BadRequestException('Invalid export format. Supported formats: csv, json');
+    }
+  }
+
   // System Settings Management
   async getSystemSettings(currentUser: UserInfo): Promise<SystemSettingsDto> {
     this.validateAdminAccess(currentUser);
