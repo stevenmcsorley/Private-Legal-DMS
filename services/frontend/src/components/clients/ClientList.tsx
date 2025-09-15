@@ -90,8 +90,8 @@ export const ClientList = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading clients...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-slate-300">Loading clients...</p>
         </div>
       </div>
     );
@@ -102,10 +102,10 @@ export const ClientList = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Clients</h1>
-          <p className="text-gray-600">Manage client relationships and information</p>
+          <h1 className="text-2xl font-bold text-white">Clients</h1>
+          <p className="text-slate-400">Manage client relationships and information</p>
         </div>
-        <Button asChild>
+        <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
           <Link to="/clients/new">
             <Plus className="h-4 w-4 mr-2" />
             New Client
@@ -114,12 +114,12 @@ export const ClientList = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search clients..."
                   value={searchTerm}
@@ -158,29 +158,29 @@ export const ClientList = () => {
       </Card>
 
       {/* Results Count */}
-      <div className="flex items-center text-sm text-gray-600">
-        <Filter className="h-4 w-4 mr-2" />
+      <div className="flex items-center text-sm text-slate-300">
+        <Filter className="h-4 w-4 mr-2 text-orange-400" />
         Showing {filteredClients.length} of {clients.length} clients
       </div>
 
       {/* Clients Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredClients.map((client) => (
-          <Card key={client.id} className="hover:shadow-lg transition-shadow">
+          <Card key={client.id} className="bg-slate-800 border-slate-700 hover:bg-slate-750 hover:border-slate-600 transition-all duration-200">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg truncate">
                     <Link 
                       to={`/clients/${client.id}`}
-                      className="hover:text-blue-600 transition-colors flex items-center"
+                      className="text-white hover:text-orange-400 transition-colors flex items-center"
                     >
-                      <Building className="h-5 w-5 mr-2 flex-shrink-0" />
+                      <Building className="h-5 w-5 mr-2 flex-shrink-0 text-orange-400" />
                       {client.name}
                     </Link>
                   </CardTitle>
                   {client.metadata?.contact_person && (
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-sm text-slate-400 mt-1">
                       Contact: {client.metadata.contact_person}
                     </p>
                   )}
@@ -188,10 +188,10 @@ export const ClientList = () => {
               </div>
               
               <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="outline">
-                  Active
+                <Badge className="bg-green-600 text-white border-green-500 px-3 py-1 rounded-full">
+                  ACTIVE
                 </Badge>
-                <Badge variant="secondary">
+                <Badge variant="outline" className="border-slate-500 text-slate-300">
                   Client
                 </Badge>
               </div>
@@ -200,51 +200,51 @@ export const ClientList = () => {
             <CardContent>
               <div className="space-y-3">
                 {client.contact_email && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Mail className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-300">
+                    <Mail className="h-4 w-4 mr-2 flex-shrink-0 text-orange-400" />
                     <span className="truncate">{client.contact_email}</span>
                   </div>
                 )}
                 
                 {client.contact_phone && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Phone className="h-4 w-4 mr-2 flex-shrink-0" />
+                  <div className="flex items-center text-sm text-slate-300">
+                    <Phone className="h-4 w-4 mr-2 flex-shrink-0 text-orange-400" />
                     <span>{client.contact_phone}</span>
                   </div>
                 )}
                 
                 {client.address && (
-                  <div className="flex items-start text-sm text-gray-600">
-                    <Building className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start text-sm text-slate-300">
+                    <Building className="h-4 w-4 mr-2 mt-0.5 flex-shrink-0 text-orange-400" />
                     <span className="line-clamp-2">{typeof client.address === 'string' ? client.address : client.address.street}</span>
                   </div>
                 )}
                 
-                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t border-slate-700">
                   <div className="text-center">
                     <div className="flex items-center justify-center">
-                      <Archive className="h-4 w-4 text-gray-400 mr-1" />
-                      <span className="text-lg font-semibold text-gray-900">
+                      <Archive className="h-4 w-4 text-orange-400 mr-1" />
+                      <span className="text-lg font-semibold text-white">
                         {client.matter_count}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600">Matters</p>
+                    <p className="text-xs text-slate-400">Matters</p>
                   </div>
                   
                   <div className="text-center">
                     <div className="flex items-center justify-center">
-                      <FileText className="h-4 w-4 text-gray-400 mr-1" />
-                      <span className="text-lg font-semibold text-gray-900">
+                      <FileText className="h-4 w-4 text-orange-400 mr-1" />
+                      <span className="text-lg font-semibold text-white">
                         {client.document_count}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-600">Documents</p>
+                    <p className="text-xs text-slate-400">Documents</p>
                   </div>
                 </div>
                 
-                <div className="flex items-center justify-between text-xs text-gray-500 pt-2">
+                <div className="flex items-center justify-between text-xs text-slate-500 pt-2">
                   <div className="flex items-center">
-                    <Clock className="h-3 w-3 mr-1" />
+                    <Clock className="h-3 w-3 mr-1 text-slate-500" />
                     <span>
                       Created {new Date(client.created_at).toLocaleDateString()}
                     </span>
@@ -252,7 +252,7 @@ export const ClientList = () => {
                   
                   {client.last_activity && (
                     <div className="flex items-center">
-                      <User className="h-3 w-3 mr-1" />
+                      <User className="h-3 w-3 mr-1 text-slate-500" />
                       <span>
                         Active {new Date(client.last_activity).toLocaleDateString()}
                       </span>
@@ -266,16 +266,16 @@ export const ClientList = () => {
       </div>
 
       {filteredClients.length === 0 && (
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="text-center py-12">
-            <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No clients found</h3>
-            <p className="text-gray-600 mb-4">
+            <Building className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No clients found</h3>
+            <p className="text-slate-400 mb-4">
               {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : 'Get started by adding your first client.'}
             </p>
-            <Button asChild>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
               <Link to="/clients/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Add Client

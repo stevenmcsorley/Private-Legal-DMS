@@ -179,8 +179,8 @@ export const AuditLogs = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto"></div>
-          <p className="mt-2 text-slate-400">Loading audit logs...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-slate-300">Loading audit logs...</p>
         </div>
       </div>
     );
@@ -191,8 +191,8 @@ export const AuditLogs = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-slate-100 flex items-center">
-            <Shield className="h-6 w-6 mr-2" />
+          <h2 className="text-2xl font-bold text-white flex items-center">
+            <Shield className="h-6 w-6 mr-2 text-orange-400" />
             Audit Logs
           </h2>
           <p className="text-slate-400">Monitor all system activities and access patterns</p>
@@ -201,7 +201,7 @@ export const AuditLogs = () => {
           <Button 
             variant="outline" 
             onClick={() => exportAuditLogs('csv')}
-            className="flex items-center"
+            className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white flex items-center"
           >
             <Download className="h-4 w-4 mr-2" />
             Export CSV
@@ -209,7 +209,7 @@ export const AuditLogs = () => {
           <Button 
             variant="outline" 
             onClick={() => exportAuditLogs('json')}
-            className="flex items-center"
+            className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white flex items-center"
           >
             <Download className="h-4 w-4 mr-2" />
             Export JSON
@@ -218,17 +218,17 @@ export const AuditLogs = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
             <div className="lg:col-span-2">
-              <Label htmlFor="search">Search</Label>
+              <Label htmlFor="search" className="text-white mb-2 block">Search</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 h-4 w-4" />
                 <Input
                   id="search"
                   placeholder="Search actions, users, resources..."
-                  className="pl-10"
+                  className="pl-10 bg-slate-700 border-slate-600 text-white placeholder-slate-400"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -236,9 +236,9 @@ export const AuditLogs = () => {
             </div>
 
             <div>
-              <Label>Action</Label>
+              <Label className="text-white mb-2 block">Action</Label>
               <Select value={selectedAction} onValueChange={setSelectedAction}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
@@ -256,9 +256,9 @@ export const AuditLogs = () => {
             </div>
 
             <div>
-              <Label>Resource</Label>
+              <Label className="text-white mb-2 block">Resource</Label>
               <Select value={selectedResourceType} onValueChange={setSelectedResourceType}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="All resources" />
                 </SelectTrigger>
                 <SelectContent>
@@ -274,9 +274,9 @@ export const AuditLogs = () => {
             </div>
 
             <div>
-              <Label>Outcome</Label>
+              <Label className="text-white mb-2 block">Outcome</Label>
               <Select value={selectedOutcome} onValueChange={setSelectedOutcome}>
-                <SelectTrigger>
+                <SelectTrigger className="bg-slate-700 border-slate-600 text-white">
                   <SelectValue placeholder="All outcomes" />
                 </SelectTrigger>
                 <SelectContent>
@@ -288,20 +288,22 @@ export const AuditLogs = () => {
             </div>
 
             <div>
-              <Label htmlFor="from-date">From Date</Label>
+              <Label htmlFor="from-date" className="text-white mb-2 block">From Date</Label>
               <Input
                 id="from-date"
                 type="date"
+                className="bg-slate-700 border-slate-600 text-white"
                 value={fromDate}
                 onChange={(e) => setFromDate(e.target.value)}
               />
             </div>
 
             <div>
-              <Label htmlFor="to-date">To Date</Label>
+              <Label htmlFor="to-date" className="text-white mb-2 block">To Date</Label>
               <Input
                 id="to-date"
                 type="date"
+                className="bg-slate-700 border-slate-600 text-white"
                 value={toDate}
                 onChange={(e) => setToDate(e.target.value)}
               />
@@ -309,7 +311,8 @@ export const AuditLogs = () => {
           </div>
 
           <div className="flex justify-between items-center mt-4">
-            <div className="text-sm text-slate-400">
+            <div className="text-sm text-slate-300 flex items-center">
+              <Filter className="h-4 w-4 mr-2 text-orange-400" />
               Showing {filteredLogs.length} of {total} audit entries
             </div>
             <Button 
@@ -323,7 +326,7 @@ export const AuditLogs = () => {
                 setToDate('');
                 setSearchTerm('');
               }}
-              className="flex items-center"
+              className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white flex items-center"
             >
               <Filter className="h-4 w-4 mr-2" />
               Clear Filters
@@ -333,7 +336,7 @@ export const AuditLogs = () => {
       </Card>
 
       {/* Audit Logs Table */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -351,11 +354,11 @@ export const AuditLogs = () => {
               </thead>
               <tbody className="divide-y divide-slate-700">
                 {filteredLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-slate-800/50">
+                  <tr key={log.id} className="hover:bg-slate-700/50">
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
-                        <Clock className="h-4 w-4 text-slate-400" />
-                        <span className="text-slate-300 text-sm">
+                        <Clock className="h-4 w-4 text-orange-400" />
+                        <span className="text-white text-sm">
                           {formatTimestamp(log.timestamp)}
                         </span>
                       </div>
@@ -363,12 +366,12 @@ export const AuditLogs = () => {
                     
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-slate-400" />
+                        <User className="h-4 w-4 text-orange-400" />
                         <div>
-                          <p className="text-slate-300 text-sm font-medium">
+                          <p className="text-white text-sm font-medium">
                             {log.user?.display_name || 'Unknown User'}
                           </p>
-                          <p className="text-slate-500 text-xs">
+                          <p className="text-slate-400 text-xs">
                             {log.user?.email || log.user_id}
                           </p>
                         </div>
@@ -377,8 +380,8 @@ export const AuditLogs = () => {
                     
                     <td className="py-4 px-6">
                       <div className="flex items-center space-x-2">
-                        {getActionIcon(log.action)}
-                        <span className="text-slate-300 text-sm font-medium">
+                        <span className="text-orange-400">{getActionIcon(log.action)}</span>
+                        <span className="text-white text-sm font-medium">
                           {log.action.replace(/_/g, ' ').toUpperCase()}
                         </span>
                       </div>
@@ -386,10 +389,10 @@ export const AuditLogs = () => {
                     
                     <td className="py-4 px-6">
                       <div>
-                        <p className="text-slate-300 text-sm font-medium">
+                        <p className="text-white text-sm font-medium">
                           {log.resource_type.toUpperCase()}
                         </p>
-                        <p className="text-slate-500 text-xs">
+                        <p className="text-slate-400 text-xs">
                           {log.resource_id !== 'unknown' ? log.resource_id : 'N/A'}
                         </p>
                       </div>
@@ -416,7 +419,7 @@ export const AuditLogs = () => {
                     </td>
                     
                     <td className="py-4 px-6">
-                      <span className="text-slate-400 text-sm font-mono">
+                      <span className="text-slate-300 text-sm font-mono">
                         {log.ip_address}
                       </span>
                     </td>
@@ -425,7 +428,7 @@ export const AuditLogs = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-slate-400 hover:text-slate-300"
+                        className="text-orange-400 hover:text-orange-300 hover:bg-orange-500/10"
                         onClick={() => {
                           alert(`Details: ${JSON.stringify(log.details, null, 2)}`);
                         }}
@@ -443,16 +446,17 @@ export const AuditLogs = () => {
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-slate-400">
+              <div className="text-sm text-slate-300">
                 Page {currentPage} of {totalPages} ({total} total entries)
               </div>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                   onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                   disabled={currentPage === 1}
                 >
@@ -462,6 +466,7 @@ export const AuditLogs = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                   onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                   disabled={currentPage === totalPages}
                 >
@@ -475,10 +480,10 @@ export const AuditLogs = () => {
       )}
 
       {filteredLogs.length === 0 && (
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="text-center py-12">
-            <Shield className="h-12 w-12 text-slate-500 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-slate-100 mb-2">No audit logs found</h3>
+            <Shield className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No audit logs found</h3>
             <p className="text-slate-400">
               {searchTerm || selectedAction || selectedResourceType || selectedOutcome || fromDate || toDate
                 ? 'Try adjusting your filters to see more results.'

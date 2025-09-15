@@ -237,11 +237,11 @@ export const MatterDetails = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-600 text-white border-green-500';
+      case 'closed': return 'bg-slate-600 text-white border-slate-500';
+      case 'on_hold': return 'bg-yellow-600 text-white border-yellow-500';
+      case 'cancelled': return 'bg-red-600 text-white border-red-500';
+      default: return 'bg-slate-600 text-white border-slate-500';
     }
   };
 
@@ -250,8 +250,8 @@ export const MatterDetails = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading matter details...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-slate-300">Loading matter details...</p>
         </div>
       </div>
     );
@@ -269,20 +269,20 @@ export const MatterDetails = () => {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center">
+            <h1 className="text-2xl font-bold text-white flex items-center">
               {matter.title}
             </h1>
-            <p className="text-muted-foreground font-mono">Matter ID: {matter.id.slice(0, 8)}</p>
+            <p className="text-slate-400 font-mono">Matter ID: {matter.id.slice(0, 8)}</p>
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white" asChild>
             <Link to={`/matters/${matter.id}/edit`}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Link>
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white">
             <Share2 className="h-4 w-4 mr-2" />
             Share
           </Button>
@@ -291,29 +291,29 @@ export const MatterDetails = () => {
 
       {/* Matter Info Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Building className="h-5 w-5 text-gray-400" />
+                <Building className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Client</p>
-                <p className="text-sm text-muted-foreground">{matter.client?.name || 'Unknown Client'}</p>
+                <p className="text-sm font-medium text-white">Client</p>
+                <p className="text-sm text-slate-300">{matter.client?.name || 'Unknown Client'}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <User className="h-5 w-5 text-gray-400" />
+                <User className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Created By</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-white">Created By</p>
+                <p className="text-sm text-slate-300">
                   {matter.created_by_user?.display_name || 'Unknown'}
                 </p>
               </div>
@@ -321,29 +321,29 @@ export const MatterDetails = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <FileText className="h-5 w-5 text-gray-400" />
+                <FileText className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Documents</p>
-                <p className="text-sm text-muted-foreground">{documents.length} files</p>
+                <p className="text-sm font-medium text-white">Documents</p>
+                <p className="text-sm text-slate-300">{documents.length} files</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Calendar className="h-5 w-5 text-gray-400" />
+                <Calendar className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Created</p>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm font-medium text-white">Created</p>
+                <p className="text-sm text-slate-300">
                   {new Date(matter.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -354,34 +354,34 @@ export const MatterDetails = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
-          <TabsTrigger value="people">People ({teamMembers.length})</TabsTrigger>
-          <TabsTrigger value="audit">Audit ({auditEntries.length})</TabsTrigger>
+        <TabsList className="bg-slate-800 border-slate-700">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Overview</TabsTrigger>
+          <TabsTrigger value="documents" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Documents ({documents.length})</TabsTrigger>
+          <TabsTrigger value="people" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">People ({teamMembers.length})</TabsTrigger>
+          <TabsTrigger value="audit" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Audit ({auditEntries.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Matter Details */}
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle>Matter Details</CardTitle>
+                <CardTitle className="text-white">Matter Details</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Status</label>
-                  <div className="mt-1">
-                    <Badge className={getStatusColor(matter.status)}>
-                      {matter.status.replace('_', ' ')}
+                  <label className="text-sm font-medium text-white mb-2 block">Status</label>
+                  <div>
+                    <Badge className={`${getStatusColor(matter.status)} px-3 py-1 rounded-full`}>
+                      {matter.status.replace('_', ' ').toUpperCase()}
                     </Badge>
                   </div>
                 </div>
                 
                 <div>
-                  <label className="text-sm font-medium text-foreground">Security Class</label>
-                  <div className="mt-1">
-                    <Badge variant="outline">
+                  <label className="text-sm font-medium text-white mb-2 block">Security Class</label>
+                  <div>
+                    <Badge variant="outline" className="border-slate-500 text-slate-300">
                       Level {matter.security_class}
                     </Badge>
                   </div>
@@ -389,48 +389,52 @@ export const MatterDetails = () => {
                 
                 {matter.description && (
                   <div>
-                    <label className="text-sm font-medium text-foreground">Description</label>
-                    <p className="mt-1 text-sm text-foreground">{matter.description}</p>
+                    <label className="text-sm font-medium text-white mb-2 block">Description</label>
+                    <p className="text-sm text-slate-300 leading-relaxed bg-slate-700 p-3 rounded-lg border border-slate-600">
+                      {matter.description}
+                    </p>
                   </div>
                 )}
                 
-                <div>
-                  <label className="text-sm font-medium text-foreground">Created</label>
-                  <p className="mt-1 text-sm text-foreground">
-                    {new Date(matter.created_at).toLocaleDateString()}
-                  </p>
-                </div>
-                
-                <div>
-                  <label className="text-sm font-medium text-foreground">Last Updated</label>
-                  <p className="mt-1 text-sm text-foreground">
-                    {new Date(matter.updated_at).toLocaleDateString()}
-                  </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-white mb-2 block">Created</label>
+                    <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">
+                      {new Date(matter.created_at).toLocaleDateString()}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-white mb-2 block">Last Updated</label>
+                    <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">
+                      {new Date(matter.updated_at).toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Client Information */}
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle>Client Information</CardTitle>
+                <CardTitle className="text-white">Client Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Name</label>
-                  <p className="mt-1 text-sm text-foreground">{matter.client?.name || 'Unknown Client'}</p>
+                  <label className="text-sm font-medium text-white mb-2 block">Name</label>
+                  <p className="text-sm text-slate-300 bg-slate-700 p-3 rounded-lg border border-slate-600">{matter.client?.name || 'Unknown Client'}</p>
                 </div>
                 
                 {matter.client?.contact_email && (
                   <div>
-                    <label className="text-sm font-medium text-foreground">Email</label>
-                    <p className="mt-1 text-sm text-foreground">{matter.client.contact_email}</p>
+                    <label className="text-sm font-medium text-white mb-2 block">Email</label>
+                    <p className="text-sm text-slate-300 bg-slate-700 p-3 rounded-lg border border-slate-600">{matter.client.contact_email}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-foreground">Client ID</label>
-                  <p className="mt-1 text-sm text-muted-foreground font-mono">{matter.client?.id || matter.client_id}</p>
+                  <label className="text-sm font-medium text-white mb-2 block">Client ID</label>
+                  <p className="text-sm text-slate-400 font-mono bg-slate-700 p-3 rounded-lg border border-slate-600">{matter.client?.id || matter.client_id}</p>
                 </div>
               </CardContent>
             </Card>
@@ -443,7 +447,7 @@ export const MatterDetails = () => {
 
         <TabsContent value="people" className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Team Members</h3>
+            <h3 className="text-lg font-medium text-white">Team Members</h3>
             <Dialog open={addMemberOpen} onOpenChange={setAddMemberOpen}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -525,25 +529,25 @@ export const MatterDetails = () => {
 
           <div className="space-y-2">
             {teamMembers.map((member) => (
-              <Card key={member.id}>
+              <Card key={member.id} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <div className="h-8 w-8 bg-gray-300 rounded-full flex items-center justify-center">
-                        <User className="h-4 w-4 text-gray-600" />
+                      <div className="h-8 w-8 bg-slate-600 rounded-full flex items-center justify-center">
+                        <User className="h-4 w-4 text-slate-300" />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">
+                        <p className="text-sm font-medium text-white">
                           {member.user.display_name}
                         </p>
-                        <p className="text-xs text-muted-foreground">{member.user.email}</p>
+                        <p className="text-xs text-slate-400">{member.user.email}</p>
                       </div>
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      <Badge variant="outline">{member.role}</Badge>
-                      <Badge variant="outline">{member.access_level}</Badge>
-                      <span className="text-xs text-muted-foreground">
+                      <Badge variant="outline" className="border-orange-500 text-orange-300">{member.role.replace('_', ' ')}</Badge>
+                      <Badge variant="outline" className="border-slate-500 text-slate-300">{member.access_level.replace('_', ' ')}</Badge>
+                      <span className="text-xs text-slate-400">
                         Added {new Date(member.added_at).toLocaleDateString()}
                       </span>
                     </div>
@@ -555,23 +559,23 @@ export const MatterDetails = () => {
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-4">
-          <h3 className="text-lg font-medium">Audit Trail</h3>
+          <h3 className="text-lg font-medium text-white">Audit Trail</h3>
           
           <div className="space-y-2">
             {auditEntries.map((entry) => (
-              <Card key={entry.id}>
+              <Card key={entry.id} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-start space-x-3">
-                    <Clock className="h-4 w-4 text-gray-400 mt-1" />
+                    <Clock className="h-4 w-4 text-slate-400 mt-1" />
                     <div className="flex-1">
-                      <p className="text-sm text-foreground">
+                      <p className="text-sm text-white">
                         <span className="font-medium">{entry.user.display_name}</span> {entry.action}
                       </p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-slate-400">
                         {new Date(entry.timestamp).toLocaleString()}
                       </p>
                       {entry.details && (
-                        <pre className="text-xs text-muted-foreground mt-2 bg-muted p-2 rounded">
+                        <pre className="text-xs text-slate-400 mt-2 bg-slate-700 p-2 rounded border border-slate-600">
                           {JSON.stringify(entry.details, null, 2)}
                         </pre>
                       )}
@@ -583,11 +587,11 @@ export const MatterDetails = () => {
           </div>
 
           {auditEntries.length === 0 && (
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-12">
-                <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No audit entries</h3>
-                <p className="text-muted-foreground">Audit trail will appear here as actions are performed.</p>
+                <Archive className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No audit entries</h3>
+                <p className="text-slate-400">Audit trail will appear here as actions are performed.</p>
               </CardContent>
             </Card>
           )}

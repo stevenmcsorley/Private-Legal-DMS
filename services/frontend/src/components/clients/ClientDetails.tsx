@@ -135,32 +135,32 @@ export const ClientDetails = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'inactive': return 'bg-gray-100 text-gray-800';
-      case 'prospect': return 'bg-blue-100 text-blue-800';
-      case 'former': return 'bg-yellow-100 text-yellow-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-600 text-white border-green-500';
+      case 'inactive': return 'bg-slate-600 text-white border-slate-500';
+      case 'prospect': return 'bg-blue-600 text-white border-blue-500';
+      case 'former': return 'bg-yellow-600 text-white border-yellow-500';
+      default: return 'bg-slate-600 text-white border-slate-500';
     }
   };
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'individual': return 'bg-purple-100 text-purple-800';
-      case 'corporation': return 'bg-blue-100 text-blue-800';
-      case 'partnership': return 'bg-green-100 text-green-800';
-      case 'llc': return 'bg-orange-100 text-orange-800';
-      case 'non_profit': return 'bg-teal-100 text-teal-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'individual': return 'bg-purple-600 text-white border-purple-500';
+      case 'corporation': return 'bg-blue-600 text-white border-blue-500';
+      case 'partnership': return 'bg-green-600 text-white border-green-500';
+      case 'llc': return 'bg-orange-600 text-white border-orange-500';
+      case 'non_profit': return 'bg-teal-600 text-white border-teal-500';
+      default: return 'bg-slate-600 text-white border-slate-500';
     }
   };
 
   const getMatterStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-600 text-white border-green-500';
+      case 'closed': return 'bg-slate-600 text-white border-slate-500';
+      case 'on_hold': return 'bg-yellow-600 text-white border-yellow-500';
+      case 'cancelled': return 'bg-red-600 text-white border-red-500';
+      default: return 'bg-slate-600 text-white border-slate-500';
     }
   };
 
@@ -168,8 +168,8 @@ export const ClientDetails = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading client details...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-slate-300">Loading client details...</p>
         </div>
       </div>
     );
@@ -187,28 +187,28 @@ export const ClientDetails = () => {
             </Link>
           </Button>
           <div>
-            <h1 className="text-2xl font-bold flex items-center">
-              <Building className="h-6 w-6 mr-3" />
+            <h1 className="text-2xl font-bold flex items-center text-white">
+              <Building className="h-6 w-6 mr-3 text-orange-400" />
               {client.name}
             </h1>
             <div className="flex items-center space-x-2 mt-1">
-              <Badge className={getStatusColor(client.metadata?.status || 'active')}>
-                {client.metadata?.status || 'active'}
+              <Badge className={`${getStatusColor(client.metadata?.status || 'active')} px-3 py-1 rounded-full`}>
+                {(client.metadata?.status || 'active').toUpperCase()}
               </Badge>
-              <Badge className={getTypeColor(client.metadata?.client_type || 'individual')}>
-                {(client.metadata?.client_type || 'individual').replace('_', ' ')}
+              <Badge className={`${getTypeColor(client.metadata?.client_type || 'individual')} px-3 py-1 rounded-full`}>
+                {(client.metadata?.client_type || 'individual').replace('_', ' ').toUpperCase()}
               </Badge>
             </div>
           </div>
         </div>
         <div className="flex space-x-2">
-          <Button variant="outline" asChild>
+          <Button variant="outline" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white" asChild>
             <Link to={`/clients/${client.id}/edit`}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Link>
           </Button>
-          <Button asChild>
+          <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
             <Link to={`/matters/new?client_id=${client.id}`}>
               <Plus className="h-4 w-4 mr-2" />
               New Matter
@@ -219,15 +219,15 @@ export const ClientDetails = () => {
 
       {/* Client Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Archive className="h-5 w-5 text-gray-400" />
+                <Archive className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Active Matters</p>
-                <p className="text-2xl font-bold text-foreground">
+                <p className="text-sm font-medium text-white">Active Matters</p>
+                <p className="text-2xl font-bold text-white">
                   {matters.filter(m => m.status === 'active').length}
                 </p>
               </div>
@@ -235,29 +235,29 @@ export const ClientDetails = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <FileText className="h-5 w-5 text-gray-400" />
+                <FileText className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Total Documents</p>
-                <p className="text-2xl font-bold text-foreground">{documents.length}</p>
+                <p className="text-sm font-medium text-white">Total Documents</p>
+                <p className="text-2xl font-bold text-white">{documents.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="pt-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <Calendar className="h-5 w-5 text-gray-400" />
+                <Calendar className="h-5 w-5 text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-foreground">Client Since</p>
-                <p className="text-sm text-foreground">
+                <p className="text-sm font-medium text-white">Client Since</p>
+                <p className="text-sm text-slate-300">
                   {new Date(client.created_at).toLocaleDateString()}
                 </p>
               </div>
@@ -268,56 +268,56 @@ export const ClientDetails = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="matters">Matters ({matters.length})</TabsTrigger>
-          <TabsTrigger value="documents">Documents ({documents.length})</TabsTrigger>
+        <TabsList className="bg-slate-800 border-slate-700">
+          <TabsTrigger value="overview" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Overview</TabsTrigger>
+          <TabsTrigger value="matters" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Matters ({matters.length})</TabsTrigger>
+          <TabsTrigger value="documents" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white text-slate-300">Documents ({documents.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Contact Information */}
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle>Contact Information</CardTitle>
+                <CardTitle className="text-white">Contact Information</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {client.contact_email && (
                   <div className="flex items-center space-x-3">
-                    <Mail className="h-4 w-4 text-gray-400" />
+                    <Mail className="h-4 w-4 text-orange-400" />
                     <div>
-                      <label className="text-sm font-medium text-foreground">Email</label>
-                      <p className="text-sm text-foreground">{client.contact_email}</p>
+                      <label className="text-sm font-medium text-white mb-1 block">Email</label>
+                      <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">{client.contact_email}</p>
                     </div>
                   </div>
                 )}
                 
                 {client.contact_phone && (
                   <div className="flex items-center space-x-3">
-                    <Phone className="h-4 w-4 text-gray-400" />
+                    <Phone className="h-4 w-4 text-orange-400" />
                     <div>
-                      <label className="text-sm font-medium text-foreground">Phone</label>
-                      <p className="text-sm text-foreground">{client.contact_phone}</p>
+                      <label className="text-sm font-medium text-white mb-1 block">Phone</label>
+                      <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">{client.contact_phone}</p>
                     </div>
                   </div>
                 )}
                 
                 {client.metadata?.contact_person && (
                   <div className="flex items-center space-x-3">
-                    <User className="h-4 w-4 text-gray-400" />
+                    <User className="h-4 w-4 text-orange-400" />
                     <div>
-                      <label className="text-sm font-medium text-foreground">Contact Person</label>
-                      <p className="text-sm text-foreground">{client.metadata.contact_person}</p>
+                      <label className="text-sm font-medium text-white mb-1 block">Contact Person</label>
+                      <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">{client.metadata.contact_person}</p>
                     </div>
                   </div>
                 )}
                 
                 {client.address && (
                   <div className="flex items-start space-x-3">
-                    <MapPin className="h-4 w-4 text-gray-400 mt-1" />
+                    <MapPin className="h-4 w-4 text-orange-400 mt-1" />
                     <div>
-                      <label className="text-sm font-medium text-foreground">Address</label>
-                      <p className="text-sm text-foreground whitespace-pre-line">
+                      <label className="text-sm font-medium text-white mb-1 block">Address</label>
+                      <p className="text-sm text-slate-300 bg-slate-700 p-3 rounded border border-slate-600 whitespace-pre-line">
                         {typeof client.address === 'string' ? client.address : client.address.street}
                       </p>
                     </div>
@@ -327,35 +327,35 @@ export const ClientDetails = () => {
             </Card>
 
             {/* Additional Details */}
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle>Additional Details</CardTitle>
+                <CardTitle className="text-white">Additional Details</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {client.metadata?.tax_id && (
                   <div>
-                    <label className="text-sm font-medium text-foreground">Tax ID</label>
-                    <p className="mt-1 text-sm text-foreground font-mono">{client.metadata.tax_id}</p>
+                    <label className="text-sm font-medium text-white mb-2 block">Tax ID</label>
+                    <p className="text-sm text-slate-400 font-mono bg-slate-700 p-2 rounded border border-slate-600">{client.metadata.tax_id}</p>
                   </div>
                 )}
                 
                 {client.metadata?.billing_address && (
                   <div>
-                    <label className="text-sm font-medium text-foreground">Billing Address</label>
-                    <p className="mt-1 text-sm text-foreground whitespace-pre-line">{client.metadata.billing_address}</p>
+                    <label className="text-sm font-medium text-white mb-2 block">Billing Address</label>
+                    <p className="text-sm text-slate-300 bg-slate-700 p-3 rounded border border-slate-600 whitespace-pre-line">{client.metadata.billing_address}</p>
                   </div>
                 )}
                 
                 {client.metadata?.preferred_communication && (
                   <div>
-                    <label className="text-sm font-medium text-foreground">Preferred Communication</label>
-                    <p className="mt-1 text-sm text-foreground">{client.metadata.preferred_communication}</p>
+                    <label className="text-sm font-medium text-white mb-2 block">Preferred Communication</label>
+                    <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">{client.metadata.preferred_communication}</p>
                   </div>
                 )}
                 
                 <div>
-                  <label className="text-sm font-medium text-foreground">Last Updated</label>
-                  <p className="mt-1 text-sm text-foreground">
+                  <label className="text-sm font-medium text-white mb-2 block">Last Updated</label>
+                  <p className="text-sm text-slate-300 bg-slate-700 p-2 rounded border border-slate-600">
                     {new Date(client.updated_at).toLocaleDateString()}
                   </p>
                 </div>
@@ -364,12 +364,12 @@ export const ClientDetails = () => {
           </div>
 
           {client.metadata?.notes && (
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardHeader>
-                <CardTitle>Notes</CardTitle>
+                <CardTitle className="text-white">Notes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-foreground whitespace-pre-line">{client.metadata.notes}</p>
+                <p className="text-sm text-slate-300 bg-slate-700 p-3 rounded border border-slate-600 whitespace-pre-line">{client.metadata.notes}</p>
               </CardContent>
             </Card>
           )}
@@ -377,8 +377,8 @@ export const ClientDetails = () => {
 
         <TabsContent value="matters" className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-lg font-medium">Matters</h3>
-            <Button asChild>
+            <h3 className="text-lg font-medium text-white">Matters</h3>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
               <Link to={`/matters/new?client_id=${client.id}`}>
                 <Plus className="h-4 w-4 mr-2" />
                 New Matter
@@ -388,22 +388,22 @@ export const ClientDetails = () => {
 
           <div className="space-y-2">
             {matters.map((matter) => (
-              <Card key={matter.id}>
+              <Card key={matter.id} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3">
-                        <Archive className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                        <Archive className="h-5 w-5 text-orange-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-sm font-medium text-foreground truncate">
+                          <h4 className="text-sm font-medium text-white truncate">
                             <Link 
                               to={`/matters/${matter.id}`}
-                              className="hover:text-blue-600 transition-colors"
+                              className="hover:text-orange-400 transition-colors"
                             >
                               {matter.title}
                             </Link>
                           </h4>
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
+                          <div className="flex items-center space-x-4 text-xs text-slate-400 mt-1">
                             <span className="font-mono">{matter.matter_number}</span>
                             <span>{matter.matter_type.replace('_', ' ')}</span>
                             {matter.assigned_lawyer && (
@@ -416,10 +416,10 @@ export const ClientDetails = () => {
                     </div>
                     
                     <div className="flex items-center space-x-3 ml-4">
-                      <Badge className={getMatterStatusColor(matter.status)}>
-                        {matter.status.replace('_', ' ')}
+                      <Badge className={`${getMatterStatusColor(matter.status)} px-3 py-1 rounded-full`}>
+                        {matter.status.replace('_', ' ').toUpperCase()}
                       </Badge>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-slate-400">
                         {matter.document_count} docs
                       </div>
                     </div>
@@ -430,12 +430,12 @@ export const ClientDetails = () => {
           </div>
 
           {matters.length === 0 && (
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-12">
-                <Archive className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No matters</h3>
-                <p className="text-muted-foreground mb-4">Create the first matter for this client.</p>
-                <Button asChild>
+                <Archive className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No matters</h3>
+                <p className="text-slate-400 mb-4">Create the first matter for this client.</p>
+                <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
                   <Link to={`/matters/new?client_id=${client.id}`}>
                     <Plus className="h-4 w-4 mr-2" />
                     Create Matter
@@ -447,20 +447,20 @@ export const ClientDetails = () => {
         </TabsContent>
 
         <TabsContent value="documents" className="space-y-4">
-          <h3 className="text-lg font-medium">Recent Documents</h3>
+          <h3 className="text-lg font-medium text-white">Recent Documents</h3>
           
           <div className="space-y-2">
             {documents.slice(0, 10).map((doc) => (
-              <Card key={doc.id}>
+              <Card key={doc.id} className="bg-slate-800 border-slate-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3 flex-1 min-w-0">
-                      <FileText className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                      <FileText className="h-5 w-5 text-orange-400 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
+                        <p className="text-sm font-medium text-white truncate">
                           {doc.original_filename}
                         </p>
-                        <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
+                        <div className="flex items-center space-x-4 text-xs text-slate-400 mt-1">
                           <span>v{doc.version}</span>
                           <span>{formatFileSize(doc.file_size)}</span>
                           <span>{doc.matter.title} ({doc.matter.matter_number})</span>
@@ -472,7 +472,7 @@ export const ClientDetails = () => {
                     
                     <div className="flex items-center space-x-2 ml-4">
                       {doc.is_confidential && (
-                        <Badge variant="destructive" className="text-xs">
+                        <Badge className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
                           Confidential
                         </Badge>
                       )}
@@ -484,11 +484,11 @@ export const ClientDetails = () => {
           </div>
 
           {documents.length === 0 && (
-            <Card>
+            <Card className="bg-slate-800 border-slate-700">
               <CardContent className="text-center py-12">
-                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-foreground mb-2">No documents</h3>
-                <p className="text-muted-foreground">Documents will appear here when matters are created and documents are uploaded.</p>
+                <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-white mb-2">No documents</h3>
+                <p className="text-slate-400">Documents will appear here when matters are created and documents are uploaded.</p>
               </CardContent>
             </Card>
           )}

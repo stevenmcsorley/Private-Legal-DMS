@@ -198,11 +198,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   if (loading) {
     return (
-      <Card className={`w-full h-96 ${className}`}>
+      <Card className={`w-full h-96 bg-slate-800 border-slate-700 ${className}`}>
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading document...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+            <p className="text-slate-300">Loading document...</p>
           </div>
         </CardContent>
       </Card>
@@ -211,11 +211,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
   if (error) {
     return (
-      <Card className={`w-full h-96 ${className}`}>
+      <Card className={`w-full h-96 bg-slate-800 border-slate-700 ${className}`}>
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <p className="text-red-600 mb-2">{error}</p>
-            <Button onClick={fetchPreviewUrl} variant="outline">
+            <p className="text-red-400 mb-2">{error}</p>
+            <Button onClick={fetchPreviewUrl} variant="outline" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
               Retry
             </Button>
           </div>
@@ -225,10 +225,10 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   }
 
   return (
-    <Card className={`w-full ${className}`}>
+    <Card className={`w-full bg-slate-800 border-slate-700 ${className}`}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg font-medium truncate">{documentName}</CardTitle>
+          <CardTitle className="text-lg font-medium truncate text-white">{documentName}</CardTitle>
           <div className="flex items-center gap-2">
             {isPDF && (
               <>
@@ -238,6 +238,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   size="sm"
                   disabled={scale <= 0.5}
                   title="Zoom Out (Ctrl+-)"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
@@ -246,11 +247,11 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   variant="outline"
                   size="sm"
                   title="Fit to Width"
-                  className="px-2"
+                  className="px-2 border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
                   <span className="text-xs">Fit</span>
                 </Button>
-                <span className="text-sm font-medium min-w-[4rem] text-center">
+                <span className="text-sm font-medium min-w-[4rem] text-center text-white bg-slate-700 px-2 py-1 rounded border border-slate-600">
                   {Math.round(scale * 100)}%
                 </span>
                 <Button
@@ -259,16 +260,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   size="sm"
                   disabled={scale >= 3.0}
                   title="Zoom In (Ctrl++)"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
               </>
             )}
-            <Button onClick={downloadDocument} variant="outline" size="sm">
+            <Button onClick={downloadDocument} variant="outline" size="sm" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
               <Download className="h-4 w-4" />
             </Button>
             {onClose && (
-              <Button onClick={onClose} variant="outline" size="sm">
+              <Button onClick={onClose} variant="outline" size="sm" className="border-red-500 text-red-300 hover:bg-red-500 hover:text-white">
                 <X className="h-4 w-4" />
               </Button>
             )}
@@ -276,20 +278,20 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         </div>
         
         {isPDF && numPages > 0 && (
-          <div className="flex items-center justify-center gap-4 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-center gap-4 pt-3 border-t border-slate-600">
             <Button
               onClick={goToPrevPage}
               variant="outline"
               size="sm"
               disabled={pageNumber <= 1}
-              className="bg-white hover:bg-slate-50"
+              className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               title="Previous Page (Left Arrow)"
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
               Previous
             </Button>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-slate-600">Page</span>
+            <div className="flex items-center gap-2 bg-slate-700 px-3 py-2 rounded-lg border border-slate-600">
+              <span className="text-sm text-white font-medium">Page</span>
               <input
                 type="number"
                 min="1"
@@ -301,16 +303,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     setPageNumber(page);
                   }
                 }}
-                className="w-16 px-2 py-1 text-sm text-center border border-slate-300 rounded"
+                className="w-16 px-2 py-1 text-sm text-center bg-slate-600 border border-slate-500 rounded text-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               />
-              <span className="text-sm text-slate-600">of {numPages}</span>
+              <span className="text-sm text-slate-300">of</span>
+              <span className="text-sm text-white font-medium">{numPages}</span>
             </div>
             <Button
               onClick={goToNextPage}
               variant="outline"
               size="sm"
               disabled={pageNumber >= numPages}
-              className="bg-white hover:bg-slate-50"
+              className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
               title="Next Page (Right Arrow)"
             >
               Next
@@ -321,7 +324,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       </CardHeader>
       
       <CardContent>
-        <div className="border rounded-lg bg-white min-h-[600px] flex items-center justify-center overflow-auto">
+        <div className="border border-slate-600 rounded-lg bg-slate-900 min-h-[600px] flex items-center justify-center overflow-auto">
           {isPDF ? (
             <Document
               file={previewUrl}
@@ -334,8 +337,8 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               onLoadError={onDocumentLoadError}
               loading={
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-amber-500 mx-auto mb-2"></div>
-                  <p className="text-slate-600">Loading PDF...</p>
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                  <p className="text-slate-300">Loading PDF...</p>
                 </div>
               }
               className="flex flex-col items-center"
@@ -345,13 +348,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 scale={scale}
                 loading={
                   <div className="text-center p-8">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500 mx-auto mb-2"></div>
-                    <p className="text-slate-600">Loading page...</p>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-500 mx-auto mb-2"></div>
+                    <p className="text-slate-300">Loading page...</p>
                   </div>
                 }
                 renderTextLayer={false}
                 renderAnnotationLayer={false}
-                className="border border-gray-200 shadow-sm"
+                className="border border-slate-600 shadow-lg bg-white"
               />
             </Document>
           ) : mimeType.startsWith('image/') ? (
@@ -363,9 +366,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             />
           ) : (
             <div className="text-center p-8">
-              <p className="text-gray-600 mb-4">Preview not available for this file type</p>
-              <p className="text-sm text-gray-500 mb-4">File type: {mimeType}</p>
-              <Button onClick={downloadDocument}>
+              <p className="text-slate-300 mb-4">Preview not available for this file type</p>
+              <p className="text-sm text-slate-400 mb-4">File type: {mimeType}</p>
+              <Button onClick={downloadDocument} className="bg-orange-600 hover:bg-orange-700 text-white">
                 <Download className="h-4 w-4 mr-2" />
                 Download to view
               </Button>

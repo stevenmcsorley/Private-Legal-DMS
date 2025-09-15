@@ -86,11 +86,11 @@ export const MatterList = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
-      case 'closed': return 'bg-gray-100 text-gray-800';
-      case 'on_hold': return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'active': return 'bg-green-600 text-white border-green-500';
+      case 'closed': return 'bg-slate-600 text-white border-slate-500';
+      case 'on_hold': return 'bg-yellow-600 text-white border-yellow-500';
+      case 'cancelled': return 'bg-red-600 text-white border-red-500';
+      default: return 'bg-slate-600 text-white border-slate-500';
     }
   };
 
@@ -99,8 +99,8 @@ export const MatterList = () => {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading matters...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-2 text-slate-300">Loading matters...</p>
         </div>
       </div>
     );
@@ -111,10 +111,10 @@ export const MatterList = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Matters</h1>
-          <p className="text-gray-600">Manage legal matters and cases</p>
+          <h1 className="text-2xl font-bold text-white">Matters</h1>
+          <p className="text-slate-400">Manage legal matters and cases</p>
         </div>
-        <Button asChild>
+        <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
           <Link to="/matters/new">
             <Plus className="h-4 w-4 mr-2" />
             New Matter
@@ -123,12 +123,12 @@ export const MatterList = () => {
       </div>
 
       {/* Filters */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="md:col-span-2">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search matters..."
                   value={searchTerm}
@@ -179,27 +179,27 @@ export const MatterList = () => {
       </Card>
 
       {/* Results Count */}
-      <div className="flex items-center text-sm text-gray-600">
-        <Filter className="h-4 w-4 mr-2" />
+      <div className="flex items-center text-sm text-slate-300">
+        <Filter className="h-4 w-4 mr-2 text-orange-400" />
         Showing {filteredMatters.length} of {matters.length} matters
       </div>
 
       {/* Matters Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredMatters.map((matter) => (
-          <Card key={matter.id} className="hover:shadow-lg transition-shadow">
+          <Card key={matter.id} className="bg-slate-800 border-slate-700 hover:bg-slate-750 hover:border-slate-600 transition-all duration-200">
             <CardHeader className="pb-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg truncate">
                     <Link 
                       to={`/matters/${matter.id}`}
-                      className="hover:text-blue-600 transition-colors"
+                      className="text-white hover:text-orange-400 transition-colors"
                     >
                       {matter.title}
                     </Link>
                   </CardTitle>
-                  <p className="text-sm text-gray-600 font-mono">
+                  <p className="text-sm text-slate-400 font-mono">
                     {matter.id.slice(0, 8)}...
                   </p>
                 </div>
@@ -209,10 +209,10 @@ export const MatterList = () => {
               </div>
               
               <div className="flex flex-wrap gap-2 mt-2">
-                <Badge className={getStatusColor(matter.status)}>
-                  {matter.status.replace('_', ' ')}
+                <Badge className={`${getStatusColor(matter.status)} px-3 py-1 rounded-full`}>
+                  {matter.status.replace('_', ' ').toUpperCase()}
                 </Badge>
-                <Badge variant="outline">
+                <Badge variant="outline" className="border-slate-500 text-slate-300">
                   Security Level {matter.security_class}
                 </Badge>
               </div>
@@ -221,33 +221,33 @@ export const MatterList = () => {
             <CardContent>
               <div className="space-y-3">
                 {matter.description && (
-                  <p className="text-sm text-gray-700 line-clamp-2">
+                  <p className="text-sm text-slate-300 line-clamp-2">
                     {matter.description}
                   </p>
                 )}
                 
-                <div className="flex items-center text-sm text-gray-600">
-                  <User className="h-4 w-4 mr-2" />
+                <div className="flex items-center text-sm text-slate-300">
+                  <User className="h-4 w-4 mr-2 text-orange-400" />
                   <span className="truncate">{matter.client?.name || 'Unknown Client'}</span>
                 </div>
                 
                 {matter.created_by_user && (
-                  <div className="flex items-center text-sm text-gray-600">
-                    <User className="h-4 w-4 mr-2" />
+                  <div className="flex items-center text-sm text-slate-300">
+                    <User className="h-4 w-4 mr-2 text-orange-400" />
                     <span className="truncate">
                       Created by: {matter.created_by_user.display_name}
                     </span>
                   </div>
                 )}
                 
-                <div className="flex items-center justify-between text-sm text-gray-600">
+                <div className="flex items-center justify-between text-sm text-slate-400">
                   <div className="flex items-center">
-                    <FileText className="h-4 w-4 mr-1" />
+                    <FileText className="h-4 w-4 mr-1 text-slate-500" />
                     <span>Documents</span>
                   </div>
                   
                   <div className="flex items-center">
-                    <Clock className="h-4 w-4 mr-1" />
+                    <Clock className="h-4 w-4 mr-1 text-slate-500" />
                     <span>{new Date(matter.updated_at).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -258,16 +258,16 @@ export const MatterList = () => {
       </div>
 
       {filteredMatters.length === 0 && (
-        <Card>
+        <Card className="bg-slate-800 border-slate-700">
           <CardContent className="text-center py-12">
-            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No matters found</h3>
-            <p className="text-gray-600 mb-4">
+            <FileText className="h-12 w-12 text-slate-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-white mb-2">No matters found</h3>
+            <p className="text-slate-400 mb-4">
               {searchTerm || statusFilter !== 'all' || typeFilter !== 'all' || priorityFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : 'Get started by creating your first matter.'}
             </p>
-            <Button asChild>
+            <Button className="bg-orange-600 hover:bg-orange-700 text-white" asChild>
               <Link to="/matters/new">
                 <Plus className="h-4 w-4 mr-2" />
                 Create Matter
