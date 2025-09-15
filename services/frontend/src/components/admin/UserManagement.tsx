@@ -179,26 +179,30 @@ export const UserManagement = () => {
     setIsCreating(true);
     
     try {
+      console.log('Creating user with firmId:', currentUser.firmId);
+      const requestBody = {
+        email: createUserForm.email,
+        display_name: createUserForm.display_name,
+        roles: createUserForm.roles,
+        is_active: createUserForm.is_active,
+        firm_id: currentUser.firmId,
+        attributes: {
+          first_name: createUserForm.first_name,
+          last_name: createUserForm.last_name,
+          job_title: createUserForm.job_title,
+          department: createUserForm.department,
+          phone: createUserForm.phone,
+        }
+      };
+      console.log('Request body:', requestBody);
+      
       const response = await fetch('/api/admin/users', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({
-          email: createUserForm.email,
-          display_name: createUserForm.display_name,
-          roles: createUserForm.roles,
-          is_active: createUserForm.is_active,
-          firm_id: currentUser.firmId,
-          attributes: {
-            first_name: createUserForm.first_name,
-            last_name: createUserForm.last_name,
-            job_title: createUserForm.job_title,
-            department: createUserForm.department,
-            phone: createUserForm.phone,
-          }
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {

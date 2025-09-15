@@ -195,7 +195,11 @@ export const TeamManagement = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(editTeamForm),
+        body: JSON.stringify({
+          name: editTeamForm.name,
+          description: editTeamForm.description,
+          member_ids: editTeamForm.initial_member_ids,
+        }),
       });
 
       if (response.ok) {

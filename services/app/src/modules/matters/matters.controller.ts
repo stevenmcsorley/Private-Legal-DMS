@@ -251,7 +251,13 @@ export class MattersController {
     @Body() addTeamMemberDto: AddTeamMemberDto,
     @CurrentUser() user: UserInfo,
   ): Promise<TeamMemberResponseDto> {
-    return this.mattersService.addTeamMember(id, addTeamMemberDto, user);
+    console.log('addTeamMember called with:', { id, addTeamMemberDto, user: user.sub });
+    try {
+      return await this.mattersService.addTeamMember(id, addTeamMemberDto, user);
+    } catch (error) {
+      console.error('addTeamMember error:', error);
+      throw error;
+    }
   }
 
   @Delete(':id/team/:teamMemberId')

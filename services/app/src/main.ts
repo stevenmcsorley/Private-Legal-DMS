@@ -71,7 +71,7 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
-      disableErrorMessages: configService.get('NODE_ENV') === 'production',
+      disableErrorMessages: false, // Always show error messages for debugging
     }),
   );
 

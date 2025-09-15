@@ -93,7 +93,13 @@ export class AdminController {
     @Body() createUserDto: CreateUserDto,
     @CurrentUser() user: UserInfo,
   ) {
-    return this.adminService.createUser(createUserDto, user);
+    console.log('createUser called with:', { createUserDto, user: user.sub });
+    try {
+      return await this.adminService.createUser(createUserDto, user);
+    } catch (error) {
+      console.error('createUser error:', error);
+      throw error;
+    }
   }
 
   @Put('users/:id')

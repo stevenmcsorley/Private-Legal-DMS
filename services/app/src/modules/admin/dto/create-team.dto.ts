@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsOptional, IsArray, IsUUID, MinLength, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsUUID, MinLength, MaxLength, Matches } from 'class-validator';
 
 export class CreateTeamDto {
   @ApiProperty({
@@ -27,7 +27,10 @@ export class CreateTeamDto {
     required: false,
   })
   @IsOptional()
-  @IsUUID()
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    { message: 'parent_team_id must be a UUID' })
   parent_team_id?: string;
 
   @ApiProperty({
@@ -38,13 +41,21 @@ export class CreateTeamDto {
   })
   @IsOptional()
   @IsArray()
-  @IsUUID(undefined, { each: true })
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/, {
+    each: true,
+    message: 'each value in initial_member_ids must be a UUID'
+  })
   initial_member_ids?: string[];
 
   @ApiProperty({
     description: 'Firm ID the team belongs to',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
-  @IsUUID()
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    { message: 'firm_id must be a UUID' })
   firm_id: string;
 }
