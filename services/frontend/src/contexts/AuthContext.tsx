@@ -22,6 +22,12 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (role: string) => boolean;
   hasAnyRole: (roles: string[]) => boolean;
+  // Permission helpers
+  isAdmin: () => boolean;
+  canManageUsers: () => boolean;
+  canAccessAdmin: () => boolean;
+  canManageDocuments: () => boolean;
+  canManageMatters: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,6 +104,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return roles.some(role => hasRole(role));
   };
 
+  // Permission helpers
+  const isAdmin = (): boolean => {
+    return hasAnyRole(['super_admin', 'firm_admin']);
+  };
+
+  const canManageUsers = (): boolean => {
+    return hasAnyRole(['super_admin', 'firm_admin']);
+  };
+
+  const canAccessAdmin = (): boolean => {
+    return hasAnyRole(['super_admin', 'firm_admin', 'legal_manager']);
+  };
+
+  const canManageDocuments = (): boolean => {
+    return hasAnyRole(['super_admin', 'firm_admin', 'legal_manager', 'legal_professional']);
+  };
+
+  const canManageMatters = (): boolean => {
+    return hasAnyRole(['super_admin', 'firm_admin', 'legal_manager', 'legal_professional']);
+  };
+
   const isAuthenticated = !!user;
 
   useEffect(() => {
@@ -112,6 +139,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     hasRole,
     hasAnyRole,
+    isAdmin,
+    canManageUsers,
+    canAccessAdmin,
+    canManageDocuments,
+    canManageMatters,
   };
 
   return (

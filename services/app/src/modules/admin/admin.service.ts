@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull, In } from 'typeorm';
-import { User, Firm, Role, Team, RetentionClass, Document, Matter, Client, AuditLog } from '../../common/entities';
+import { User, Firm, Team, RetentionClass, Document, Matter, Client, AuditLog } from '../../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -50,8 +50,6 @@ export class AdminService {
     private userRepository: Repository<User>,
     @InjectRepository(Firm)
     private firmRepository: Repository<Firm>,
-    @InjectRepository(Role)
-    private roleRepository: Repository<Role>,
     @InjectRepository(Team)
     private teamRepository: Repository<Team>,
     @InjectRepository(RetentionClass)
@@ -282,18 +280,21 @@ export class AdminService {
   }
 
   // Role Management
-  async getRoles(): Promise<Role[]> {
-    return await this.roleRepository.find({
-      where: { is_active: true },
-      order: { hierarchy_level: 'ASC' },
-    });
+  async getRoles(): Promise<{name: string; description: string}[]> {
+    // Return hardcoded roles that match Keycloak configuration
+    return [
+      { name: 'super_admin', description: 'System-wide super administrator' },
+      { name: 'firm_admin', description: 'Firm administrator' },
+      { name: 'legal_manager', description: 'Legal manager' },
+      { name: 'legal_professional', description: 'Legal professional (lawyer)' },
+      { name: 'client_user', description: 'Client portal user' },
+      { name: 'external_partner', description: 'External partner from another firm' },
+      { name: 'support_staff', description: 'Support staff' },
+    ];
   }
 
   async validateRoles(roleNames: string[]): Promise<void> {
-    const validRoles = await this.roleRepository.find({
-      where: { is_active: true },
-      select: ['name'],
-    });
+    const validRoles = await this.getRoles();
     const validRoleNames = validRoles.map(r => r.name);
     const invalidRoles = roleNames.filter(role => !validRoleNames.includes(role));
     
