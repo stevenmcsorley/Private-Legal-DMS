@@ -7,7 +7,7 @@ import { User } from '../common/entities/user.entity';
 import * as crypto from 'crypto';
 
 export interface UserInfo {
-  sub: string;
+  sub: string; // Database user ID (not Keycloak ID) - used for foreign key references
   email: string;
   preferred_username: string;
   given_name?: string;
@@ -68,9 +68,43 @@ export class AuthService {
         }
       }
 
+      // If still no user found, auto-create one from Keycloak data
+      this.logger.debug(`User lookup result: user=${!!user}, payload.email=${payload.email}, payload.sub=${payload.sub}`);
+      
+      if (!user && payload.email) {
+        this.logger.log(`Auto-creating user from Keycloak data: ${payload.email}`);
+        
+        const extractedRoles = this.extractRoles(payload);
+        const mappedFirmId = this.mapFirmId(payload.firm_id as string);
+        
+        this.logger.debug(`Creating user with roles: ${JSON.stringify(extractedRoles)}, firm_id: ${mappedFirmId}`);
+        
+        user = this.userRepository.create({
+          id: payload.sub, // Use Keycloak sub as the user ID
+          keycloak_id: payload.sub,
+          email: payload.email,
+          display_name: payload.name || payload.preferred_username || payload.email,
+          roles: extractedRoles,
+          firm_id: mappedFirmId,
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date(),
+        });
+        
+        try {
+          user = await this.userRepository.save(user);
+          this.logger.log(`Successfully created user ${user.email} with ID ${user.id}`);
+        } catch (error) {
+          this.logger.error(`Failed to create user ${payload.email}:`, error);
+          // Continue with the request, user info will still be available from JWT
+        }
+      } else if (!user) {
+        this.logger.warn(`Cannot auto-create user: no email in payload. Payload: ${JSON.stringify({sub: payload.sub, email: payload.email, name: payload.name})}`);
+      }
+
       // Extract user information from JWT payload and database
       const userInfo: UserInfo = {
-        sub: payload.sub as string,
+        sub: user?.id || payload.sub as string, // Use database user ID when available, fallback to Keycloak ID
         email: payload.email as string,
         preferred_username: payload.preferred_username as string,
         given_name: payload.given_name as string,

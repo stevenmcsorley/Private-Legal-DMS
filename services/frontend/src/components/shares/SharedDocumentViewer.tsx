@@ -166,11 +166,11 @@ export const SharedDocumentViewer: React.FC = () => {
 
   if (loading) {
     return (
-      <Card className="w-full h-96">
+      <Card className="w-full h-96 bg-slate-800 border-slate-700">
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-            <p className="text-gray-600">Loading shared document...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+            <p className="text-slate-300">Loading shared document...</p>
           </div>
         </CardContent>
       </Card>
@@ -179,12 +179,12 @@ export const SharedDocumentViewer: React.FC = () => {
 
   if (error) {
     return (
-      <Card className="w-full h-96">
+      <Card className="w-full h-96 bg-slate-800 border-slate-700">
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
-            <p className="text-red-600 mb-2">{error}</p>
-            <Button onClick={() => navigate(-1)} variant="outline">
+            <AlertTriangle className="h-12 w-12 text-red-400 mx-auto mb-4" />
+            <p className="text-red-400 mb-2">{error}</p>
+            <Button onClick={() => navigate(-1)} variant="outline" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Go Back
             </Button>
@@ -196,11 +196,11 @@ export const SharedDocumentViewer: React.FC = () => {
 
   if (!document || !shareInfo) {
     return (
-      <Card className="w-full h-96">
+      <Card className="w-full h-96 bg-slate-800 border-slate-700">
         <CardContent className="flex items-center justify-center h-full">
           <div className="text-center">
-            <p className="text-gray-600">Document not found</p>
-            <Button onClick={() => navigate(-1)} variant="outline" className="mt-4">
+            <p className="text-slate-300">Document not found</p>
+            <Button onClick={() => navigate(-1)} variant="outline" className="mt-4 border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Go Back
             </Button>
@@ -213,7 +213,7 @@ export const SharedDocumentViewer: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header with share info */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -221,31 +221,32 @@ export const SharedDocumentViewer: React.FC = () => {
                 variant="outline" 
                 size="sm" 
                 onClick={() => navigate(-1)}
+                className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
               <div>
-                <CardTitle className="flex items-center">
-                  <Building className="h-5 w-5 mr-2" />
+                <CardTitle className="flex items-center text-white">
+                  <Building className="h-5 w-5 mr-2 text-orange-400" />
                   Cross-Firm Shared Document
                 </CardTitle>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-slate-400 mt-1">
                   Shared by {shareInfo.shared_by_firm_name} with {shareInfo.shared_with_firm_name}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center space-x-2">
-              <Badge variant={shareInfo.status === 'active' ? 'default' : 'secondary'}>
-                {shareInfo.status}
+              <Badge className={shareInfo.status === 'active' ? 'bg-green-600 text-white border-green-500' : 'bg-slate-600 text-white border-slate-500'} variant="outline">
+                {shareInfo.status.toUpperCase()}
               </Badge>
-              <Badge variant="outline" className="flex items-center">
+              <Badge variant="outline" className="flex items-center border-orange-500 text-orange-300">
                 <Shield className="h-3 w-3 mr-1" />
-                {shareInfo.role}
+                {shareInfo.role.replace('_', ' ').toUpperCase()}
               </Badge>
               {document.isWatermarked && (
-                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                <Badge variant="outline" className="bg-blue-600 text-white border-blue-500">
                   <Shield className="h-3 w-3 mr-1" />
                   Watermarked
                 </Badge>
@@ -256,16 +257,16 @@ export const SharedDocumentViewer: React.FC = () => {
       </Card>
 
       {/* Document info */}
-      <Card>
+      <Card className="bg-slate-800 border-slate-700">
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
+              <div className="h-12 w-12 bg-orange-600 rounded-lg flex items-center justify-center">
                 📄
               </div>
               <div>
-                <h3 className="font-medium">{document.original_filename}</h3>
-                <div className="flex items-center space-x-4 text-sm text-gray-600">
+                <h3 className="font-medium text-white">{document.original_filename}</h3>
+                <div className="flex items-center space-x-4 text-sm text-slate-400">
                   <span>{formatFileSize(document.file_size)}</span>
                   <span>•</span>
                   <span>{document.matter.title} ({document.matter.matter_number})</span>
@@ -276,7 +277,7 @@ export const SharedDocumentViewer: React.FC = () => {
             </div>
             
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={downloadDocument}>
+              <Button variant="outline" size="sm" onClick={downloadDocument} className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
                 <Download className="h-4 w-4 mr-2" />
                 Download
               </Button>
@@ -287,13 +288,13 @@ export const SharedDocumentViewer: React.FC = () => {
 
       {/* Security notice for watermarked documents */}
       {document.isWatermarked && (
-        <Card className="border-blue-200 bg-blue-50">
+        <Card className="border-blue-600 bg-blue-600/10">
           <CardContent className="pt-6">
             <div className="flex items-start space-x-3">
-              <Shield className="h-5 w-5 text-blue-600 mt-0.5" />
+              <Shield className="h-5 w-5 text-blue-400 mt-0.5" />
               <div>
-                <h4 className="font-medium text-blue-900">Watermarked Document</h4>
-                <p className="text-sm text-blue-700 mt-1">
+                <h4 className="font-medium text-blue-300">Watermarked Document</h4>
+                <p className="text-sm text-blue-200 mt-1">
                   This document contains watermarks identifying the sharing firm and recipient. 
                   All access is logged and monitored for security compliance.
                 </p>
