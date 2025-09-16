@@ -345,6 +345,8 @@ export class ClientPortalController {
       confidential: false,
       privileged: false,
       work_product: false,
+      uploaded_by_type: 'client' as const,
+      uploaded_by_user_id: user.sub,
     };
 
     return this.documentsService.uploadDocument(serviceFile, clientUploadDto, user);

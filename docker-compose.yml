@@ -80,6 +80,7 @@ services:
       MINIO_SECRET_KEY: minio123
       MINIO_USE_SSL: "false"
       OPA_URL: http://opa:8181/v1/data/dms/authz
+      OPA_POLICY_PACKAGE: dms/authz
       KEYCLOAK_ISSUER: http://keycloak:8080/realms/dms
       KEYCLOAK_CLIENT_ID: dms-app
       KEYCLOAK_CLIENT_SECRET: dev-secret

@@ -127,6 +127,17 @@ export class DocumentResponseDto {
   @Expose()
   preview_url?: string;
 
+  @ApiProperty({ 
+    description: 'Type of user who uploaded the document',
+    enum: ['client', 'legal_staff']
+  })
+  @Expose()
+  uploaded_by_type: 'client' | 'legal_staff';
+
+  @ApiProperty({ description: 'User ID who uploaded the document', required: false })
+  @Expose()
+  uploaded_by_user_id?: string;
+
   // Exclude internal data
   @Exclude()
   object_key: string;

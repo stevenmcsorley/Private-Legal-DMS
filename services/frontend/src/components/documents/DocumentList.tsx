@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Upload, FileText, Eye, Download, Calendar, Tag, AlertTriangle } from 'lucide-react';
+import { Search, Filter, Upload, FileText, Eye, Download, Calendar, Tag, AlertTriangle, User } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
@@ -43,6 +43,8 @@ interface Document {
   title?: string;
   description?: string;
   metadata?: DocumentMeta;
+  uploaded_by_type: 'client' | 'legal_staff';
+  uploaded_by_user_id?: string;
   matter?: {
     id: string;
     title: string;
@@ -69,6 +71,7 @@ interface DocumentQuery {
   tags?: string[];
   confidential?: boolean;
   legal_hold?: boolean;
+  uploaded_by_type?: string;
 }
 
 interface DocumentListProps {
@@ -100,6 +103,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const [showConfidential, setShowConfidential] = useState<boolean | null>(null);
   const [showLegalHold, setShowLegalHold] = useState<boolean | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [uploadType, setUploadType] = useState<string>('');
   
   // Filter panel
   const [showFilters, setShowFilters] = useState<boolean>(false);
@@ -112,7 +116,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
   useEffect(() => {
     fetchDocuments();
-  }, [currentPage, matterId, clientId, searchTerm, documentType, showConfidential, showLegalHold, selectedTags]);
+  }, [currentPage, matterId, clientId, searchTerm, documentType, showConfidential, showLegalHold, selectedTags, uploadType]);
 
   const fetchDocuments = async () => {
     try {
@@ -128,6 +132,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         ...(selectedTags.length > 0 && { tags: selectedTags }),
         ...(showConfidential !== null && { confidential: showConfidential }),
         ...(showLegalHold !== null && { legal_hold: showLegalHold }),
+        ...(uploadType && { uploaded_by_type: uploadType }),
       };
 
       const queryParams = new URLSearchParams();
@@ -235,6 +240,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     setShowConfidential(null);
     setShowLegalHold(null);
     setSelectedTags([]);
+    setUploadType('');
     setCurrentPage(1);
   };
 
@@ -381,7 +387,7 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
         {/* Filters Panel */}
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 p-4 bg-slate-900 rounded-lg border border-slate-800">
             <div>
               <label className="block text-sm font-medium mb-2">Document Type</label>
               <Select value={documentType} onValueChange={setDocumentType}>
@@ -395,6 +401,20 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   <SelectItem value="memo">Memo</SelectItem>
                   <SelectItem value="correspondence">Correspondence</SelectItem>
                   <SelectItem value="filing">Filing</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-2">Upload Source</label>
+              <Select value={uploadType} onValueChange={setUploadType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All uploads" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">All uploads</SelectItem>
+                  <SelectItem value="client">Client uploads</SelectItem>
+                  <SelectItem value="legal_staff">Legal staff uploads</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -469,6 +489,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                       {document.metadata?.confidential && (
                         <Badge variant="secondary" className="text-xs">
                           Confidential
+                        </Badge>
+                      )}
+                      {document.uploaded_by_type === 'client' && (
+                        <Badge variant="outline" className="text-xs bg-blue-600/20 text-blue-300 border-blue-500">
+                          <User className="h-3 w-3 mr-1" />
+                          Client Upload
                         </Badge>
                       )}
                     </div>

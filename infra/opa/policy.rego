@@ -52,6 +52,14 @@ allow if {
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
+# Document listing (when no specific firm_id in resource)
+allow if {
+    input.resource.type == "document"
+    input.action in ["read", "list"]
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
+}
+
 # Document access rules (cross-firm access)
 allow if {
     input.resource.type == "document"
@@ -69,6 +77,13 @@ allow if {
     
     # Client can access documents in matters they're assigned to
     input.user.id in input.resource.client_ids
+}
+
+# Allow client users to list documents (service layer will filter)
+allow if {
+    input.resource.type == "document"
+    input.action in ["read", "list"]
+    "client_user" in input.user.roles
 }
 
 # Document upload permissions
@@ -113,6 +128,14 @@ allow if {
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
+# Matter listing (when no specific firm_id in resource)
+allow if {
+    input.resource.type == "matter"
+    input.action in ["read", "list"]
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
+}
+
 # Matter management
 allow if {
     input.resource.type == "matter"
@@ -127,6 +150,13 @@ allow if {
     input.action in ["read"]
     "client_user" in input.user.roles
     input.user.id in input.resource.client_ids
+}
+
+# Allow client users to list matters (service layer will filter)
+allow if {
+    input.resource.type == "matter"
+    input.action in ["read", "list"]
+    "client_user" in input.user.roles
 }
 
 # Client management
@@ -247,6 +277,20 @@ allow if {
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
+# Client portal access
+allow if {
+    input.resource.type == "client_portal"
+    input.action == "read"
+    "client_user" in input.user.roles
+}
+
+# Client portal document upload
+allow if {
+    input.resource.type == "client_portal"
+    input.action == "write"
+    "client_user" in input.user.roles
+}
+
 # System administration
 allow if {
     input.resource.type in ["system", "retention_class", "legal_hold_policy"]
@@ -259,6 +303,14 @@ allow if {
     input.action in ["create", "update", "read", "list", "delete"]
     firm_access_allowed
     "firm_admin" in input.user.roles
+}
+
+# Admin resource access for firm admins
+allow if {
+    input.resource.type == "admin"
+    input.action in ["read", "list"]
+    "firm_admin" in input.user.roles
+    input.user.attrs.firm_id != "system"
 }
 
 # Generate decision (simple)

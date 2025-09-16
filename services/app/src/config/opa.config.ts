@@ -14,7 +14,7 @@ export class OpaConfig {
   }
 
   get policyPackage(): string {
-    return this.configService.get('OPA_POLICY_PACKAGE', 'dms.authz');
+    return this.configService.get('OPA_POLICY_PACKAGE', 'dms/authz');
   }
 
   get enabled(): boolean {

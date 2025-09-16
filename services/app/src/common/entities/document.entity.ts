@@ -80,6 +80,12 @@ export class Document {
   @Column({ type: 'boolean', default: false })
   is_deleted: boolean;
 
+  @Column({ type: 'varchar', length: 20, default: 'legal_staff' })
+  uploaded_by_type: 'client' | 'legal_staff';
+
+  @Column('uuid', { nullable: true })
+  uploaded_by_user_id: string;
+
   // Relations
   @ManyToOne(() => Firm, firm => firm.documents, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'firm_id' })

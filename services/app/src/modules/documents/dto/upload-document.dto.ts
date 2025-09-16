@@ -124,4 +124,21 @@ export class UploadDocumentDto {
   })
   @IsOptional()
   custom_fields?: Record<string, any>;
+
+  @ApiPropertyOptional({
+    description: 'Type of user who uploaded the document',
+    enum: ['client', 'legal_staff'],
+    default: 'legal_staff',
+  })
+  @IsOptional()
+  @IsString()
+  uploaded_by_type?: 'client' | 'legal_staff';
+
+  @ApiPropertyOptional({
+    description: 'User ID who uploaded the document',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+  })
+  @IsOptional()
+  @IsUUID()
+  uploaded_by_user_id?: string;
 }

@@ -26,9 +26,8 @@ export class OpaService {
   constructor(private opaConfig: OpaConfig) {}
 
   async authorize(request: AuthzRequest): Promise<AuthzResponse> {
-    // Temporarily disable OPA and use fallback for immediate fix
-    // TODO: Re-enable OPA after fixing configuration
-    if (true || !this.opaConfig.enabled) {
+    // Use OPA when enabled, fallback otherwise
+    if (!this.opaConfig.enabled) {
       // When OPA is disabled, use basic role-based fallback
       return this.basicAuthzFallback(request);
     }
@@ -58,7 +57,7 @@ export class OpaService {
       const timeoutId = setTimeout(() => controller.abort(), this.opaConfig.timeout);
       
       const response = await fetch(
-        `${this.opaConfig.queryEndpoint}/${this.opaConfig.policyPackage}/allow`,
+        `${this.opaConfig.queryEndpoint}/${this.opaConfig.policyPackage}/decision`,
         {
           method: 'POST',
           headers: {
@@ -78,10 +77,12 @@ export class OpaService {
 
       const result = await response.json() as any;
       
+      // Handle the decision endpoint response format: {"result": {"allow": true, "reason": "..."}}
+      const decision = result.result || {};
       return {
-        allowed: result.result === true,
-        reason: result.reason,
-        obligations: result.obligations,
+        allowed: decision.allow === true,
+        reason: decision.reason,
+        obligations: decision.obligations,
       };
     } catch (error) {
       this.logger.error('OPA authorization failed:', error);
@@ -189,6 +190,10 @@ export class OpaService {
       case 'update':
         if (user.roles.some(role => ['support_staff'].includes(role))) {
           return { allowed: true, reason: 'Write access granted' };
+        }
+        // Allow client users to write to client portal
+        if (resource.type === 'client_portal' && user.roles.includes('client_user')) {
+          return { allowed: true, reason: 'Client portal write access granted' };
         }
         break;
         

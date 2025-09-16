@@ -137,6 +137,8 @@ export class DocumentsService {
         legal_hold: false,
         created_by: user.sub,
         is_deleted: false,
+        uploaded_by_type: uploadDto.uploaded_by_type || 'legal_staff',
+        uploaded_by_user_id: uploadDto.uploaded_by_user_id || user.sub,
       });
 
       const savedDocument = await this.documentRepository.save(document);
@@ -472,6 +474,8 @@ export class DocumentsService {
       created_at: document.created_at,
       updated_at: document.updated_at,
       download_url: options.downloadUrl,
+      uploaded_by_type: document.uploaded_by_type,
+      uploaded_by_user_id: document.uploaded_by_user_id,
     });
 
     // Add metadata if available
