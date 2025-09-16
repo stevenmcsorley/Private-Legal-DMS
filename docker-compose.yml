@@ -289,7 +289,9 @@ services:
   onlyoffice:
     image: onlyoffice/documentserver:8.2
     environment:
-      JWT_ENABLED: "false"  # Disabled for development
+      JWT_ENABLED: "true"
+      JWT_SECRET: "01PmN463rIix2zANSLceDUs6cxqHU35N"
+      JWT_HEADER: "AuthorizationJWT"  # Custom header to avoid conflicts
     ports:
       - "8082:80"
     volumes:

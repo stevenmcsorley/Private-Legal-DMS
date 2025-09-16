@@ -152,6 +152,16 @@ export class MinioService implements OnModuleInit {
     }
   }
 
+  async getObjectStream(objectKey: string): Promise<any> {
+    try {
+      const bucketName = this.minioConfig.bucketName;
+      return await this.getClient().getObject(bucketName, objectKey);
+    } catch (error) {
+      this.logger.error(`Failed to get object stream ${objectKey}:`, error);
+      throw error;
+    }
+  }
+
   async getFileInfo(objectKey: string): Promise<ObjectInfo> {
     try {
       const bucketName = this.minioConfig.bucketName;

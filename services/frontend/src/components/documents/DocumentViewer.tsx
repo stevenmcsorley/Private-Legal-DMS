@@ -32,6 +32,23 @@ interface DocumentViewerProps {
   downloadUrl?: string; // Optional custom download URL for watermarked documents
 }
 
+// Helper function to determine document type
+const getDocumentType = (mimeType: string): 'pdf' | 'office' | 'image' | 'unsupported' => {
+  if (mimeType === 'application/pdf') return 'pdf';
+  
+  if (mimeType.includes('officedocument') || 
+      mimeType.includes('msword') ||
+      mimeType.includes('ms-excel') ||
+      mimeType.includes('ms-powerpoint') ||
+      mimeType.includes('vnd.oasis.opendocument')) {
+    return 'office';
+  }
+  
+  if (mimeType.startsWith('image/')) return 'image';
+  
+  return 'unsupported';
+};
+
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   documentId,
   documentName,
@@ -48,7 +65,9 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
-  const isPDF = mimeType === 'application/pdf';
+  const [onlyOfficeUrl, setOnlyOfficeUrl] = useState<string>('');
+  
+  const documentType = getDocumentType(mimeType);
 
   useEffect(() => {
     // Reset to initial load state when document changes
@@ -59,15 +78,17 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       // Use custom preview URL directly (for watermarked documents)
       setPreviewUrl(customPreviewUrl);
       setLoading(false);
+    } else if (documentType === 'office') {
+      fetchOnlyOfficeUrl();
     } else {
       fetchPreviewUrl();
     }
-  }, [documentId, customPreviewUrl]);
+  }, [documentId, customPreviewUrl, documentType]);
 
   // Add keyboard navigation
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (!isPDF || numPages === 0) return;
+      if (documentType !== 'pdf' || numPages === 0) return;
       
       switch (event.key) {
         case 'ArrowLeft':
@@ -93,7 +114,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isPDF, numPages, pageNumber]);
+  }, [documentType, numPages, pageNumber]);
 
   const fetchPreviewUrl = async () => {
     try {
@@ -119,6 +140,96 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchOnlyOfficeUrl = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/documents/${documentId}/onlyoffice-url`, {
+        credentials: 'include',
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch OnlyOffice configuration');
+      }
+      
+      const data = await response.json();
+      
+      console.log('OnlyOffice response data:', data);
+      
+      // Use the config object from the response
+      if (data.config) {
+        console.log('Initializing OnlyOffice with config:', data.config);
+        initializeOnlyOffice(data.config);
+      } else {
+        console.error('No config found in OnlyOffice response');
+        throw new Error('Invalid OnlyOffice configuration response');
+      }
+    } catch (error) {
+      console.error('Error fetching OnlyOffice configuration:', error);
+      setError('Failed to load document for editing');
+      toast({
+        title: 'Error',
+        description: 'Failed to load document for editing',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const initializeOnlyOffice = (config: any) => {
+    console.log('Initializing OnlyOffice with config:', config);
+    
+    // Load OnlyOffice Document API script
+    const script = document.createElement('script');
+    script.src = `http://localhost:8082/web-apps/apps/api/documents/api.js`;
+    
+    console.log('Loading OnlyOffice API from:', script.src);
+    
+    script.onload = () => {
+      console.log('OnlyOffice API script loaded');
+      if ((window as any).DocsAPI) {
+        console.log('DocsAPI is available, initializing editor...');
+        const editorId = `onlyoffice-editor-${documentId}`;
+        
+        // Set state first to trigger re-render, then initialize OnlyOffice
+        setOnlyOfficeUrl('api-loaded');
+        
+        // Use setTimeout to ensure React has rendered the container after state update
+        setTimeout(() => {
+          const container = document.getElementById(editorId);
+          if (container) {
+            console.log('Found container element:', editorId);
+            container.innerHTML = '';
+            
+            // Initialize OnlyOffice editor
+            console.log('Creating DocsAPI.DocEditor with config:', config);
+            try {
+              new (window as any).DocsAPI.DocEditor(editorId, config);
+              setOnlyOfficeUrl('initialized');
+              console.log('OnlyOffice editor initialized successfully');
+            } catch (err) {
+              console.error('Error initializing OnlyOffice editor:', err);
+              setError('Failed to initialize OnlyOffice editor');
+            }
+          } else {
+            console.error('Container element still not found after state update:', editorId);
+            setError('OnlyOffice container not available');
+          }
+        }, 0);
+      } else {
+        console.error('DocsAPI not available after script load');
+        setError('OnlyOffice API not available');
+      }
+    };
+    
+    script.onerror = (err) => {
+      console.error('Failed to load OnlyOffice API script:', err);
+      setError('Failed to load OnlyOffice API');
+    };
+    
+    document.head.appendChild(script);
   };
 
   const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
@@ -230,7 +341,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium truncate text-white">{documentName}</CardTitle>
           <div className="flex items-center gap-2">
-            {isPDF && (
+            {documentType === 'pdf' && (
               <>
                 <Button
                   onClick={zoomOut}
@@ -277,7 +388,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
           </div>
         </div>
         
-        {isPDF && numPages > 0 && (
+        {documentType === 'pdf' && numPages > 0 && (
           <div className="flex items-center justify-center gap-4 pt-3 border-t border-slate-600">
             <Button
               onClick={goToPrevPage}
@@ -325,7 +436,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
       
       <CardContent>
         <div className="border border-slate-600 rounded-lg bg-slate-900 min-h-[600px] flex items-center justify-center overflow-auto">
-          {isPDF ? (
+          {documentType === 'pdf' ? (
             <Document
               file={previewUrl}
               options={{ 
@@ -357,13 +468,24 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 className="border border-slate-600 shadow-lg bg-white"
               />
             </Document>
-          ) : mimeType.startsWith('image/') ? (
+          ) : documentType === 'office' && (onlyOfficeUrl === 'api-loaded' || onlyOfficeUrl === 'initialized') ? (
+            <div 
+              id={`onlyoffice-editor-${documentId}`}
+              className="w-full h-[600px] bg-white"
+              style={{ minHeight: '600px' }}
+            />
+          ) : documentType === 'image' ? (
             <img
               src={previewUrl}
               alt={documentName}
               className="max-w-full max-h-full object-contain"
               style={{ transform: `scale(${scale})` }}
             />
+          ) : documentType === 'office' ? (
+            <div className="text-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>
+              <p className="text-slate-300">Loading Office document...</p>
+            </div>
           ) : (
             <div className="text-center p-8">
               <p className="text-slate-300 mb-4">Preview not available for this file type</p>

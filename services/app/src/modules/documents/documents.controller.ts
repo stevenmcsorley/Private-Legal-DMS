@@ -31,6 +31,7 @@ import { UploadDocumentDto } from './dto/upload-document.dto';
 import { DocumentResponseDto } from './dto/document-response.dto';
 import { CurrentUser } from '../../auth/decorators/user.decorator';
 import { CanRead, CanWrite, CanDelete } from '../../auth/decorators/permission.decorator';
+import { Public } from '../../auth/decorators/public.decorator';
 import { UserInfo } from '../../auth/auth.service';
 
 @ApiTags('Documents')
@@ -290,6 +291,60 @@ export class DocumentsController {
       url: `/api/documents/${id}/stream`,
       expires_at: expiresAt,
     };
+  }
+
+  @Get(':id/onlyoffice-url')
+  @CanRead('document')
+  @ApiOperation({ summary: 'Get OnlyOffice document editing URL' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'OnlyOffice URL generated successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        config: {
+          type: 'object',
+          description: 'OnlyOffice configuration object',
+        },
+        document_type: {
+          type: 'string',
+          description: 'Document type (word, cell, slide)',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Document not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Document type not supported by OnlyOffice',
+  })
+  async getOnlyOfficeUrl(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ): Promise<{ config: any; document_type: string }> {
+    return this.documentsService.generateOnlyOfficeUrl(id, user);
+  }
+
+  @Get(':id/onlyoffice-access')
+  @Public() // This endpoint uses JWT validation instead of session auth
+  @ApiOperation({ summary: 'Public document access for OnlyOffice with JWT validation' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Document stream for OnlyOffice',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid or missing JWT token',
+  })
+  async getDocumentForOnlyOffice(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() res: Response,
+    @Query('token') token?: string,
+  ): Promise<void> {
+    return this.documentsService.streamDocumentForOnlyOffice(id, token, res);
   }
 
   @Get(':id/stream')

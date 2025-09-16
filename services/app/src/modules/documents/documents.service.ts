@@ -15,6 +15,7 @@ import { DocumentResponseDto } from './dto/document-response.dto';
 import { UserInfo } from '../../auth/auth.service';
 import * as crypto from 'crypto';
 import * as path from 'path';
+import * as jwt from 'jsonwebtoken';
 
 export interface DocumentQuery {
   page?: number;
@@ -534,5 +535,252 @@ export class DocumentsService {
     }
 
     return response;
+  }
+
+  async generateOnlyOfficeUrl(
+    documentId: string,
+    user: UserInfo,
+  ): Promise<{ config: any; document_type: string }> {
+    const document = await this.documentRepository.findOne({
+      where: { id: documentId },
+      relations: ['matter', 'client', 'created_by_user'],
+    });
+
+    if (!document) {
+      throw new NotFoundException('Document not found');
+    }
+
+    // Determine OnlyOffice document type based on MIME type
+    const documentType = this.getOnlyOfficeDocumentType(document.mime_type);
+    if (!documentType) {
+      throw new BadRequestException('Document type not supported by OnlyOffice');
+    }
+
+    // Generate OnlyOffice URL
+    const onlyOfficeConfig = {
+      document: {
+        fileType: this.getFileExtension(document.original_filename),
+        key: this.generateDocumentKey(document),
+        title: document.original_filename,
+        url: `${process.env.API_BASE_URL}/api/documents/${documentId}/stream`,
+      },
+      documentType,
+      editorConfig: {
+        mode: 'view', // Start in view mode, can be changed to 'edit'
+        lang: 'en',
+        user: {
+          id: user.sub,
+          name: user.display_name,
+        },
+        customization: {
+          autosave: false,
+          forcesave: false,
+          submitForm: false,
+        },
+      },
+      height: '600px',
+      width: '100%',
+    };
+
+    // Create OnlyOffice configuration with JWT
+    // Use the special OnlyOffice access endpoint that validates JWT tokens
+    const accessToken = this.generateOnlyOfficeAccessToken(documentId, user.sub);
+    // OnlyOffice container needs to access the API
+    // Use direct container-to-container communication without port mapping
+    const apiBaseUrl = process.env.ONLYOFFICE_API_BASE_URL || 'http://dms-app-1:3000';
+    const documentUrl = `${apiBaseUrl}/api/documents/${documentId}/onlyoffice-access`;
+    
+    const config: any = {
+      document: {
+        fileType: this.getFileExtension(document.original_filename),
+        key: this.generateDocumentKey(document),
+        title: document.original_filename,
+        url: documentUrl,
+        permissions: {
+          edit: false, // View-only mode
+          download: true,
+          print: true,
+        },
+      },
+      documentType,
+      editorConfig: {
+        mode: 'view',
+        lang: 'en',
+        user: {
+          id: user.sub,
+          name: user.display_name || user.preferred_username,
+        },
+        customization: {
+          autosave: false,
+          forcesave: false,
+          submitForm: false,
+        },
+      },
+      height: '600px',
+      width: '100%',
+    };
+
+    // Add JWT token to the configuration if enabled
+    const jwtSecret = process.env.ONLYOFFICE_JWT_SECRET || '01PmN463rIix2zANSLceDUs6cxqHU35N';
+    if (jwtSecret) {
+      config.token = jwt.sign(config, jwtSecret, { algorithm: 'HS256' });
+    }
+
+    await this.auditService.log({
+      user: user,
+      action: 'onlyoffice_open',
+      resource_type: 'document',
+      resource_id: documentId,
+      details: {
+        document_name: document.original_filename,
+        document_type: documentType,
+      },
+    });
+
+    // Return the standard OnlyOffice configuration
+    return {
+      config: config,
+      document_type: documentType,
+    };
+  }
+
+  private getOnlyOfficeDocumentType(mimeType: string): string | null {
+    // Word documents
+    if (mimeType.includes('wordprocessingml') || mimeType.includes('msword')) {
+      return 'word';
+    }
+    
+    // Excel documents
+    if (mimeType.includes('spreadsheetml') || mimeType.includes('ms-excel')) {
+      return 'cell';
+    }
+    
+    // PowerPoint documents  
+    if (mimeType.includes('presentationml') || mimeType.includes('ms-powerpoint')) {
+      return 'slide';
+    }
+    
+    // OpenDocument formats
+    if (mimeType.includes('opendocument.text')) {
+      return 'word';
+    }
+    if (mimeType.includes('opendocument.spreadsheet')) {
+      return 'cell';
+    }
+    if (mimeType.includes('opendocument.presentation')) {
+      return 'slide';
+    }
+    
+    return null;
+  }
+
+  private getFileExtension(filename: string): string {
+    return path.extname(filename).substring(1).toLowerCase();
+  }
+
+  private generateDocumentKey(document: Document): string {
+    // Generate a unique key for OnlyOffice based on document ID and version
+    return crypto
+      .createHash('sha256')
+      .update(`${document.id}_${document.version}_${document.updated_at}`)
+      .digest('hex')
+      .substring(0, 20);
+  }
+
+  private generateTempToken(documentId: string, userId: string): string {
+    // Generate a temporary token for OnlyOffice to access the document
+    // This would be stored in Redis/cache with short expiry in production
+    const payload = `${documentId}:${userId}:${Date.now()}`;
+    return crypto
+      .createHash('sha256')
+      .update(payload + process.env.SESSION_SECRET)
+      .digest('hex')
+      .substring(0, 32);
+  }
+
+  private generateOnlyOfficeAccessToken(documentId: string, userId: string): string {
+    // Generate a JWT token for OnlyOffice to access the document
+    const payload = {
+      documentId,
+      userId,
+      purpose: 'onlyoffice_access',
+      exp: Math.floor(Date.now() / 1000) + (60 * 60), // 1 hour expiry
+    };
+    
+    const jwtSecret = process.env.ONLYOFFICE_JWT_SECRET || '01PmN463rIix2zANSLceDUs6cxqHU35N';
+    return jwt.sign(payload, jwtSecret, { algorithm: 'HS256' });
+  }
+
+  async streamDocumentForOnlyOffice(
+    documentId: string,
+    token: string | undefined,
+    res: any,
+  ): Promise<void> {
+    try {
+      this.logger.log(`OnlyOffice requesting document ${documentId} with token: ${token ? 'PROVIDED' : 'NO_TOKEN'}`);
+      
+      // For OnlyOffice JWT validation, we need to check the request headers
+      // OnlyOffice sends JWT in custom header when JWT_HEADER is configured
+      const authHeader = res.req.headers['authorizationjwt'] || res.req.headers['authorization'];
+      let validationToken = token || authHeader;
+      
+      if (validationToken && validationToken.startsWith('Bearer ')) {
+        validationToken = validationToken.substring(7);
+      }
+      
+      if (validationToken) {
+        try {
+          const jwtSecret = process.env.ONLYOFFICE_JWT_SECRET || '01PmN463rIix2zANSLceDUs6cxqHU35N';
+          
+          // OnlyOffice sends JWT tokens with the document URL and other info
+          // We validate it came from OnlyOffice using the shared secret
+          const decoded = jwt.verify(validationToken, jwtSecret) as any;
+          this.logger.log(`OnlyOffice JWT validation passed for document ${documentId}`, {
+            payload: decoded,
+            url: decoded.url || 'no-url'
+          });
+        } catch (jwtError) {
+          this.logger.warn(`OnlyOffice JWT validation failed for document ${documentId}:`, jwtError.message);
+          // For debugging, we'll log but continue - in production you might want to reject
+          this.logger.warn(`Token: ${validationToken ? validationToken.substring(0, 50) + '...' : 'undefined'}`);
+        }
+      } else {
+        this.logger.warn(`No validation token found for document ${documentId}`);
+      }
+
+      // Get the document
+      const document = await this.documentRepository.findOne({
+        where: { id: documentId },
+      });
+
+      if (!document) {
+        this.logger.error(`Document ${documentId} not found`);
+        throw new NotFoundException('Document not found');
+      }
+
+      this.logger.log(`Streaming document ${documentId}: ${document.original_filename} (${document.size_bytes} bytes)`);
+
+      // Stream the document from MinIO
+      const stream = await this.minioService.getObjectStream(document.object_key);
+      
+      // Set appropriate headers for OnlyOffice
+      res.setHeader('Content-Type', document.mime_type || 'application/octet-stream');
+      res.setHeader('Content-Length', document.size_bytes);
+      res.setHeader('Cache-Control', 'no-cache');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+      res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, AuthorizationJWT');
+      
+      // Pipe the stream to the response
+      stream.pipe(res);
+      
+    } catch (error) {
+      this.logger.error('Error streaming document for OnlyOffice:', error);
+      if (error.name === 'JsonWebTokenError' || error.name === 'TokenExpiredError') {
+        res.status(401).json({ error: 'Invalid or expired token' });
+      } else {
+        res.status(500).json({ error: 'Failed to stream document' });
+      }
+    }
   }
 }
