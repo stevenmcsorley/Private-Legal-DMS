@@ -116,7 +116,7 @@ allow if {
 # Matter management
 allow if {
     input.resource.type == "matter"
-    input.action in ["create", "update", "delete"]
+    input.action in ["create", "update", "delete", "write"]
     firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
