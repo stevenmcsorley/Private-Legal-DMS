@@ -16,13 +16,6 @@ import {
   Search
 } from 'lucide-react';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -44,24 +37,24 @@ import { toast } from '@/components/ui/use-toast';
 interface RetentionPolicy {
   id: string;
   name: string;
-  description: string;
-  retention_period_years: number;
-  trigger_event: 'matter_close' | 'document_creation' | 'last_access';
+  description?: string;
+  retention_years: number;
   auto_delete: boolean;
   legal_hold_override: boolean;
   created_at: string;
   updated_at: string;
-  document_count: number;
-  status: 'active' | 'inactive';
+  document_count?: number;
+  firm_id: string;
+  minio_policy?: Record<string, any>;
 }
 
 interface CreateRetentionPolicyData {
   name: string;
-  description: string;
-  retention_period_years: number;
-  trigger_event: 'matter_close' | 'document_creation' | 'last_access';
+  description?: string;
+  retention_years: number;
   auto_delete: boolean;
   legal_hold_override: boolean;
+  minio_policy?: Record<string, any>;
 }
 
 export const RetentionPolicies = () => {
@@ -73,8 +66,7 @@ export const RetentionPolicies = () => {
   const [formData, setFormData] = useState<CreateRetentionPolicyData>({
     name: '',
     description: '',
-    retention_period_years: 7,
-    trigger_event: 'matter_close',
+    retention_years: 7,
     auto_delete: false,
     legal_hold_override: false,
   });
@@ -85,55 +77,19 @@ export const RetentionPolicies = () => {
 
   const fetchPolicies = async () => {
     try {
-      const response = await fetch('/api/admin/retention-policies', {
+      const response = await fetch('/api/admin/retention-classes', {
         credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
-        setPolicies(data.policies || []);
+        setPolicies(data.retention_classes || []);
       } else {
-        // Mock data for development
-        setPolicies([
-          {
-            id: '1',
-            name: 'Standard Legal Documents',
-            description: 'Standard retention for legal documents and correspondence',
-            retention_period_years: 7,
-            trigger_event: 'matter_close',
-            auto_delete: false,
-            legal_hold_override: true,
-            created_at: '2025-01-15T10:30:00Z',
-            updated_at: '2025-01-15T10:30:00Z',
-            document_count: 1247,
-            status: 'active',
-          },
-          {
-            id: '2', 
-            name: 'Client Communications',
-            description: 'Email and communication records with clients',
-            retention_period_years: 5,
-            trigger_event: 'last_access',
-            auto_delete: true,
-            legal_hold_override: true,
-            created_at: '2025-01-10T14:20:00Z',
-            updated_at: '2025-02-01T09:15:00Z',
-            document_count: 892,
-            status: 'active',
-          },
-          {
-            id: '3',
-            name: 'Draft Documents',
-            description: 'Working drafts and temporary documents',
-            retention_period_years: 2,
-            trigger_event: 'document_creation',
-            auto_delete: true,
-            legal_hold_override: false,
-            created_at: '2025-01-05T16:45:00Z',
-            updated_at: '2025-01-05T16:45:00Z',
-            document_count: 234,
-            status: 'inactive',
-          },
-        ]);
+        console.error('Failed to fetch retention policies:', response.status, response.statusText);
+        toast({
+          title: 'Error',
+          description: 'Failed to load retention policies',
+          variant: 'destructive',
+        });
       }
     } catch (error) {
       console.error('Error fetching retention policies:', error);
@@ -148,9 +104,33 @@ export const RetentionPolicies = () => {
   };
 
   const handleCreatePolicy = async () => {
+    // Validate required fields
+    if (!formData.name.trim()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Policy name is required',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.retention_years < 0 || formData.retention_years > 100) {
+      toast({
+        title: 'Validation Error',
+        description: 'Retention period must be between 0 and 100 years',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      const response = await fetch('/api/admin/retention-policies', {
-        method: 'POST',
+      const url = editingPolicy 
+        ? `/api/admin/retention-classes/${editingPolicy.id}`
+        : '/api/admin/retention-classes';
+      const method = editingPolicy ? 'PUT' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify(formData),
@@ -162,20 +142,21 @@ export const RetentionPolicies = () => {
         resetForm();
         toast({
           title: 'Success',
-          description: 'Retention policy created successfully',
+          description: `Retention policy ${editingPolicy ? 'updated' : 'created'} successfully`,
         });
       } else {
+        const errorData = await response.json().catch(() => ({}));
         toast({
           title: 'Error',
-          description: 'Failed to create retention policy',
+          description: errorData.message || `Failed to ${editingPolicy ? 'update' : 'create'} retention policy`,
           variant: 'destructive',
         });
       }
     } catch (error) {
-      console.error('Error creating policy:', error);
+      console.error('Error with retention policy:', error);
       toast({
         title: 'Error',
-        description: 'Failed to create retention policy',
+        description: `Failed to ${editingPolicy ? 'update' : 'create'} retention policy`,
         variant: 'destructive',
       });
     }
@@ -185,7 +166,7 @@ export const RetentionPolicies = () => {
     if (!confirm('Are you sure you want to delete this retention policy?')) return;
 
     try {
-      const response = await fetch(`/api/admin/retention-policies/${policyId}`, {
+      const response = await fetch(`/api/admin/retention-classes/${policyId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -197,9 +178,10 @@ export const RetentionPolicies = () => {
           description: 'Retention policy deleted successfully',
         });
       } else {
+        const errorData = await response.json().catch(() => ({}));
         toast({
           title: 'Error',
-          description: 'Failed to delete retention policy',
+          description: errorData.message || 'Failed to delete retention policy',
           variant: 'destructive',
         });
       }
@@ -217,8 +199,7 @@ export const RetentionPolicies = () => {
     setFormData({
       name: '',
       description: '',
-      retention_period_years: 7,
-      trigger_event: 'matter_close',
+      retention_years: 7,
       auto_delete: false,
       legal_hold_override: false,
     });
@@ -229,9 +210,8 @@ export const RetentionPolicies = () => {
     setEditingPolicy(policy);
     setFormData({
       name: policy.name,
-      description: policy.description,
-      retention_period_years: policy.retention_period_years,
-      trigger_event: policy.trigger_event,
+      description: policy.description || '',
+      retention_years: policy.retention_years,
       auto_delete: policy.auto_delete,
       legal_hold_override: policy.legal_hold_override,
     });
@@ -240,17 +220,9 @@ export const RetentionPolicies = () => {
 
   const filteredPolicies = policies.filter(policy =>
     policy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    policy.description.toLowerCase().includes(searchTerm.toLowerCase())
+    (policy.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getTriggerEventLabel = (event: string) => {
-    switch (event) {
-      case 'matter_close': return 'Matter Close';
-      case 'document_creation': return 'Document Creation';
-      case 'last_access': return 'Last Access';
-      default: return event;
-    }
-  };
 
   if (loading) {
     return (
@@ -307,16 +279,19 @@ export const RetentionPolicies = () => {
                   <Input
                     id="retention-period"
                     type="number"
-                    min="1"
-                    max="50"
-                    value={formData.retention_period_years}
-                    onChange={(e) => setFormData({...formData, retention_period_years: parseInt(e.target.value)})}
+                    min="0"
+                    max="100"
+                    value={formData.retention_years}
+                    onChange={(e) => setFormData({...formData, retention_years: parseInt(e.target.value) || 0})}
                   />
+                  <p className="text-xs text-slate-400 mt-1">
+                    Set to 0 for indefinite retention. Documents older than this period may be deleted.
+                  </p>
                 </div>
               </div>
               
               <div>
-                <Label htmlFor="description">Description</Label>
+                <Label htmlFor="description">Description (Optional)</Label>
                 <Input
                   id="description"
                   value={formData.description}
@@ -325,42 +300,37 @@ export const RetentionPolicies = () => {
                 />
               </div>
               
-              <div>
-                <Label htmlFor="trigger">Retention Trigger Event</Label>
-                <Select 
-                  value={formData.trigger_event} 
-                  onValueChange={(value: any) => setFormData({...formData, trigger_event: value})}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="matter_close">Matter Close Date</SelectItem>
-                    <SelectItem value="document_creation">Document Creation Date</SelectItem>
-                    <SelectItem value="last_access">Last Access Date</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex items-center space-x-6">
-                <label className="flex items-center space-x-2">
+              <div className="space-y-3">
+                <label className="flex items-start space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.auto_delete}
                     onChange={(e) => setFormData({...formData, auto_delete: e.target.checked})}
-                    className="rounded border-slate-300"
+                    className="rounded border-slate-300 mt-0.5"
                   />
-                  <span className="text-sm">Auto-delete after retention period</span>
+                  <div>
+                    <span className="text-sm font-medium">Auto-delete after retention period</span>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Automatically soft-delete documents when their retention period expires. 
+                      Documents under legal hold will never be deleted.
+                    </p>
+                  </div>
                 </label>
                 
-                <label className="flex items-center space-x-2">
+                <label className="flex items-start space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.legal_hold_override}
                     onChange={(e) => setFormData({...formData, legal_hold_override: e.target.checked})}
-                    className="rounded border-slate-300"
+                    className="rounded border-slate-300 mt-0.5"
                   />
-                  <span className="text-sm">Override legal holds</span>
+                  <div>
+                    <span className="text-sm font-medium">Legal hold can override this policy</span>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Allow documents in this retention class to be placed under legal hold, 
+                      which prevents deletion even if auto-delete is enabled.
+                    </p>
+                  </div>
                 </label>
               </div>
             </div>
@@ -398,9 +368,9 @@ export const RetentionPolicies = () => {
             <div className="flex items-center">
               <Archive className="h-5 w-5 text-blue-500 mr-3" />
               <div>
-                <p className="text-sm font-medium text-slate-300">Active Policies</p>
+                <p className="text-sm font-medium text-slate-300">Total Policies</p>
                 <p className="text-2xl font-bold text-slate-100">
-                  {policies.filter(p => p.status === 'active').length}
+                  {policies.length}
                 </p>
               </div>
             </div>
@@ -414,7 +384,7 @@ export const RetentionPolicies = () => {
               <div>
                 <p className="text-sm font-medium text-slate-300">Managed Documents</p>
                 <p className="text-2xl font-bold text-slate-100">
-                  {policies.reduce((sum, p) => sum + p.document_count, 0).toLocaleString()}
+                  {policies.reduce((sum, p) => sum + (p.document_count || 0), 0).toLocaleString()}
                 </p>
               </div>
             </div>
@@ -433,9 +403,9 @@ export const RetentionPolicies = () => {
             <div className="grid grid-cols-6 gap-4 pb-2 border-b border-slate-700 text-sm font-medium text-slate-300">
               <div>Policy Name</div>
               <div>Retention Period</div>
-              <div>Trigger Event</div>
+              <div>Auto Delete</div>
               <div>Documents</div>
-              <div>Status</div>
+              <div>Created</div>
               <div>Actions</div>
             </div>
             
@@ -444,48 +414,43 @@ export const RetentionPolicies = () => {
               <div key={policy.id} className="grid grid-cols-6 gap-4 py-4 border-b border-slate-800 items-center">
                 <div>
                   <div className="font-medium text-slate-100">{policy.name}</div>
-                  <div className="text-sm text-slate-400">{policy.description}</div>
+                  {policy.description && (
+                    <div className="text-sm text-slate-400">{policy.description}</div>
+                  )}
                 </div>
                 <div>
                   <div className="flex items-center">
                     <Clock className="h-4 w-4 text-slate-400 mr-1" />
-                    {policy.retention_period_years} years
+                    {policy.retention_years === 0 ? 'Indefinite' : `${policy.retention_years} years`}
                   </div>
                 </div>
                 <div>
-                  <Badge variant="outline">
-                    {getTriggerEventLabel(policy.trigger_event)}
-                  </Badge>
+                  <div className="flex items-center space-x-2">
+                    <Badge 
+                      variant="outline"
+                      className={policy.auto_delete 
+                        ? 'text-red-400 border-red-600 bg-red-900/30' 
+                        : 'text-slate-400 border-slate-600 bg-slate-900/30'
+                      }
+                    >
+                      {policy.auto_delete ? 'Enabled' : 'Disabled'}
+                    </Badge>
+                    {policy.legal_hold_override && (
+                      <Badge variant="outline" className="text-xs text-orange-400 border-orange-600 bg-orange-900/30">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Override holds
+                      </Badge>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <div className="text-slate-300">
-                    {policy.document_count.toLocaleString()}
+                    {(policy.document_count || 0).toLocaleString()}
                   </div>
                 </div>
                 <div>
-                  <div className="space-y-1">
-                    <Badge 
-                      className={policy.status === 'active' 
-                        ? 'border-green-700 bg-green-900/30 text-green-400' 
-                        : 'border-gray-700 bg-gray-900/30 text-gray-400'
-                      }
-                    >
-                      {policy.status}
-                    </Badge>
-                    <div className="flex items-center space-x-2 text-xs text-slate-500">
-                      {policy.auto_delete && (
-                        <Badge variant="outline" className="text-xs">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Auto-delete
-                        </Badge>
-                      )}
-                      {policy.legal_hold_override && (
-                        <Badge variant="outline" className="text-xs">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Override holds
-                        </Badge>
-                      )}
-                    </div>
+                  <div className="text-sm text-slate-400">
+                    {new Date(policy.created_at).toLocaleDateString()}
                   </div>
                 </div>
                 <div>
@@ -522,6 +487,140 @@ export const RetentionPolicies = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Retention Actions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <AlertTriangle className="h-5 w-5 mr-2 text-orange-500" />
+            Retention Policy Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 text-left flex-col items-start"
+              onClick={() => handleEnforceRetention()}
+            >
+              <div className="flex items-center mb-2">
+                <Clock className="h-5 w-5 mr-2 text-blue-500" />
+                <span className="font-medium">Enforce Retention Policies</span>
+              </div>
+              <span className="text-sm text-slate-400">
+                Manually trigger retention policy evaluation and document cleanup
+              </span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 text-left flex-col items-start"
+              onClick={() => handleViewEligibleDocuments()}
+            >
+              <div className="flex items-center mb-2">
+                <FileText className="h-5 w-5 mr-2 text-yellow-500" />
+                <span className="font-medium">View Eligible Documents</span>
+              </div>
+              <span className="text-sm text-slate-400">
+                See documents that are eligible for deletion under current policies
+              </span>
+            </Button>
+            
+            <Button 
+              variant="outline" 
+              className="h-auto p-4 text-left flex-col items-start"
+              onClick={() => handleCleanupSoftDeleted()}
+            >
+              <div className="flex items-center mb-2">
+                <Trash2 className="h-5 w-5 mr-2 text-red-500" />
+                <span className="font-medium">Cleanup Soft-Deleted</span>
+              </div>
+              <span className="text-sm text-slate-400">
+                Permanently remove documents that were soft-deleted 30+ days ago
+              </span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
+
+  async function handleEnforceRetention() {
+    try {
+      const response = await fetch('/api/retention/enforce', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Retention Enforcement Completed',
+          description: `Evaluated: ${result.documentsEvaluated}, Deleted: ${result.documentsDeleted}`,
+        });
+      } else {
+        throw new Error('Failed to enforce retention policies');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to enforce retention policies',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleViewEligibleDocuments() {
+    try {
+      const response = await fetch('/api/retention/eligible-for-deletion', {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const documents = await response.json();
+        toast({
+          title: 'Eligible Documents',
+          description: `${documents.length} documents are eligible for deletion`,
+        });
+        // TODO: Could open a modal showing the list
+      } else {
+        throw new Error('Failed to fetch eligible documents');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch eligible documents',
+        variant: 'destructive',
+      });
+    }
+  }
+
+  async function handleCleanupSoftDeleted() {
+    if (!confirm('This will permanently delete all soft-deleted documents older than 30 days. Are you sure?')) {
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/retention/cleanup-soft-deleted', {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        toast({
+          title: 'Cleanup Completed',
+          description: `${result.deleted_count} documents permanently deleted`,
+        });
+      } else {
+        throw new Error('Failed to cleanup soft-deleted documents');
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to cleanup soft-deleted documents',
+        variant: 'destructive',
+      });
+    }
+  }
 };
