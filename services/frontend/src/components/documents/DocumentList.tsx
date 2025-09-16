@@ -9,6 +9,7 @@ import { Checkbox } from '../ui/checkbox';
 import { DocumentViewer } from './DocumentViewer';
 import { toast } from '../ui/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Label } from '../ui/label';
 // Using built-in date formatting instead of date-fns
 
 interface DocumentMeta {
@@ -113,6 +114,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const [matters, setMatters] = useState<Array<{ id: string; title: string; matter_number?: string }>>([]);
   const [loadingMatters, setLoadingMatters] = useState<boolean>(false);
   const [selectedMatterId, setSelectedMatterId] = useState<string>('');
+  const [retentionClasses, setRetentionClasses] = useState<Array<{ id: string; name: string; retention_years: number }>>([]);
+  const [selectedRetentionClass, setSelectedRetentionClass] = useState<string>('');
+  const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
 
   useEffect(() => {
     fetchDocuments();
@@ -169,6 +173,22 @@ export const DocumentList: React.FC<DocumentListProps> = ({
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchRetentionClasses = async () => {
+    try {
+      const response = await fetch('/api/admin/retention-classes', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        // Backend returns array directly, not wrapped in retention_classes
+        setRetentionClasses(Array.isArray(data) ? data : data.retention_classes || []);
+      }
+    } catch (error) {
+      console.error('Error fetching retention classes:', error);
+      setRetentionClasses([]);
     }
   };
 
@@ -304,6 +324,9 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   console.log('Appending matter_id to form:', targetMatterId, 'Type:', typeof targetMatterId);
                   form.append('matter_id', targetMatterId);
                   form.append('title', file.name);
+                  if (selectedRetentionClass) {
+                    form.append('retention_class_id', selectedRetentionClass);
+                  }
                   console.log('Sending form data - matter_id:', targetMatterId);
 
                   const response = await fetch('/api/documents/upload', {
@@ -319,6 +342,8 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
                   toast({ title: 'Uploaded', description: `${file.name} uploaded.` });
                   await fetchDocuments();
+                  // Reset retention class selection after successful upload
+                  setSelectedRetentionClass('');
                 } catch (err: any) {
                   console.error('Upload error:', err);
                   toast({
@@ -363,7 +388,11 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     })();
                   }
                 } else {
-                  fileInputRef.current?.click();
+                  // Fetch retention classes if not loaded yet
+                  if (retentionClasses.length === 0) {
+                    fetchRetentionClasses();
+                  }
+                  setShowUploadDialog(true);
                 }
               }}
               disabled={uploading}
@@ -623,10 +652,67 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               }
               console.log('Continue clicked with selectedMatterId:', selectedMatterId);
               setShowMatterPicker(false);
-              // Directly trigger file picker
-              console.log('Opening file picker...');
-              fileInputRef.current?.click();
+              // Fetch retention classes if not loaded yet
+              if (retentionClasses.length === 0) {
+                fetchRetentionClasses();
+              }
+              setShowUploadDialog(true);
             }}>Continue</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Upload Dialog with Retention Class Selection */}
+    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+      <DialogContent aria-describedby="upload-dialog-desc">
+        <DialogHeader>
+          <DialogTitle>Upload Document</DialogTitle>
+        </DialogHeader>
+        <div id="upload-dialog-desc" className="sr-only">Select file and retention class for upload.</div>
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="retention-class-select" className="text-sm font-medium">
+              Retention Class (Optional)
+            </Label>
+            <Select value={selectedRetentionClass} onValueChange={setSelectedRetentionClass}>
+              <SelectTrigger className="mt-1">
+                <SelectValue placeholder="Select retention class..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">No retention class</SelectItem>
+                {retentionClasses.map((rc) => (
+                  <SelectItem key={rc.id} value={rc.id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{rc.name}</span>
+                      <span className="text-xs text-slate-400">
+                        {rc.retention_years === 0 ? 'Indefinite retention' : `${rc.retention_years} years`}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-slate-500 mt-1">
+              Retention class determines how long this document will be kept before deletion.
+            </p>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => {
+              setSelectedRetentionClass('');
+              setShowUploadDialog(false);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              setShowUploadDialog(false);
+              console.log('Opening file picker with retention class:', selectedRetentionClass);
+              fileInputRef.current?.click();
+            }}>
+              Choose File
+            </Button>
           </div>
         </div>
       </DialogContent>

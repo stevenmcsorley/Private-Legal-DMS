@@ -82,7 +82,8 @@ export const RetentionPolicies = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setPolicies(data.retention_classes || []);
+        // Backend returns array directly, not wrapped in retention_classes
+        setPolicies(Array.isArray(data) ? data : data.retention_classes || []);
       } else {
         console.error('Failed to fetch retention policies:', response.status, response.statusText);
         toast({
