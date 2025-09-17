@@ -62,6 +62,11 @@ interface ClientDocument {
   title?: string;
   description?: string;
   legal_hold?: boolean;
+  retention_class?: {
+    id: string;
+    name: string;
+    retention_years: number;
+  };
   legal_hold_reason?: string;
   metadata?: {
     document_type?: string;
@@ -588,6 +593,12 @@ export const ClientPortal = () => {
                       <div className="flex items-center space-x-4 text-xs text-slate-400">
                         <span>v{doc.version || 1}</span>
                         <span>{formatFileSize(doc.size_bytes)}</span>
+                        {doc.retention_class && (
+                          <span className="flex items-center">
+                            <Archive className="h-3 w-3 mr-1" />
+                            {doc.retention_class.name} ({doc.retention_class.retention_years}y)
+                          </span>
+                        )}
                         <span className="flex items-center">
                           <Clock className="h-3 w-3 mr-1" />
                           {doc.created_at ? new Date(doc.created_at).toLocaleDateString('en-US', { 

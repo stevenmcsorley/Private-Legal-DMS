@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Filter, Upload, FileText, Eye, Download, Calendar, Tag, AlertTriangle, User } from 'lucide-react';
+import { Search, Filter, Upload, FileText, Eye, Download, Calendar, Tag, AlertTriangle, User, Archive } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
@@ -59,6 +59,11 @@ interface Document {
     id: string;
     display_name: string;
     email: string;
+  };
+  retention_class?: {
+    id: string;
+    name: string;
+    retention_years: number;
   };
 }
 
@@ -529,6 +534,12 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                     </div>
                     <div className="flex items-center text-sm text-slate-400 space-x-4">
                       <span>{formatFileSize(document.size_bytes)}</span>
+                      {document.retention_class && (
+                        <span className="flex items-center">
+                          <Archive className="h-3 w-3 inline mr-1" />
+                          {document.retention_class.name} ({document.retention_class.retention_years}y)
+                        </span>
+                      )}
                       <span>
                         <Calendar className="h-3 w-3 inline mr-1" />
 {new Date(document.created_at).toLocaleDateString('en-US', { 

@@ -69,6 +69,11 @@ interface Document {
   };
   version: number;
   is_confidential: boolean;
+  retention_class?: {
+    id: string;
+    name: string;
+    retention_years: number;
+  };
 }
 
 export const ClientDetails = () => {
@@ -463,6 +468,12 @@ export const ClientDetails = () => {
                         <div className="flex items-center space-x-4 text-xs text-slate-400 mt-1">
                           <span>v{doc.version}</span>
                           <span>{formatFileSize(doc.file_size)}</span>
+                          {doc.retention_class && (
+                            <span className="flex items-center">
+                              <Archive className="h-3 w-3 inline mr-1" />
+                              {doc.retention_class.name} ({doc.retention_class.retention_years}y)
+                            </span>
+                          )}
                           <span>{doc.matter.title} ({doc.matter.matter_number})</span>
                           <span>by {doc.uploaded_by.display_name}</span>
                           <span>{new Date(doc.uploaded_at).toLocaleDateString()}</span>

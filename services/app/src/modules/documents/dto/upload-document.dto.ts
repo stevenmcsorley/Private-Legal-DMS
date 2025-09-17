@@ -115,7 +115,10 @@ export class UploadDocumentDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
-  @IsUUID()
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    { message: 'retention_class_id must be a UUID' })
   retention_class_id?: string;
 
   @ApiPropertyOptional({
@@ -139,6 +142,9 @@ export class UploadDocumentDto {
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
   @IsOptional()
-  @IsUUID()
+  // Accept UUID-like IDs used in dev seed data (relax RFC variant constraint)
+  // Note: In production, prefer strict @IsUUID() validation
+  @Matches(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/,
+    { message: 'uploaded_by_user_id must be a UUID' })
   uploaded_by_user_id?: string;
 }

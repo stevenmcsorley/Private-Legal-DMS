@@ -778,10 +778,26 @@ export class AdminService {
       throw new ForbiddenException('Cannot access retention classes from different firm');
     }
 
-    return this.retentionClassRepository.find({
-      where: { firm_id: effectiveFirmId },
-      order: { name: 'ASC' },
+    // Get retention classes with document counts
+    const retentionClasses = await this.retentionClassRepository
+      .createQueryBuilder('rc')
+      .leftJoin('rc.documents', 'doc')
+      .addSelect('COUNT(doc.id)', 'document_count')
+      .where('rc.firm_id = :firmId', { firmId: effectiveFirmId })
+      .andWhere('(doc.is_deleted IS NULL OR doc.is_deleted = false)')
+      .groupBy('rc.id')
+      .orderBy('rc.name', 'ASC')
+      .getRawAndEntities();
+
+    // Map the document counts to the entities
+    const result = retentionClasses.entities.map((entity, index) => {
+      return {
+        ...entity,
+        document_count: parseInt(retentionClasses.raw[index].document_count) || 0,
+      };
     });
+
+    return result;
   }
 
   async getRetentionClass(retentionClassId: string, currentUser: UserInfo): Promise<RetentionClass> {

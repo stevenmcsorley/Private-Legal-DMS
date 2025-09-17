@@ -156,7 +156,7 @@ export const MatterDetails = () => {
       const response = await fetch(`/api/audit/matter/${id}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        setAuditEntries(Array.isArray(data) ? data : []);
+        setAuditEntries(data.logs || []);
       } else if (response.status === 404) {
         console.log('Audit endpoint not implemented yet');
         setAuditEntries([]);

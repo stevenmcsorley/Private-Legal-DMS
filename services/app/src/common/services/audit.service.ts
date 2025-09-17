@@ -487,6 +487,64 @@ export class AuditService {
     return { logs, total };
   }
 
+  // Query matter-specific audit logs
+  async queryMatterAuditLogs(matterId: string, filters: {
+    firmId?: string;
+    action?: string;
+    riskLevel?: string;
+    fromDate?: Date;
+    toDate?: Date;
+    page?: number;
+    limit?: number;
+  }): Promise<{ logs: AuditLog[]; total: number }> {
+    const queryBuilder = this.auditLogRepository
+      .createQueryBuilder('audit')
+      .leftJoinAndSelect('audit.user', 'user')
+      .orderBy('audit.timestamp', 'DESC');
+
+    // Filter by firm
+    if (filters.firmId) {
+      queryBuilder.andWhere('audit.firm_id = :firmId', { firmId: filters.firmId });
+    }
+
+    // Matter-specific conditions: include matter events, documents in matter, and related activities
+    queryBuilder.andWhere(
+      `(
+        (audit.resource_type = 'matter' AND audit.resource_id = :matterId) OR
+        (audit.resource_type = 'document' AND audit.details->>'matter_id' = :matterIdText) OR
+        (audit.action LIKE '%matter%' AND audit.details->>'matter_id' = :matterIdText)
+      )`,
+      { matterId, matterIdText: matterId }
+    );
+
+    if (filters.action) {
+      queryBuilder.andWhere('audit.action = :action', { action: filters.action });
+    }
+
+    if (filters.riskLevel) {
+      queryBuilder.andWhere('audit.risk_level = :riskLevel', { riskLevel: filters.riskLevel });
+    }
+
+    if (filters.fromDate) {
+      queryBuilder.andWhere('audit.timestamp >= :fromDate', { fromDate: filters.fromDate });
+    }
+
+    if (filters.toDate) {
+      queryBuilder.andWhere('audit.timestamp <= :toDate', { toDate: filters.toDate });
+    }
+
+    const page = filters.page || 1;
+    const limit = Math.min(filters.limit || 50, 1000); // Cap at 1000 records
+
+    queryBuilder
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [logs, total] = await queryBuilder.getManyAndCount();
+
+    return { logs, total };
+  }
+
   // Get audit statistics
   async getAuditStats(firmId?: string, days: number = 30): Promise<{
     totalEvents: number;

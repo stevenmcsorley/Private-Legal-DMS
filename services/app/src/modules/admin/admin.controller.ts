@@ -23,6 +23,7 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
+import { AuditService } from '../../common/services/audit.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -600,5 +601,64 @@ export class AdminController {
     res.setHeader('Content-Type', exportData.contentType);
     res.setHeader('Content-Disposition', `attachment; filename="${exportData.filename}"`);
     res.send(exportData.content);
+  }
+}
+
+// Separate controller for /api/audit routes
+@ApiTags('Audit')
+@ApiBearerAuth()
+@Controller('audit')
+export class AuditController {
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly auditService: AuditService,
+  ) {}
+
+  @Get('matter/:matterId')
+  @CanRead('matter')
+  @ApiOperation({ summary: 'Get audit logs for a specific matter' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number', example: 1 })
+  @ApiQuery({ name: 'limit', required: false, description: 'Items per page', example: 50 })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Matter audit logs retrieved successfully',
+  })
+  async getMatterAuditLogs(
+    @Param('matterId', ParseUUIDPipe) matterId: string,
+    @Query() query: any,
+    @CurrentUser() user: UserInfo,
+  ) {
+    const filters = {
+      firmId: user.firm_id,
+      page: query.page ? parseInt(query.page) : 1,
+      limit: query.limit ? Math.min(parseInt(query.limit), 1000) : 50,
+      action: query.action,
+      riskLevel: query.riskLevel,
+      fromDate: query.fromDate ? new Date(query.fromDate) : undefined,
+      toDate: query.toDate ? new Date(query.toDate) : undefined,
+    };
+
+    // Use the injected audit service to get matter-specific logs
+    const result = await this.auditService.queryMatterAuditLogs(matterId, filters);
+    
+    // Map the response to match frontend expectations
+    const mappedLogs = result.logs.map(log => ({
+      id: log.id,
+      action: log.action,
+      entity_type: log.resource_type,     // Map resource_type to entity_type
+      entity_id: log.resource_id,         // Map resource_id to entity_id
+      user: {
+        display_name: log.user?.display_name || 'Unknown User'
+      },
+      timestamp: log.timestamp,
+      details: log.details
+    }));
+
+    return {
+      logs: mappedLogs,
+      total: result.total,
+      page: filters.page,
+      limit: filters.limit
+    };
   }
 }
