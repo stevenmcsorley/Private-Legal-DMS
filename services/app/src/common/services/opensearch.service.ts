@@ -412,30 +412,40 @@ export class OpenSearchService implements OnModuleInit {
       size: limit,
       aggs: aggregations,
       highlight: {
+        type: 'unified', // Explicitly set the recommended highlighter
         fields: {
           title: { 
-            fragment_size: 150, 
+            fragment_size: 200, // Increased for better context
             number_of_fragments: 1,
             max_analyzer_offset: 10000000, // 10MB for titles
+            boundary_scanner: 'sentence', // Split at sentence boundaries
+            boundary_scanner_locale: 'en-US',
+            no_match_size: 100, // Show snippet even if no match
           },
           content: { 
-            fragment_size: 150, 
-            number_of_fragments: 2,
+            fragment_size: 200, // Increased for better context
+            number_of_fragments: 3, // More fragments for better coverage
             boundary_chars: '.,!? \t\n',
-            boundary_max_scan: 20,
+            boundary_scanner: 'sentence', // Split at sentence boundaries  
+            boundary_scanner_locale: 'en-US',
+            boundary_max_scan: 30, // Increased scan range
             max_analyzer_offset: 10000000, // 10MB for content
+            no_match_size: 150, // Show snippet even if no match
+            order: 'score', // Order fragments by relevance
           },
           'metadata.filename': { 
             fragment_size: 100, 
             number_of_fragments: 1,
             max_analyzer_offset: 10000000, // 10MB for filenames
+            no_match_size: 50, // Show snippet even if no match
           },
         },
         pre_tags: ['<mark>'],
         post_tags: ['</mark>'],
         max_analyzer_offset: 10000000, // 10MB global limit
-        // Allow partial highlighting - don't fail entire search if one doc is too large
-        require_field_match: false,
+        require_field_match: false, // Allow highlighting in all fields
+        encoder: 'html', // HTML encode the output for safety
+        force_source: false, // Use stored fields when available for performance
       },
     };
   }
@@ -510,15 +520,16 @@ export class OpenSearchService implements OnModuleInit {
         if (hit.highlight.content) snippets.push(...hit.highlight.content);
         if (hit.highlight['metadata.filename']) snippets.push(...hit.highlight['metadata.filename']);
         
-        // Create a snippet from highlights or fallback to content
+        // Create a snippet from highlights, preserving HTML tags for frontend display
         const snippet = snippets.length > 0 
-          ? snippets[0].replace(/<\/?mark>/g, '') 
-          : doc.content?.substring(0, 150) + '...' || 'No content available';
+          ? snippets.join(' ... ') // Join multiple fragments with separator
+          : doc.content?.substring(0, 200) + '...' || 'No content available';
         
-        // Estimate page number for documents with page info
+        // Estimate page number for documents with page info (use clean text for position calculation)
         let estimatedPage = null;
         if (doc.metadata.pages && snippets.length > 0 && doc.content) {
-          estimatedPage = this.estimatePageNumber(doc.content, snippets[0], doc.metadata.pages);
+          const cleanSnippet = snippets[0].replace(/<\/?mark>/g, '');
+          estimatedPage = this.estimatePageNumber(doc.content, cleanSnippet, doc.metadata.pages);
         }
         
         return {
@@ -533,7 +544,7 @@ export class OpenSearchService implements OnModuleInit {
       // Fallback to content snippet if no highlighting available for this document
       return {
         ...doc,
-        snippet: doc.content?.substring(0, 150) + '...' || 'No content available',
+        snippet: doc.content?.substring(0, 200) + '...' || 'No content available',
         score: hit._score,
         estimatedPage: null,
         totalPages: doc.metadata.pages,
@@ -551,37 +562,52 @@ export class OpenSearchService implements OnModuleInit {
 
   async getSuggestions(prefix: string, firmId: string): Promise<string[]> {
     try {
+      // Use match_phrase_prefix for efficient autocomplete as recommended by OpenSearch docs
       const response = await this.client.search({
         index: this.indexName,
         body: {
           query: {
             bool: {
               must: [
-                { term: { 'metadata.firm_id': firmId } },
+                { term: { 'metadata.firm_id': firmId } }
+              ],
+              should: [
+                // Exact prefix match (highest priority)
+                {
+                  match_phrase_prefix: {
+                    title: {
+                      query: prefix,
+                      slop: 2,
+                      max_expansions: 10,
+                      boost: 3.0
+                    }
+                  }
+                },
+                // Fuzzy matching for typos (lower priority)
                 {
                   multi_match: {
                     query: prefix,
-                    type: 'phrase_prefix',
-                    fields: ['title^2', 'content', 'metadata.filename'],
-                  },
-                },
+                    fields: ['title^2', 'metadata.filename'],
+                    type: 'best_fields',
+                    fuzziness: 'AUTO',
+                    prefix_length: 1,
+                    boost: 1.0
+                  }
+                }
               ],
+              minimum_should_match: 1
             },
           },
-          aggs: {
-            suggestions: {
-              terms: {
-                field: 'title.keyword',
-                include: `.*${prefix}.*`,
-                size: 10,
-              },
-            },
-          },
-          size: 0,
+          _source: ['title'],
+          size: 10,
+          // Deduplicate results by grouping identical titles
+          collapse: {
+            field: 'title.keyword'
+          }
         },
       });
 
-      return response.body.aggregations?.suggestions?.buckets?.map((bucket: any) => bucket.key) || [];
+      return response.body.hits.hits.map((hit: any) => hit._source.title);
     } catch (error) {
       this.logger.error('Failed to get suggestions', error);
       return [];

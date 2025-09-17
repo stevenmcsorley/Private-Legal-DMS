@@ -122,7 +122,7 @@ export class AuditInterceptor implements NestInterceptor {
   private parseEndpoint(path: string, method: string): {
     action: string | null;
     resourceType: string;
-    resourceId: string;
+    resourceId: string | null;
     riskLevel: 'low' | 'medium' | 'high' | 'critical';
   } {
     const pathSegments = path.split('/').filter(segment => segment);
@@ -130,7 +130,7 @@ export class AuditInterceptor implements NestInterceptor {
     // Default values
     let action: string | null = null;
     let resourceType = 'unknown';
-    let resourceId = 'unknown';
+    let resourceId: string | null = null;
     let riskLevel: 'low' | 'medium' | 'high' | 'critical' = 'low';
 
     // API endpoints
@@ -140,7 +140,7 @@ export class AuditInterceptor implements NestInterceptor {
       // Extract resource ID if present (typically UUID format)
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const idSegment = pathSegments.find(segment => uuidRegex.test(segment));
-      resourceId = idSegment || 'unknown';
+      resourceId = idSegment || null; // Use null instead of 'unknown' for UUID field
 
       // Map method + path patterns to actions
       switch (method) {

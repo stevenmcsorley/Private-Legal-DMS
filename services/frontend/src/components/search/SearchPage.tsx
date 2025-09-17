@@ -734,9 +734,15 @@ const SearchResultItem = ({ result, onDownload, onViewDocument }: SearchResultIt
               </div>
             </div>
             
-            <p className="text-sm text-slate-300 mb-4 line-clamp-2 leading-relaxed">
-              {result.snippet}
-            </p>
+            <div 
+              className="text-sm text-slate-300 mb-4 line-clamp-3 leading-relaxed"
+              dangerouslySetInnerHTML={{ 
+                __html: result.snippet.replace(
+                  /<mark>/g, 
+                  '<mark class="bg-yellow-400 text-gray-900 px-1 py-0.5 rounded font-medium">'
+                )
+              }}
+            />
             
             {renderMetadata()}
           </div>

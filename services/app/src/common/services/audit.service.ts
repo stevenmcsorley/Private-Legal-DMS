@@ -8,7 +8,7 @@ export interface AuditContext {
   user: UserInfo;
   action: string;
   resource_type: string;
-  resource_id: string;
+  resource_id: string | null;
   details?: Record<string, any>;
   ip_address?: string;
   user_agent?: string;
@@ -115,7 +115,7 @@ export class AuditService {
     });
   }
 
-  async logUnauthorizedAccess(user: UserInfo, resource_type: string, resource_id: string, attempted_action: string, ip_address?: string): Promise<void> {
+  async logUnauthorizedAccess(user: UserInfo, resource_type: string, resource_id: string | null, attempted_action: string, ip_address?: string): Promise<void> {
     await this.log({
       user,
       action: 'unauthorized_access',
