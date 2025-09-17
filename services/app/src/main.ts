@@ -65,7 +65,7 @@ async function bootstrap() {
         httpOnly: true,
         secure: configService.get('NODE_ENV') === 'production',
         sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
+        maxAge: 60 * 60 * 1000, // 1 hour - session timeout is managed by auth logic, not cookie expiration
       },
     }),
   );

@@ -8,6 +8,7 @@ import {
 import { Reflector } from '@nestjs/core';
 import { Request } from 'express';
 import { AuthService, Session } from '../auth.service';
+import { AdminService } from '../../modules/admin/admin.service';
 
 export const IS_PUBLIC_KEY = 'isPublic';
 
@@ -18,6 +19,7 @@ export class AuthGuard implements CanActivate {
   constructor(
     private authService: AuthService,
     private reflector: Reflector,
+    private adminService: AdminService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,7 +34,7 @@ export class AuthGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest<Request>();
-    const session = this.extractSessionFromRequest(request);
+    const session = await this.extractSessionFromRequest(request);
 
     if (!session) {
       throw new UnauthorizedException('No valid session found');
@@ -67,7 +69,7 @@ export class AuthGuard implements CanActivate {
     }
   }
 
-  private extractSessionFromRequest(request: Request): Session | null {
+  private async extractSessionFromRequest(request: Request): Promise<Session | null> {
     // First try to get from session (BFF pattern)
     if (request.session && (request.session as any).auth) {
       return (request.session as any).auth as Session;
@@ -77,10 +79,11 @@ export class AuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
     if (authHeader?.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
+      
       return {
         user: null as any, // Will be populated during validation
         accessToken: token,
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour default
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour default for Bearer tokens
         issuedAt: new Date(),
       };
     }

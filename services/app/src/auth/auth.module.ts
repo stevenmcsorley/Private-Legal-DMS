@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
@@ -9,17 +9,19 @@ import { AuthzGuard } from './guards/authz.guard';
 import { OpaService } from './opa.service';
 import { KeycloakConfig } from '../config/keycloak.config';
 import { OpaConfig } from '../config/opa.config';
-import { User } from '../common/entities/user.entity';
+import { User, SystemSettings } from '../common/entities';
+import { AdminModule } from '../modules/admin/admin.module';
 
 @Global()
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forFeature([User, SystemSettings]),
     JwtModule.register({
       // JWT configuration - mainly used for internal token operations
       secret: process.env.JWT_SECRET || 'dev-jwt-secret',
       signOptions: { expiresIn: '1h' },
     }),
+    forwardRef(() => AdminModule),
   ],
   providers: [
     AuthService,

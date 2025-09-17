@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../common/entities/user.entity';
+import { SystemSettings } from '../common/entities/system-settings.entity';
 import * as crypto from 'crypto';
 
 export interface UserInfo {
@@ -39,6 +40,8 @@ export class AuthService {
     private jwtService: JwtService,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(SystemSettings)
+    private systemSettingsRepository: Repository<SystemSettings>,
   ) {}
 
   async validateToken(token: string): Promise<UserInfo> {
@@ -176,6 +179,24 @@ export class AuthService {
     return firmId;
   }
 
+  private async getSessionTimeoutMinutes(): Promise<number> {
+    try {
+      const setting = await this.systemSettingsRepository.findOne({
+        where: { key: 'session_timeout_minutes' }
+      });
+
+      if (setting?.value) {
+        const timeoutValue = typeof setting.value === 'string' ? parseInt(setting.value, 10) : setting.value;
+        return isNaN(timeoutValue) ? 60 : timeoutValue;
+      }
+
+      return 60; // Default to 60 minutes
+    } catch (error) {
+      this.logger.warn('Failed to get session timeout from settings, using default:', error);
+      return 60; // Default to 60 minutes
+    }
+  }
+
   async exchangeCodeForTokens(code: string, redirectUri: string): Promise<Session> {
     const tokenEndpoint = `${this.getKeycloakBaseUrl()}/protocol/openid-connect/token`;
     
@@ -209,11 +230,15 @@ export class AuthService {
       const tokens = await response.json() as any;
       const userInfo = await this.validateToken(tokens.access_token);
       
+      // Get dynamic session timeout from admin settings instead of using JWT expiration
+      const timeoutMinutes = await this.getSessionTimeoutMinutes();
+      const timeoutMs = timeoutMinutes * 60 * 1000;
+      
       return {
         user: userInfo,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token,
-        expiresAt: new Date(Date.now() + (tokens.expires_in * 1000)),
+        expiresAt: new Date(Date.now() + timeoutMs),
         issuedAt: new Date(),
       };
     } catch (error) {
@@ -247,11 +272,15 @@ export class AuthService {
       const tokens = await response.json() as any;
       const userInfo = await this.validateToken(tokens.access_token);
       
+      // Get dynamic session timeout from admin settings instead of using JWT expiration
+      const timeoutMinutes = await this.getSessionTimeoutMinutes();
+      const timeoutMs = timeoutMinutes * 60 * 1000;
+      
       return {
         user: userInfo,
         accessToken: tokens.access_token,
         refreshToken: tokens.refresh_token || refreshToken,
-        expiresAt: new Date(Date.now() + (tokens.expires_in * 1000)),
+        expiresAt: new Date(Date.now() + timeoutMs),
         issuedAt: new Date(),
       };
     } catch (error) {

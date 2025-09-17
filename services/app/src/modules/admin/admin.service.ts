@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not, IsNull, In } from 'typeorm';
-import { User, Firm, Team, RetentionClass, Document, Matter, Client, AuditLog } from '../../common/entities';
+import { User, Firm, Team, RetentionClass, Document, Matter, Client, AuditLog, SystemSettings } from '../../common/entities';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { CreateTeamDto } from './dto/create-team.dto';
@@ -62,6 +62,8 @@ export class AdminService {
     private clientRepository: Repository<Client>,
     @InjectRepository(AuditLog)
     private auditLogRepository: Repository<AuditLog>,
+    @InjectRepository(SystemSettings)
+    private systemSettingsRepository: Repository<SystemSettings>,
   ) {}
 
   // User Management
@@ -1113,36 +1115,39 @@ export class AdminService {
   async getSystemSettings(currentUser: UserInfo): Promise<SystemSettingsDto> {
     this.validateAdminAccess(currentUser);
 
-    // For now, return default settings
-    // In a real application, these would be stored in the database
-    const defaultSettings: SystemSettingsDto = {
+    // Get settings from key-value database
+    const allSettings = await this.systemSettingsRepository.find();
+    const settingsMap = new Map(allSettings.map(s => [s.key, s.value]));
+
+    // Build settings object from key-value pairs
+    const settings: SystemSettingsDto = {
       firm_name: 'Legal Document Management System',
-      default_retention_years: 7,
-      max_file_size_mb: 100,
-      enable_ocr: true,
-      enable_legal_holds: true,
-      enable_cross_firm_sharing: false,
-      backup_config: {
+      default_retention_years: parseInt(settingsMap.get('default_retention_years') || '7', 10),
+      max_file_size_mb: parseInt(settingsMap.get('max_upload_size_mb') || '100', 10),
+      enable_ocr: settingsMap.get('enable_ocr') !== false,
+      enable_legal_holds: settingsMap.get('enable_legal_holds') !== false,
+      enable_cross_firm_sharing: settingsMap.get('enable_cross_firm_sharing') === true,
+      backup_config: settingsMap.get('backup_config') || {
         frequency: 'daily',
         retention_days: 30,
         enabled: true,
       },
-      smtp_config: {
+      smtp_config: settingsMap.get('smtp_config') || {
         host: 'smtp.example.com',
         port: 587,
         secure: false,
         enabled: false,
       },
-      watermark_config: {
+      watermark_config: settingsMap.get('watermark_config') || {
         enabled: true,
         text: 'CONFIDENTIAL - {firm_name}',
         opacity: 0.3,
       },
       security_policy: {
-        session_timeout_minutes: 60,
-        require_mfa_for_admins: true,
-        max_login_attempts: 5,
-        password_expiry_days: 90,
+        session_timeout_minutes: parseInt(settingsMap.get('session_timeout_minutes') || '60', 10),
+        max_login_attempts: parseInt(settingsMap.get('max_login_attempts') || '5', 10),
+        password_expiry_days: parseInt(settingsMap.get('password_expiry_days') || '90', 10),
+        require_mfa_for_admins: settingsMap.get('require_mfa_for_admins') === 'true' || settingsMap.get('require_mfa_for_admins') === true,
       },
     };
 
@@ -1152,11 +1157,25 @@ export class AdminService {
         where: { id: currentUser.firm_id },
       });
       if (firm) {
-        defaultSettings.firm_name = firm.name;
+        settings.firm_name = firm.name;
       }
     }
 
-    return defaultSettings;
+    return settings;
+  }
+
+  async getSessionTimeoutMinutes(): Promise<number> {
+    // Get session timeout from key-value settings
+    const setting = await this.systemSettingsRepository.findOne({
+      where: { key: 'session_timeout_minutes' }
+    });
+
+    if (setting?.value) {
+      const timeoutValue = typeof setting.value === 'string' ? parseInt(setting.value, 10) : setting.value;
+      return isNaN(timeoutValue) ? 60 : timeoutValue;
+    }
+
+    return 60; // Default to 60 minutes
   }
 
   async updateSystemSettings(
