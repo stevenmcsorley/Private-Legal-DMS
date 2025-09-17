@@ -852,7 +852,7 @@ export const ClientPortal = () => {
               <div className="space-y-2 text-sm text-slate-400">
                 <p>• Files will be securely stored and accessible only to your legal team</p>
                 <p>• Supported formats: PDF, Word documents, Excel files, and images</p>
-                <p>• Maximum file size: 10MB per file</p>
+                <p>• Maximum file size: 100MB per file</p>
                 <p>• All uploads are encrypted and logged for security</p>
                 <p>• You'll receive confirmation once files are successfully uploaded</p>
               </div>

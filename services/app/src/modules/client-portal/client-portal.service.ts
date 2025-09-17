@@ -279,7 +279,7 @@ export class ClientPortalService {
     });
 
     return {
-      max_file_size: 50 * 1024 * 1024, // 50MB for client uploads
+      max_file_size: 100 * 1024 * 1024, // 100MB for client uploads
       allowed_file_types: [
         'application/pdf',
         'application/msword',

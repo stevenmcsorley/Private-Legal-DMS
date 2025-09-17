@@ -54,6 +54,9 @@ export class DocumentMeta {
   @Column({ type: 'text', nullable: true })
   extracted_text: string;
 
+  @Column({ type: 'integer', nullable: true })
+  pages: number;
+
   @Column({ type: 'tsvector', nullable: true })
   search_vector: string;
 

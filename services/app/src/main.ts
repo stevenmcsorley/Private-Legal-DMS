@@ -5,6 +5,7 @@ import { ConfigService } from '@nestjs/config';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
 import * as compression from 'compression';
+import * as express from 'express';
 import helmet from 'helmet';
 
 // Polyfill for crypto.randomUUID if not available
@@ -25,6 +26,10 @@ async function bootstrap() {
   
   // Trust proxy for proper IP forwarding
   app.getHttpAdapter().getInstance().set('trust proxy', 1);
+
+  // Set body size limits for file uploads (100MB)
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
   // Security middleware
   app.use(helmet({

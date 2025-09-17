@@ -10,6 +10,8 @@ import { Repository } from 'typeorm';
 import { Document, DocumentMeta, Matter, Client, RetentionClass } from '../../common/entities';
 import { MinioService } from '../../common/services/minio.service';
 import { AuditService } from '../../common/services/audit.service';
+import { SearchService } from '../search/search.service';
+import { TextExtractionService } from '../../common/services/text-extraction.service';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { DocumentResponseDto } from './dto/document-response.dto';
 import { UserInfo } from '../../auth/auth.service';
@@ -56,6 +58,8 @@ export class DocumentsService {
     private retentionClassRepository: Repository<RetentionClass>,
     private minioService: MinioService,
     private auditService: AuditService,
+    private searchService: SearchService,
+    private textExtractionService: TextExtractionService,
   ) {}
 
   async uploadDocument(
@@ -164,6 +168,42 @@ export class DocumentsService {
 
       await this.documentMetaRepository.save(documentMeta);
 
+      // Extract text content from the document
+      try {
+        if (this.textExtractionService.isSupportedFileType(file.mimetype, file.originalname)) {
+          this.logger.debug(`Extracting text from ${file.originalname}`);
+          
+          const extractionResult = await this.textExtractionService.extractTextWithLanguage(
+            file.buffer,
+            file.originalname
+          );
+
+          if (extractionResult.text) {
+            // Update the document metadata with extracted text
+            documentMeta.extracted_text = extractionResult.text;
+            
+            // Update title if it wasn't provided and we have one from extraction
+            if (!uploadDto.title && extractionResult.metadata.title) {
+              documentMeta.title = extractionResult.metadata.title;
+            }
+            
+            // Store page information if available
+            if (extractionResult.metadata.pages) {
+              documentMeta.pages = extractionResult.metadata.pages;
+            }
+
+            await this.documentMetaRepository.save(documentMeta);
+            
+            this.logger.debug(`Extracted ${extractionResult.text.length} characters from ${file.originalname}`);
+          }
+        } else {
+          this.logger.debug(`File type ${file.mimetype} not supported for text extraction: ${file.originalname}`);
+        }
+      } catch (extractionError) {
+        this.logger.warn(`Text extraction failed for ${file.originalname}:`, extractionError.message);
+        // Continue with upload even if text extraction fails
+      }
+
       this.logger.log(`Document uploaded: ${savedDocument.id} by user ${user.sub}`);
 
       // Audit log the document upload
@@ -175,8 +215,14 @@ export class DocumentsService {
         uploadDto.matter_id,
       );
 
-      // TODO: Queue document for text extraction and indexing
-      // await this.queueDocumentProcessing(savedDocument.id);
+      // Index document for search
+      try {
+        await this.searchService.indexDocument(savedDocument);
+        this.logger.debug(`Document indexed for search: ${savedDocument.id}`);
+      } catch (indexError) {
+        this.logger.error(`Failed to index document ${savedDocument.id}:`, indexError);
+        // Don't fail the upload if indexing fails, just log the error
+      }
 
       return this.buildDocumentResponse(savedDocument, {
         metadata: documentMeta,

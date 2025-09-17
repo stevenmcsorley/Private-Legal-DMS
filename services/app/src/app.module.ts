@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bull';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ServeStaticModule } from '@nestjs/serve-static';
+import { MulterModule } from '@nestjs/platform-express';
 import { join } from 'path';
 
 import { configValidationSchema } from './config/validation';
@@ -66,6 +67,13 @@ import { MetricsModule } from './common/metrics/metrics.module';
       rootPath: join(__dirname, '..', 'public'),
       serveRoot: '/static',
       exclude: ['/api/*'],
+    }),
+
+    // Multer configuration for file uploads
+    MulterModule.register({
+      limits: {
+        fileSize: 100 * 1024 * 1024, // 100MB
+      },
     }),
 
     // Core modules
