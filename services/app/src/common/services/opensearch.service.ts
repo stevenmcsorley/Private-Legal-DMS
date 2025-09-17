@@ -273,6 +273,206 @@ export class OpenSearchService implements OnModuleInit {
     }
   }
 
+  private parseAdvancedQuery(queryString: string): any[] {
+    const queries = [];
+    
+    // Define field mappings for field-specific searches
+    const fieldMappings: Record<string, string[]> = {
+      title: ['title^3'],
+      content: ['content'],
+      filename: ['metadata.filename^2'],
+      author: ['metadata.author'],
+      tag: ['metadata.tags'],
+      tags: ['metadata.tags'],
+    };
+    
+    // Default fields for general searches
+    const defaultFields = ['title^3', 'content', 'metadata.filename^2'];
+    
+    // Parse different types of queries
+    const tokens = this.tokenizeQuery(queryString);
+    
+    for (const token of tokens) {
+      if (token.type === 'quoted_phrase') {
+        // "exact phrase" - phrase query
+        queries.push({
+          multi_match: {
+            query: token.value,
+            type: 'phrase',
+            fields: defaultFields,
+            boost: 3,
+          },
+        });
+      } else if (token.type === 'proximity') {
+        // "nearby words"~5 - proximity search
+        queries.push({
+          multi_match: {
+            query: token.value,
+            type: 'phrase',
+            slop: token.distance || 5,
+            fields: defaultFields,
+            boost: 2.5,
+          },
+        });
+      } else if (token.type === 'field_search') {
+        // title:merger - field-specific search
+        const fields = fieldMappings[token.field] || [token.field];
+        queries.push({
+          multi_match: {
+            query: token.value,
+            fields: fields,
+            boost: 2,
+          },
+        });
+      } else if (token.type === 'wildcard') {
+        // contract* - wildcard search
+        queries.push({
+          query_string: {
+            query: token.value,
+            fields: defaultFields,
+            default_operator: 'AND',
+            boost: 1.5,
+          },
+        });
+      } else if (token.type === 'boolean') {
+        // attorney OR lawyer - boolean query
+        queries.push({
+          query_string: {
+            query: token.value,
+            fields: defaultFields,
+            default_operator: 'OR',
+            boost: 2,
+          },
+        });
+      } else if (token.type === 'regular') {
+        // Regular search terms - multiple strategies
+        const searchQueries = [];
+        
+        // Exact phrase match (highest boost)
+        searchQueries.push({
+          multi_match: {
+            query: token.value,
+            type: 'phrase',
+            fields: defaultFields,
+            boost: 3,
+          },
+        });
+        
+        // Fuzzy matching for typos
+        searchQueries.push({
+          multi_match: {
+            query: token.value,
+            type: 'best_fields',
+            fields: defaultFields,
+            fuzziness: 'AUTO',
+            prefix_length: 2,
+            boost: 1.5,
+          },
+        });
+        
+        // Prefix matching
+        searchQueries.push({
+          multi_match: {
+            query: token.value,
+            type: 'phrase_prefix',
+            fields: defaultFields,
+            boost: 1.2,
+          },
+        });
+        
+        queries.push({
+          bool: {
+            should: searchQueries,
+            minimum_should_match: 1,
+          },
+        });
+      }
+    }
+    
+    return queries.length > 0 ? queries : [{
+      match_all: {}
+    }];
+  }
+
+  private tokenizeQuery(queryString: string): Array<{
+    type: 'quoted_phrase' | 'proximity' | 'field_search' | 'wildcard' | 'boolean' | 'regular';
+    value: string;
+    field?: string;
+    distance?: number;
+  }> {
+    const tokens = [];
+    let remaining = queryString.trim();
+    
+    while (remaining.length > 0) {
+      // Match quoted phrases with optional proximity: "phrase"~5
+      const quotedMatch = remaining.match(/^"([^"]+)"(?:~(\d+))?/);
+      if (quotedMatch) {
+        const [fullMatch, phrase, distance] = quotedMatch;
+        tokens.push({
+          type: distance ? 'proximity' : 'quoted_phrase',
+          value: phrase,
+          distance: distance ? parseInt(distance) : undefined,
+        });
+        remaining = remaining.slice(fullMatch.length).trim();
+        continue;
+      }
+      
+      // Match field searches: field:value
+      const fieldMatch = remaining.match(/^(\w+):(\S+)/);
+      if (fieldMatch) {
+        const [fullMatch, field, value] = fieldMatch;
+        tokens.push({
+          type: 'field_search',
+          field: field.toLowerCase(),
+          value: value,
+        });
+        remaining = remaining.slice(fullMatch.length).trim();
+        continue;
+      }
+      
+      // Match wildcard terms: contract*
+      const wildcardMatch = remaining.match(/^(\S*[*?]\S*)/);
+      if (wildcardMatch) {
+        const [fullMatch, term] = wildcardMatch;
+        tokens.push({
+          type: 'wildcard',
+          value: term,
+        });
+        remaining = remaining.slice(fullMatch.length).trim();
+        continue;
+      }
+      
+      // Match boolean expressions: attorney OR lawyer
+      const booleanMatch = remaining.match(/^(.+?)\s+(AND|OR|NOT)\s+(.+?)(?=\s+(?:AND|OR|NOT)|$)/i);
+      if (booleanMatch) {
+        const [fullMatch, left, operator, right] = booleanMatch;
+        tokens.push({
+          type: 'boolean',
+          value: `${left} ${operator.toUpperCase()} ${right}`,
+        });
+        remaining = remaining.slice(fullMatch.length).trim();
+        continue;
+      }
+      
+      // Match regular words
+      const wordMatch = remaining.match(/^(\S+)/);
+      if (wordMatch) {
+        const [fullMatch, word] = wordMatch;
+        tokens.push({
+          type: 'regular',
+          value: word,
+        });
+        remaining = remaining.slice(fullMatch.length).trim();
+        continue;
+      }
+      
+      // Skip unknown characters
+      remaining = remaining.slice(1).trim();
+    }
+    
+    return tokens;
+  }
+
   private buildSearchQuery(query: SearchQuery, firmId: string) {
     const page = query.page || 1;
     const limit = query.limit || 50;
@@ -287,58 +487,12 @@ export class OpenSearchService implements OnModuleInit {
       must.push({ term: { type: query.type } });
     }
 
-    // Main search query with proximity and fuzzy matching
+    // Main search query with advanced parsing
     if (query.q) {
-      const searchQueries = [];
-
-      // Exact phrase match (highest boost)
-      searchQueries.push({
-        multi_match: {
-          query: query.q,
-          type: 'phrase',
-          fields: ['title^3', 'content', 'metadata.filename^2'],
-          boost: 3,
-        },
-      });
-
-      // Proximity search (within 5 words)
-      if (query.q.includes(' ')) {
-        searchQueries.push({
-          multi_match: {
-            query: query.q,
-            type: 'phrase_prefix',
-            slop: 5,
-            fields: ['title^2', 'content', 'metadata.filename'],
-            boost: 2,
-          },
-        });
-      }
-
-      // Fuzzy matching for typos
-      searchQueries.push({
-        multi_match: {
-          query: query.q,
-          type: 'best_fields',
-          fields: ['title^2', 'content', 'metadata.filename'],
-          fuzziness: 'AUTO',
-          prefix_length: 2,
-          boost: 1.5,
-        },
-      });
-
-      // Wildcard search for partial matches
-      searchQueries.push({
-        multi_match: {
-          query: `*${query.q}*`,
-          type: 'phrase_prefix',
-          fields: ['title', 'content', 'metadata.filename'],
-          boost: 1,
-        },
-      });
-
+      const parsedQueries = this.parseAdvancedQuery(query.q);
       must.push({
         bool: {
-          should: searchQueries,
+          should: parsedQueries,
           minimum_should_match: 1,
         },
       });
