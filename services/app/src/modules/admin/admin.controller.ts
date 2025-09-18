@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -239,6 +240,74 @@ export class AdminController {
     @CurrentUser() user: UserInfo,
   ) {
     return this.adminService.updateUserClients(userId, clientIds, user);
+  }
+
+  @Patch('users/:id/clearance')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Update user security clearance level' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        clearance_level: {
+          type: 'integer',
+          minimum: 1,
+          maximum: 10,
+          description: 'Security clearance level (1-10)',
+          example: 7,
+        },
+      },
+      required: ['clearance_level'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User clearance level updated successfully',
+  })
+  async updateUserClearance(
+    @Param('id', ParseUUIDPipe) userId: string,
+    @Body('clearance_level') clearanceLevel: number,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.updateUserClearance(userId, clearanceLevel, user);
+  }
+
+  @Patch('users/batch-clearance')
+  @CanWrite('admin')
+  @ApiOperation({ summary: 'Update multiple users clearance levels' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        updates: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              user_id: { type: 'string', format: 'uuid' },
+              clearance_level: { type: 'integer', minimum: 1, maximum: 10 },
+            },
+            required: ['user_id', 'clearance_level'],
+          },
+          description: 'Array of user clearance updates',
+          example: [
+            { user_id: '123e4567-e89b-12d3-a456-426614174000', clearance_level: 7 },
+            { user_id: '123e4567-e89b-12d3-a456-426614174001', clearance_level: 5 }
+          ],
+        },
+      },
+      required: ['updates'],
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Batch clearance update completed successfully',
+  })
+  async updateBatchUserClearance(
+    @Body('updates') updates: Array<{ user_id: string; clearance_level: number }>,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.adminService.updateBatchUserClearance(updates, user);
   }
 
   @Get('debug/client-portal-issues')

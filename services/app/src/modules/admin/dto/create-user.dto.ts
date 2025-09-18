@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsArray, IsOptional, IsUUID, MinLength, MaxLength } from 'class-validator';
+import { IsEmail, IsString, IsArray, IsOptional, IsUUID, MinLength, MaxLength, IsInt, Min, Max } from 'class-validator';
 
 export class CreateUserDto {
   @ApiProperty({
@@ -53,6 +53,20 @@ export class CreateUserDto {
   })
   @IsOptional()
   attributes?: Record<string, any>;
+
+  @ApiProperty({
+    description: 'Security clearance level (1-10)',
+    example: 5,
+    minimum: 1,
+    maximum: 10,
+    default: 5,
+    required: false,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(10)
+  clearance_level?: number = 5;
 
   @ApiProperty({
     description: 'Whether user account is active',

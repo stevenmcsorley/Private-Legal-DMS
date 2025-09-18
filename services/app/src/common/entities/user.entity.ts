@@ -38,6 +38,9 @@ export class User {
   @Column({ type: 'jsonb', default: {} })
   attributes: Record<string, any>;
 
+  @Column({ type: 'int', default: 5 })
+  clearance_level: number;
+
   @Column({ type: 'boolean', default: true })
   is_active: boolean;
 

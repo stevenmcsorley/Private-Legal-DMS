@@ -6,6 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { SearchableMultiSelect } from '@/components/ui/searchable-multiselect';
+import { ClearanceLevelInput } from '@/components/ui/clearance-level-input';
+import { ClearanceLevelDisplay } from '@/components/ui/clearance-level-display';
+import { getRecommendedClearanceLevel, validateClearanceLevel } from '@/utils/clearance-config';
 import { 
   Search, 
   Plus, 
@@ -43,6 +46,7 @@ interface User {
   display_name: string;
   roles: string[];
   is_active: boolean;
+  clearance_level: number;
   created_at: string;
   firm: {
     id: string;
@@ -60,6 +64,7 @@ interface CreateUserFormData {
   phone: string;
   roles: string[];
   client_ids: string[];
+  clearance_level: number;
   is_active: boolean;
 }
 
@@ -101,6 +106,7 @@ export const UserManagement = () => {
     phone: '',
     roles: [],
     client_ids: [],
+    clearance_level: 5,
     is_active: true,
   });
   const [createUserForm, setCreateUserForm] = useState<CreateUserFormData>({
@@ -113,6 +119,7 @@ export const UserManagement = () => {
     phone: '',
     roles: [],
     client_ids: [],
+    clearance_level: 5,
     is_active: true,
   });
 
@@ -200,6 +207,13 @@ export const UserManagement = () => {
       return;
     }
 
+    // Validate clearance level against roles
+    const clearanceValidation = validateClearanceLevel(createUserForm.clearance_level, createUserForm.roles);
+    if (!clearanceValidation.valid) {
+      alert(`Clearance Level Error: ${clearanceValidation.message}`);
+      return;
+    }
+
     if (!currentUser?.firmId) {
       alert('Unable to determine your firm. Please refresh the page and try again.');
       return;
@@ -214,6 +228,7 @@ export const UserManagement = () => {
         display_name: createUserForm.display_name,
         roles: createUserForm.roles,
         is_active: createUserForm.is_active,
+        clearance_level: createUserForm.clearance_level,
         firm_id: currentUser.firmId,
         client_ids: createUserForm.client_ids.length > 0 ? createUserForm.client_ids : undefined,
         attributes: {
@@ -249,6 +264,7 @@ export const UserManagement = () => {
           phone: '',
           roles: [],
           client_ids: [],
+          clearance_level: 5,
           is_active: true,
         });
         alert('User created successfully!');
@@ -286,20 +302,33 @@ export const UserManagement = () => {
   };
 
   const handleRoleToggle = (roleName: string, checked: boolean) => {
+    const newRoles = checked 
+      ? [...createUserForm.roles, roleName]
+      : createUserForm.roles.filter(role => role !== roleName);
+    
+    // Auto-suggest clearance level based on roles
+    const recommendedLevel = getRecommendedClearanceLevel(newRoles);
+    
     setCreateUserForm(prev => ({
       ...prev,
-      roles: checked 
-        ? [...prev.roles, roleName]
-        : prev.roles.filter(role => role !== roleName)
+      roles: newRoles,
+      clearance_level: recommendedLevel
     }));
   };
 
   const handleEditRoleToggle = (roleName: string, checked: boolean) => {
+    const newRoles = checked 
+      ? [...editUserForm.roles, roleName]
+      : editUserForm.roles.filter(role => role !== roleName);
+    
+    // Auto-suggest clearance level based on roles if not manually set
+    const recommendedLevel = getRecommendedClearanceLevel(newRoles);
+    
     setEditUserForm(prev => ({
       ...prev,
-      roles: checked 
-        ? [...prev.roles, roleName]
-        : prev.roles.filter(role => role !== roleName)
+      roles: newRoles,
+      // Only auto-update clearance if it's at the default level or invalid for new roles
+      clearance_level: prev.clearance_level === 5 ? recommendedLevel : prev.clearance_level
     }));
   };
 
@@ -315,6 +344,7 @@ export const UserManagement = () => {
       phone: user.attributes?.phone || '',
       roles: user.roles || [],
       client_ids: user.attributes?.client_ids || user.client_ids || [],
+      clearance_level: user.clearance_level || 5,
       is_active: user.is_active,
     });
     setShowEditDialog(true);
@@ -332,6 +362,13 @@ export const UserManagement = () => {
       return;
     }
 
+    // Validate clearance level against roles
+    const clearanceValidation = validateClearanceLevel(editUserForm.clearance_level, editUserForm.roles);
+    if (!clearanceValidation.valid) {
+      alert(`Clearance Level Error: ${clearanceValidation.message}`);
+      return;
+    }
+
     setIsEditing(true);
     
     try {
@@ -346,6 +383,7 @@ export const UserManagement = () => {
           display_name: editUserForm.display_name,
           roles: editUserForm.roles,
           is_active: editUserForm.is_active,
+          clearance_level: editUserForm.clearance_level,
           client_ids: editUserForm.client_ids.length > 0 ? editUserForm.client_ids : undefined,
           attributes: {
             first_name: editUserForm.first_name,
@@ -745,6 +783,16 @@ export const UserManagement = () => {
                 />
               )}
 
+              {/* Clearance Level */}
+              <ClearanceLevelInput
+                value={createUserForm.clearance_level}
+                onChange={(level) => setCreateUserForm({...createUserForm, clearance_level: level})}
+                maxLevel={currentUser?.clearance_level || 10}
+                roles={createUserForm.roles}
+                showRecommendation={true}
+                showValidation={true}
+              />
+
               {/* Status */}
               <div className="flex items-center space-x-2">
                 <Checkbox
@@ -852,6 +900,7 @@ export const UserManagement = () => {
                   </th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">User</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Roles</th>
+                  <th className="text-left py-3 px-6 font-medium text-slate-300">Clearance</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Status</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Last Login</th>
                   <th className="text-left py-3 px-6 font-medium text-slate-300">Actions</th>
@@ -899,6 +948,14 @@ export const UserManagement = () => {
                       <p className="text-xs text-slate-500 mt-1">
                         Firm: {user.firm.name}
                       </p>
+                    </td>
+                    
+                    <td className="py-4 px-6">
+                      <ClearanceLevelDisplay 
+                        level={user.clearance_level || 5} 
+                        showLabel={false}
+                        size="sm"
+                      />
                     </td>
                     
                     <td className="py-4 px-6">
@@ -1111,6 +1168,16 @@ export const UserManagement = () => {
                   maxHeight="250px"
                 />
               )}
+
+              {/* Clearance Level */}
+              <ClearanceLevelInput
+                value={editUserForm.clearance_level}
+                onChange={(level) => setEditUserForm({...editUserForm, clearance_level: level})}
+                maxLevel={currentUser?.clearance_level || 10}
+                roles={editUserForm.roles}
+                showRecommendation={true}
+                showValidation={true}
+              />
 
               {/* Status */}
               <div className="flex items-center space-x-2">

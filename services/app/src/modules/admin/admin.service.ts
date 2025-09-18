@@ -160,6 +160,7 @@ export class AdminService {
       display_name: user.display_name,
       roles: user.roles,
       attributes: user.attributes,
+      clearance_level: user.clearance_level,
       firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
       is_active: user.is_active,
       created_at: user.created_at,
@@ -422,6 +423,100 @@ export class AdminService {
     });
 
     return this.getUser(userId, currentUser);
+  }
+
+  async updateUserClearance(userId: string, clearanceLevel: number, currentUser: UserInfo): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    // Validate clearance level
+    if (clearanceLevel < 1 || clearanceLevel > 10) {
+      throw new BadRequestException('Clearance level must be between 1 and 10');
+    }
+
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    // Firm admins can only update users from their firm
+    if (!currentUser.roles.includes('super_admin') && user.firm_id !== currentUser.firm_id) {
+      throw new ForbiddenException('Cannot update user from different firm');
+    }
+
+    // Prevent setting clearance higher than current user's clearance (unless super admin)
+    if (!currentUser.roles.includes('super_admin')) {
+      const currentUserLevel = currentUser.attributes?.clearance_level || 5;
+      if (clearanceLevel > currentUserLevel) {
+        throw new ForbiddenException('Cannot set clearance level higher than your own');
+      }
+    }
+
+    const oldClearanceLevel = user.clearance_level;
+    user.clearance_level = clearanceLevel;
+
+    await this.userRepository.save(user);
+
+    this.logger.log(`User clearance updated: ${user.email} from ${oldClearanceLevel} to ${clearanceLevel} by ${currentUser.email}`, {
+      userId,
+      adminId: currentUser.sub,
+      oldClearanceLevel,
+      newClearanceLevel: clearanceLevel,
+    });
+
+    return this.getUser(userId, currentUser);
+  }
+
+  async updateBatchUserClearance(
+    updates: Array<{ user_id: string; clearance_level: number }>,
+    currentUser: UserInfo
+  ): Promise<any> {
+    this.validateAdminAccess(currentUser);
+
+    // Validate all clearance levels
+    for (const update of updates) {
+      if (update.clearance_level < 1 || update.clearance_level > 10) {
+        throw new BadRequestException(`Clearance level must be between 1 and 10 for user ${update.user_id}`);
+      }
+    }
+
+    const results = [];
+    const errors = [];
+
+    for (const update of updates) {
+      try {
+        const result = await this.updateUserClearance(update.user_id, update.clearance_level, currentUser);
+        results.push({
+          user_id: update.user_id,
+          status: 'success',
+          clearance_level: update.clearance_level,
+        });
+      } catch (error) {
+        errors.push({
+          user_id: update.user_id,
+          status: 'error',
+          message: error.message,
+        });
+      }
+    }
+
+    this.logger.log(`Batch clearance update completed: ${results.length} successful, ${errors.length} errors by ${currentUser.email}`, {
+      adminId: currentUser.sub,
+      successCount: results.length,
+      errorCount: errors.length,
+    });
+
+    return {
+      success: results,
+      errors,
+      summary: {
+        total: updates.length,
+        successful: results.length,
+        failed: errors.length,
+      },
+    };
   }
 
   async getClientPortalIssues(currentUser: UserInfo): Promise<any> {
