@@ -69,8 +69,8 @@ services:
     environment:
       NODE_ENV: development
       TS_NODE_TRANSPILE_ONLY: "true"
-      API_BASE_URL: http://localhost
-      FRONTEND_URL: http://localhost
+      API_BASE_URL: http://localhost:3000
+      FRONTEND_URL: http://localhost:5173
       KEYCLOAK_PUBLIC_URL: http://localhost:8081
       DATABASE_URL: postgres://app:app@app-db:5432/app
       OPENSEARCH_URL: http://opensearch:9200
