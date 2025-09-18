@@ -1,6 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/user.decorator';
+import { RequirePermissions, CanAdmin } from '../../auth/decorators/permission.decorator';
 import { UserInfo } from '../../auth/auth.service';
 import { SearchService } from './search.service';
 import { SearchQuery, SearchResponse } from '../../common/services/opensearch.service';
@@ -11,6 +12,7 @@ export class SearchController {
   constructor(private readonly searchService: SearchService) {}
 
   @Get()
+  @RequirePermissions('query', 'search')
   @ApiOperation({ summary: 'Search documents, matters, and clients' })
   @ApiQuery({ name: 'q', required: true, description: 'Search query' })
   @ApiQuery({ name: 'type', required: false, enum: ['document', 'matter', 'client', 'all'], description: 'Type filter' })
@@ -41,6 +43,7 @@ export class SearchController {
   }
 
   @Get('suggestions')
+  @RequirePermissions('query', 'search')
   @ApiOperation({ summary: 'Get search suggestions' })
   @ApiQuery({ name: 'q', required: true, description: 'Search prefix' })
   @ApiResponse({ status: 200, description: 'Search suggestions returned successfully' })
@@ -60,13 +63,10 @@ export class SearchController {
   }
 
   @Get('reindex')
+  @CanAdmin('search')
   @ApiOperation({ summary: 'Reindex all documents, matters, and clients' })
   @ApiResponse({ status: 200, description: 'Reindexing completed successfully' })
   async reindex(@CurrentUser() user: UserInfo): Promise<{ message: string; indexed: { documents: number; matters: number; clients: number } }> {
-    // Only allow super admins to reindex
-    if (!user.roles.includes('super_admin')) {
-      throw new Error('Only super admins can reindex search data');
-    }
 
     await this.searchService.reindexAll();
     

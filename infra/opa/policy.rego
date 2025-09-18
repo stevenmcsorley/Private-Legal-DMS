@@ -52,10 +52,11 @@ allow if {
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
 
-# Document listing (when no specific firm_id in resource)
+# Document listing (when no specific firm_id in resource - for listing endpoints)
 allow if {
     input.resource.type == "document"
     input.action in ["read", "list"]
+    not input.resource.firm_id  # Only when no firm_id specified
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
     input.user.attrs.firm_id != "system"
 }
@@ -136,12 +137,20 @@ allow if {
     input.user.attrs.firm_id != "system"
 }
 
-# Matter management
+# Matter management - specific matter with firm_id
 allow if {
     input.resource.type == "matter"
-    input.action in ["create", "update", "delete", "write"]
+    input.action in ["create", "update", "delete"]
     firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Matter operations - firm-scoped (e.g., for shares listing)
+allow if {
+    input.resource.type == "matter"
+    input.action == "write"
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
 }
 
 # Client access to assigned matters only
@@ -159,10 +168,26 @@ allow if {
     "client_user" in input.user.roles
 }
 
-# Client management
+# Client management - specific client with firm_id (when resource has firm_id)
 allow if {
     input.resource.type == "client"
-    input.action in ["create", "update", "read", "list"]
+    input.action in ["create", "update"]
+    firm_access_allowed
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+}
+
+# Client read/list operations - firm-scoped (service layer filters by firm)
+allow if {
+    input.resource.type == "client"
+    input.action in ["read", "list"]
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
+}
+
+# Specific client read - when resource has firm_id
+allow if {
+    input.resource.type == "client"
+    input.action == "read"
     firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
@@ -188,12 +213,20 @@ allow if {
     "super_admin" in input.user.roles
 }
 
-# Search access - same as document read access
+# Search access - firm-scoped search
 allow if {
     input.resource.type == "search"
     input.action == "query"
-    firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin", "client_user"]
+    input.user.attrs.firm_id != "system"
+}
+
+# Dashboard access - firm-scoped dashboard
+allow if {
+    input.resource.type == "dashboard"
+    input.action == "read"
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
 }
 
 # Audit log access

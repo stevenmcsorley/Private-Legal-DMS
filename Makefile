@@ -51,6 +51,31 @@ db-reset: ## Reset database (drop and recreate)
 db-shell: ## Connect to PostgreSQL shell
 	docker compose exec app-db psql -U app -d app
 
+# Schema Management
+schema-export: ## Export current database schema
+	@echo "📥 Exporting database schema..."
+	docker exec dms-app-db-1 pg_dump -U app -d app --schema-only --no-owner --no-privileges > services/app/database/schema.sql
+	@echo "✅ Schema exported to services/app/database/schema.sql"
+
+schema-import: ## Import schema into fresh database
+	@echo "📤 Importing database schema..."
+	docker exec -i dms-app-db-1 psql -U app -d app < services/app/database/schema.sql
+	@echo "✅ Schema imported successfully"
+
+seed-fresh: ## Apply seed data to fresh database
+	@echo "🌱 Applying seed data..."
+	docker exec -i dms-app-db-1 psql -U app -d app < services/app/database/seeds.sql
+	@echo "✅ Seed data applied successfully"
+
+fresh-install: ## Complete fresh installation (schema + seeds)
+	@echo "🔄 Performing fresh database installation..."
+	$(MAKE) schema-import
+	$(MAKE) seed-fresh
+	@echo "✅ Fresh installation complete!"
+	@echo "🏢 Default firm: Demo Law Firm"
+	@echo "👤 Default admin: admin@demolawfirm.com"
+	@echo "📋 Default retention classes and sample data created"
+
 # Development Tools
 shell: ## Open shell in app container
 	docker compose exec app /bin/bash

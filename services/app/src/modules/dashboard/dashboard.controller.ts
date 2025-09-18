@@ -2,6 +2,9 @@ import { Controller, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { CurrentUser } from '../../auth/decorators/user.decorator';
+import { RequirePermissions } from '../../auth/decorators/permission.decorator';
+import { UserInfo } from '../../auth/auth.service';
 import { Matter, Client, Document, User, MatterStatus } from '../../common/entities';
 
 interface DashboardStats {
@@ -27,32 +30,36 @@ export class DashboardController {
     @InjectRepository(User) private userRepo: Repository<User>,
   ) {}
 
-  @Get('public-stats')
+  @Get('stats')
+  @RequirePermissions('read', 'dashboard')
   @ApiOperation({
-    summary: 'Get public dashboard statistics',
-    description: 'Returns basic system statistics for demo purposes - no authentication required'
+    summary: 'Get dashboard statistics',
+    description: 'Returns firm-specific dashboard statistics for authenticated users'
   })
   @ApiResponse({
     status: 200,
     description: 'Dashboard statistics retrieved successfully',
   })
-  async getPublicStats(): Promise<DashboardStats> {
-    // Get basic counts
+  async getStats(@CurrentUser() user: UserInfo): Promise<DashboardStats> {
+    // Get firm-specific counts
+    const firmId = user.firm_id;
     const [totalDocuments, activeMatters, totalClients, totalUsers] = await Promise.all([
-      this.documentRepo.count({ where: { is_deleted: false } }),
-      this.matterRepo.count({ where: { status: MatterStatus.ACTIVE } }),
-      this.clientRepo.count(),
-      this.userRepo.count(),
+      this.documentRepo.count({ where: { is_deleted: false, firm_id: firmId } }),
+      this.matterRepo.count({ where: { status: MatterStatus.ACTIVE, firm_id: firmId } }),
+      this.clientRepo.count({ where: { firm_id: firmId } }),
+      this.userRepo.count({ where: { firm_id: firmId } }),
     ]);
 
-    // Get recent activity (last 10 items)
+    // Get recent activity (last 10 items) for this firm
     const recentDocuments = await this.documentRepo.find({
+      where: { firm_id: firmId },
       take: 5,
       order: { created_at: 'DESC' },
       relations: ['matter'],
     });
 
     const recentMatters = await this.matterRepo.find({
+      where: { firm_id: firmId },
       take: 5, 
       order: { created_at: 'DESC' },
     });

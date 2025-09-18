@@ -1,6 +1,7 @@
 import { Controller, Post, Param, ParseUUIDPipe, Get } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { CurrentUser } from '../../auth/decorators/user.decorator';
+import { RequirePermissions, CanAdmin } from '../../auth/decorators/permission.decorator';
 import { UserInfo } from '../../auth/auth.service';
 import { DocumentsService } from './documents.service';
 import { TextExtractionService } from '../../common/services/text-extraction.service';
@@ -14,6 +15,7 @@ export class DocumentsExtractionController {
   ) {}
 
   @Post(':id/extract-text')
+  @RequirePermissions('write', 'document')
   @ApiOperation({ summary: 'Extract text from an existing document' })
   @ApiParam({ name: 'id', description: 'Document ID' })
   @ApiResponse({ status: 200, description: 'Text extraction completed' })
@@ -30,15 +32,12 @@ export class DocumentsExtractionController {
   }
 
   @Post('reprocess-all')
+  @CanAdmin('document')
   @ApiOperation({ summary: 'Reprocess all documents for text extraction' })
   @ApiResponse({ status: 200, description: 'Reprocessing started' })
   async reprocessAllDocuments(
     @CurrentUser() user: UserInfo,
   ): Promise<{ message: string; started: boolean }> {
-    // Only allow super admins
-    if (!user.roles.includes('super_admin')) {
-      throw new Error('Only super admins can reprocess all documents');
-    }
 
     // This would queue all documents for reprocessing
     return {

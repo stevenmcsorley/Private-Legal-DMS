@@ -26,7 +26,7 @@ export const Dashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       setLoading(true)
-      const response = await fetch('/api/dashboard/public-stats', {
+      const response = await fetch('/api/dashboard/stats', {
         credentials: 'include',
       })
       

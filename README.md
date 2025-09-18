@@ -28,9 +28,11 @@ A comprehensive legal document management system built for law firms requiring o
 - **Watermarked Previews** — Role-based document access with enhanced PDF.js viewer
 
 ### 👥 **Collaboration & Access Control**
-- **Role-Based Access Control** — 7-tier permission system with attribute-based policies
+- **Role-Based Access Control** — 7-tier permission system with clearance-based security (1-10 levels)
+- **Matter Security Classifications** — 5-tier document security classes with granular access control
 - **Client Portal** — Secure client access to assigned matters and documents
 - **Cross-Firm Sharing** — Time-boxed collaboration with external partners
+- **Firm Isolation** — Complete data segregation with OPA policy enforcement
 - **Matter-Centric Workflows** — Organized by cases with team assignments
 
 ### 📊 **Enterprise Observability**
@@ -146,6 +148,9 @@ git clone <repository>
 cd private-legal-dms
 make up
 
+# For fresh installation, set up database schema
+make fresh-install
+
 # Access the application
 open http://localhost
 ```
@@ -153,8 +158,9 @@ open http://localhost
 ### **Default Access**
 - **Application**: http://localhost
 - **Admin Portal**: admin/admin via Keycloak
-- **MinIO Console**: http://localhost:9001
-- **Monitoring**: http://localhost:3001 (Grafana)
+- **Default Firm**: Demo Law Firm (admin@demolawfirm.com)
+- **MinIO Console**: http://localhost:9001 (minio/minio123)
+- **Monitoring**: http://localhost:3001 (Grafana - admin/admin)
 
 ---
 
@@ -237,11 +243,14 @@ graph TB
 # Start all services
 make up
 
+# Set up fresh database (new installations)
+make fresh-install
+
 # View application logs  
 make logs
 
-# Run database migrations
-make migrate
+# Export current database schema
+make schema-export
 
 # Seed development data
 make seed
@@ -268,28 +277,67 @@ make security-scan
 
 ## 🎯 Role-Based Access Control
 
-### **User Hierarchy**
+### **User Hierarchy & Roles**
 | Role | Description | Access Level |
 |------|-------------|--------------|
-| **Super Admin** | System administrator | Complete system access |
-| **Firm Admin** | Firm-level management | User, team, and firm settings |
-| **Legal Manager** | Team supervision | Matter and team oversight |
+| **Super Admin** | System administrator | Complete system access across all firms |
+| **Firm Admin** | Firm-level management | Full firm access, user management, settings |
+| **Legal Manager** | Team supervision | Matter oversight, team management |
 | **Legal Professional** | Attorney/lawyer | Matter and document management |
-| **Client User** | External client access | Assigned matters only |
-| **External Partner** | Cross-firm collaboration | Time-limited matter access |
-| **Support Staff** | Administrative support | Limited document operations |
+| **Client User** | External client access | Assigned matters and documents only |
+| **External Partner** | Cross-firm collaboration | Time-limited shared matter access |
+| **Support Staff** | Administrative support | Document upload, limited operations |
 
-### **Permission Matrix**
-| Feature | Super Admin | Firm Admin | Legal Professional | Client User |
-|---------|-------------|------------|-------------------|-------------|
-| **Dashboard** | ✅ | ✅ | ✅ | ✅ |
-| **Matter Management** | ✅ | ✅ | ✅ | ❌ |
-| **Client Management** | ✅ | ✅ | ✅ | ❌ |
-| **Document Management** | ✅ | ✅ | ✅ | ✅ (Limited) |
-| **Advanced Search** | ✅ | ✅ | ✅ | ❌ |
-| **Admin Panel** | ✅ | ✅ | ❌ | ❌ |
-| **Client Portal** | ❌ | ❌ | ❌ | ✅ |
-| **Cross-Firm Sharing** | ✅ | ✅ | ✅ | ❌ |
+### **Comprehensive Permission Matrix**
+| Feature | Super Admin | Firm Admin | Legal Manager | Legal Professional | Client User | Support Staff | External Partner |
+|---------|-------------|------------|---------------|-------------------|-------------|---------------|------------------|
+| **Dashboard** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Limited | ❌ No | ❌ No |
+| **Client Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Matter Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ View Only | ❌ No | ❌ No |
+| **Document Read** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Clearance-based | ✅ Assigned Only | ❌ No | ✅ Shared Only |
+| **Document Upload** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Inbox Only | ✅ Yes | ❌ No |
+| **Document Delete** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Advanced Search** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **Cross-Firm Sharing** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Admin Panel** | ✅ Full | ✅ Firm Only | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No |
+| **System Administration** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No |
+
+### **Security Classifications & Clearance Levels**
+
+#### **Matter Security Classes** (1-5 scale)
+- **Class 1**: Public legal documents (default)
+- **Class 2**: Internal confidential matters  
+- **Class 3**: Sensitive client information
+- **Class 4**: High-value transactions, IP matters
+- **Class 5**: Highly classified litigation, executive matters
+
+#### **User Clearance Levels** (1-10 scale)
+- **Level 1-3**: Support staff, limited access
+- **Level 4-6**: Legal professionals, standard cases
+- **Level 7-8**: Senior attorneys, managers  
+- **Level 9-10**: Partners, firm administrators
+
+#### **Document Access Rules**
+```typescript
+// Access granted only if: user.clearance_level >= matter.security_class
+{
+  "user": {"clearance_level": 8, "roles": ["legal_professional"]},
+  "matter": {"security_class": 5},
+  "access": "✅ GRANTED" // 8 >= 5
+}
+
+{
+  "user": {"clearance_level": 3, "roles": ["support_staff"]}, 
+  "matter": {"security_class": 5},
+  "access": "❌ DENIED" // 3 < 5
+}
+```
+
+### **Firm Isolation & Cross-Firm Access**
+- **Default**: Users can only access resources within their firm
+- **Cross-Firm Sharing**: Explicit matter sharing with time-limited access
+- **Client Portal**: Clients see only their assigned matters and documents
+- **External Partners**: Access limited to specifically shared matters only
 
 ---
 
