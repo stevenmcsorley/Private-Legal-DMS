@@ -1,0 +1,210 @@
+FORM 656 - OFFER IN COMPROMISE
+
+Internal Revenue Service
+Ogden, UT 84201
+
+Taxpayer Information:
+Name: Crossroads Motel, LLC
+Address: 14500 Central Avenue SW, Albuquerque, NM 87121
+EIN: 85-7284951
+Phone: (505) 831-4500
+
+Offer Information:
+Date of Offer: February 7, 2025
+Offer Amount: $125,000
+Payment Terms: Lump Sum Cash
+
+Tax Liability Summary:
+Form 941 Quarterly Federal Tax Returns:
+Q1 2022: $34,567
+Q2 2022: $41,890
+Q3 2022: $38,723
+Q4 2022: $45,234
+Q1 2023: $52,109
+Q2 2023: $47,856
+Q3 2023: $39,445
+Q4 2023: $48,967
+
+Form 940 Federal Unemployment Tax:
+2022: $8,945
+2023: $9,234
+
+Penalties and Interest (through 2/7/25): $89,467
+
+Total Tax Liability: $456,437
+
+GROUNDS FOR OFFER:
+
+1. DOUBT AS TO COLLECTIBILITY
+
+Crossroads Motel, LLC is experiencing severe financial hardship due to:
+
+- Dramatic decline in occupancy rates from 75% (pre-COVID) to 23% (current)
+- Increased competition from new hotels and online rentals
+- Deferred maintenance issues requiring $340,000 in capital improvements
+- Pending zoning violations and potential condemnation proceedings
+- Loss of corporate accounts due to location and facility conditions
+
+Financial Analysis:
+
+ASSETS:
+Real Property (motel building and land): $890,000
+Less: First mortgage balance: ($670,000)
+Net equity in real property: $220,000
+
+Personal Property:
+Furniture and fixtures: $45,000
+Vehicles: $23,000
+Cash and bank accounts: $8,500
+Accounts receivable: $12,300
+Total personal property: $88,800
+
+Total Asset Value: $308,800
+
+MONTHLY INCOME AND EXPENSES:
+
+Average Monthly Revenue: $34,500
+Operating Expenses:
+- Mortgage payment: $5,800
+- Utilities: $4,200
+- Insurance: $2,890
+- Maintenance and repairs: $3,400
+- Payroll and benefits: $12,600
+- Property taxes: $1,890
+- Business licenses: $340
+- Supplies and amenities: $2,100
+- Marketing: $890
+- Professional fees: $1,200
+Total Monthly Expenses: $35,310
+
+Net Monthly Cash Flow: ($810) - NEGATIVE
+
+2. EXCEPTIONAL CIRCUMSTANCES
+
+The business faces exceptional circumstances that make full payment of the tax liability inequitable:
+
+a) ZONING COMPLIANCE ISSUES:
+The City of Albuquerque has issued multiple violations requiring:
+- Upgraded fire safety systems ($125,000)
+- ADA compliance modifications ($89,000)
+- Parking lot resurfacing ($34,000)
+- Landscaping and signage improvements ($67,000)
+- Building facade renovation ($78,000)
+Total required improvements: $393,000
+
+Failure to complete these improvements within 180 days will result in:
+- Revocation of business license
+- Potential condemnation of property
+- Forced closure of operations
+
+b) FAMILY HARDSHIP:
+The taxpayer's principal, Maria Santos, is the sole caretaker for:
+- Elderly mother with dementia requiring full-time care
+- Disabled adult son with cerebral palsy
+- Medical expenses exceeding $4,500 monthly
+
+c) ECONOMIC FACTORS:
+- Local market conditions show continued decline in budget hotel demand
+- Three competing properties opened within 2-mile radius since 2020
+- Highway construction project diverted traffic for 18 months
+- Loss of nearby anchor businesses affecting foot traffic
+
+3. INABILITY TO BORROW FUNDS
+
+Attempts to secure additional financing have been unsuccessful:
+- Current debt-to-income ratio prevents additional bank loans
+- Real property already encumbered by first mortgage
+- Credit rating declined due to late tax payments
+- SBA loan applications denied due to tax compliance issues
+
+COLLECTION ALTERNATIVES ANALYSIS:
+
+Full Payment: Impossible given negative cash flow and required capital improvements
+
+Payment Plan: Even minimum installment agreement would require $3,800 monthly payments, exceeding available cash flow by $4,610 monthly
+
+Asset Liquidation: Forced sale of property would likely yield $650,000-$700,000 after marketing costs and mortgage satisfaction, leaving insufficient funds for tax liability
+
+SUPPORTING DOCUMENTATION:
+
+1. Form 433-B (Collection Information Statement for Businesses)
+2. Bank statements for past 12 months
+3. Profit and loss statements (2022-2024)
+4. Real estate appraisal dated January 15, 2025
+5. Mortgage statements and loan documents
+6. City of Albuquerque zoning violation notices
+7. Contractor estimates for required improvements
+8. Medical documentation for family members
+9. Financial statements for competing hotels (market analysis)
+10. Correspondence with lenders regarding loan denials
+
+OFFER CALCULATION:
+
+Net Realizable Value of Assets: $308,800
+Less: Basic living expenses for 48 months: ($183,800)
+Available for IRS payment: $125,000
+
+The offered amount of $125,000 represents the maximum the taxpayer can pay based on:
+- Current asset values less encumbrances
+- Future income potential given market conditions
+- Required capital expenditures to maintain operations
+- Family hardship circumstances
+
+PAYMENT TERMS:
+
+The taxpayer proposes to pay the $125,000 offer amount in a lump sum within 30 days of acceptance. Funds will be obtained through:
+- Liquidation of equipment not essential to operations ($45,000)
+- Personal savings and family assistance ($35,000)
+- Proceeds from equipment financing secured for remaining assets ($45,000)
+
+TAXPAYER REPRESENTATIONS:
+
+1. All tax returns for periods covered by this offer have been filed
+2. All required deposits and payments for current tax periods are current
+3. If offer is accepted, taxpayer will remain in compliance for 5 years
+4. Financial information provided is accurate and complete
+5. Taxpayer has not hidden assets or transferred property to avoid taxation
+
+HARDSHIP CERTIFICATION:
+
+Requiring full payment of the tax liability would create economic hardship as defined in IRC Section 7122(c)(2)(B). The taxpayer cannot pay the full amount and maintain basic living standards while operating the business necessary to generate income.
+
+PROFESSIONAL REPRESENTATION:
+
+This offer is submitted with the assistance of:
+
+Saul Goodman, Enrolled Agent
+EA License No. 87654321
+Saul Goodman & Associates
+9800 Montgomery Boulevard NE
+Albuquerque, NM 87111
+Phone: (505) 503-4455
+
+SIGNATURE:
+
+I declare under penalties of perjury that this offer and all supporting statements are true, correct, and complete.
+
+_________________________________
+Maria Santos, Managing Member
+Crossroads Motel, LLC
+Date: February 7, 2025
+
+_________________________________
+Saul Goodman, EA
+Authorized Representative
+Date: February 7, 2025
+
+APPLICATION FEE:
+Check enclosed: $205 (Application fee)
+
+INITIAL PAYMENT:
+Check enclosed: $12,500 (20% of offer amount with lump sum payment option)
+
+Total Remittance: $12,705
+
+IRS PROCESSING NOTES:
+Receipt Date: _______________
+Revenue Officer: ____________
+Review Date: _______________
+Recommendation: ___________
+Approval Authority: _________

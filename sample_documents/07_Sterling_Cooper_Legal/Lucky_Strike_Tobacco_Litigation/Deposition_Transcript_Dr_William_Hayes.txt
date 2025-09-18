@@ -1,0 +1,250 @@
+UNITED STATES DISTRICT COURT
+SOUTHERN DISTRICT OF NEW YORK
+
+MARGARET PETERSON, et al.,
+                    Plaintiffs,
+v.                               Case No. 1:25-cv-00234-KBF
+LUCKY STRIKE TOBACCO COMPANY,
+                    Defendant.
+
+DEPOSITION OF DR. WILLIAM HAYES
+January 30, 2025
+10:00 A.M.
+
+APPEARANCES:
+
+For the Plaintiffs:
+ROBERT KINNEY, ESQ.
+KINNEY & ASSOCIATES
+200 Park Avenue, Suite 1700
+New York, NY 10166
+
+For the Defendant:
+BERTRAM COOPER, ESQ.
+STERLING COOPER LEGAL DEPARTMENT
+405 Madison Avenue, 23rd Floor  
+New York, NY 10017
+
+Also Present:
+MARGARET PETERSON (Plaintiff)
+Court Reporter: SUSAN MARTINEZ, CSR
+
+---
+
+THE VIDEOGRAPHER: This is the beginning of the deposition of Dr. William Hayes taken on January 30, 2025, at 10:00 a.m. in the law offices of Kinney & Associates, 200 Park Avenue, New York, New York, in the matter of Peterson v. Lucky Strike Tobacco Company.
+
+MR. KINNEY: Good morning, Dr. Hayes. Please state your name and spell your last name for the record.
+
+THE WITNESS: William James Hayes, H-A-Y-E-S.
+
+MR. KINNEY: Dr. Hayes, you understand you're under oath today?
+
+THE WITNESS: Yes, I do.
+
+MR. KINNEY: And you understand that your testimony today has the same force and effect as if you were testifying in open court?
+
+THE WITNESS: I understand.
+
+MR. KINNEY: Dr. Hayes, what is your current occupation?
+
+THE WITNESS: I am retired. I was formerly the Chief Medical Officer and Vice President of Research at Lucky Strike Tobacco Company from 1978 to 2010.
+
+MR. KINNEY: During your tenure at Lucky Strike, were you involved in research regarding the health effects of cigarette smoking?
+
+THE WITNESS: Yes, our research department conducted various studies on tobacco products and their effects.
+
+MR. KINNEY: Dr. Hayes, I'm showing you what's been marked as Plaintiff's Exhibit 47. Do you recognize this document?
+
+THE WITNESS: This appears to be an internal research memo dated March 15, 1982.
+
+MR. KINNEY: And is that your signature at the bottom of page 3?
+
+THE WITNESS: Yes, that's my signature.
+
+MR. KINNEY: Would you please read aloud the highlighted paragraph on page 2?
+
+THE WITNESS: "Our laboratory studies confirm that cigarette smoke contains at least 43 known carcinogenic compounds. The correlation between smoking duration and lung cancer development is statistically significant with p-values below 0.001. We recommend against public disclosure of these findings as they could impact market share and stockholder value."
+
+MR. KINNEY: Dr. Hayes, did Lucky Strike ever publicly disclose these research findings?
+
+MR. COOPER: Objection. Calls for a legal conclusion and is beyond the scope of this witness's knowledge.
+
+MR. KINNEY: I'll rephrase. Dr. Hayes, to your knowledge, did Lucky Strike ever publish or publicly release the research results described in Exhibit 47?
+
+THE WITNESS: Not to my knowledge, no.
+
+MR. KINNEY: Why not?
+
+THE WITNESS: The marketing department felt it would be commercially disadvantageous.
+
+MR. KINNEY: Dr. Hayes, were you present at the Tobacco Industry Research Committee meetings in the 1980s?
+
+THE WITNESS: Yes, I attended many of those meetings on behalf of Lucky Strike.
+
+MR. KINNEY: What was discussed at those meetings regarding health research?
+
+MR. COOPER: Objection. Vague and overbroad.
+
+MR. KINNEY: Let me be more specific. Were there discussions about coordinating research findings among tobacco companies?
+
+THE WITNESS: There were discussions about... industry-wide approaches to research disclosure.
+
+MR. KINNEY: What did those discussions involve?
+
+THE WITNESS: The companies agreed to present a unified position that the health effects of smoking were not definitively established.
+
+MR. KINNEY: Dr. Hayes, was this position consistent with the research you were conducting at Lucky Strike?
+
+THE WITNESS: [Long pause] It was consistent with our public position.
+
+MR. KINNEY: But was it consistent with your internal research findings?
+
+MR. COOPER: Objection. Asked and answered.
+
+THE WITNESS: Our internal research showed correlations that we felt needed further study before drawing definitive conclusions.
+
+MR. KINNEY: Dr. Hayes, I'm showing you Exhibit 52, an internal email from you dated June 10, 1987. Can you read the third paragraph?
+
+THE WITNESS: "The evidence is overwhelming that our products cause lung cancer, emphysema, and heart disease. We can no longer in good conscience deny the health risks. I recommend we begin developing safer alternatives immediately."
+
+MR. KINNEY: Did Lucky Strike develop safer alternatives as you recommended?
+
+THE WITNESS: There were some research projects, but nothing was brought to market during my tenure.
+
+MR. KINNEY: Why not?
+
+THE WITNESS: Cost considerations and concerns about admitting liability for existing products.
+
+MR. KINNEY: Dr. Hayes, when you retired in 2010, what was your opinion about the health effects of Lucky Strike cigarettes?
+
+MR. COOPER: Objection. Calls for an opinion beyond his expertise.
+
+MR. KINNEY: Dr. Hayes is a medical doctor with 32 years of tobacco research experience. I think he's qualified to give an opinion.
+
+THE WITNESS: Based on our research, I believed then and believe now that Lucky Strike cigarettes cause serious health problems including lung cancer, emphysema, and cardiovascular disease.
+
+MR. KINNEY: During your time at Lucky Strike, did you ever recommend warning labels stronger than those required by law?
+
+THE WITNESS: Yes, I recommended several times that we include more specific health warnings on our packages.
+
+MR. KINNEY: What was management's response?
+
+THE WITNESS: They said it would be commercial suicide and that we shouldn't go beyond legal requirements.
+
+MR. KINNEY: Dr. Hayes, do you have any regrets about your work at Lucky Strike?
+
+MR. COOPER: Objection. Irrelevant and calls for speculation.
+
+MR. KINNEY: I think it goes to his credibility and potential bias.
+
+THE WITNESS: I regret that we didn't do more to warn the public about health risks we had identified through our research.
+
+MR. KINNEY: Dr. Hayes, are you testifying here today under any agreement with Lucky Strike regarding your testimony?
+
+THE WITNESS: No. I have no current relationship with Lucky Strike or any tobacco company.
+
+MR. KINNEY: Have you been offered anything of value for your testimony today?
+
+THE WITNESS: No, nothing.
+
+MR. KINNEY: Dr. Hayes, in your expert medical opinion, can cigarette smoking cause lung cancer?
+
+THE WITNESS: Yes, absolutely.
+
+MR. KINNEY: And based on your research at Lucky Strike, was this fact known to the company by 1982?
+
+THE WITNESS: Yes, our research clearly showed the causal relationship by that time.
+
+MR. KINNEY: Thank you, Dr. Hayes. I have no further questions.
+
+MR. COOPER: Dr. Hayes, you mentioned that your recommendations for stronger warnings were rejected by management. You weren't responsible for marketing decisions, were you?
+
+THE WITNESS: No, I was not.
+
+MR. COOPER: And the research you conducted was preliminary and required peer review before publication, correct?
+
+THE WITNESS: That was the company's position, yes.
+
+MR. COOPER: Dr. Hayes, isn't it true that correlation doesn't necessarily prove causation?
+
+THE WITNESS: In general scientific terms, that's correct.
+
+MR. COOPER: So when you found correlations between smoking and disease, that didn't definitively prove causation, did it?
+
+THE WITNESS: The weight of evidence, including our animal studies and epidemiological data, supported causal relationships.
+
+MR. COOPER: But you're not an epidemiologist, are you Dr. Hayes?
+
+THE WITNESS: No, but I worked with epidemiologists on our research team.
+
+MR. COOPER: Dr. Hayes, during your 32 years at Lucky Strike, the company invested over $200 million in research, correct?
+
+THE WITNESS: That sounds approximately correct.
+
+MR. COOPER: And that research was aimed at developing safer products?
+
+THE WITNESS: Some of it was, yes.
+
+MR. COOPER: Dr. Hayes, you received substantial compensation from Lucky Strike over your career, didn't you?
+
+THE WITNESS: I was well compensated, yes.
+
+MR. COOPER: Including bonuses based on the company's profitability?
+
+THE WITNESS: Performance bonuses were part of my compensation package.
+
+MR. COOPER: So you financially benefited from Lucky Strike's success in the marketplace?
+
+THE WITNESS: As did all employees through the profit-sharing program.
+
+MR. COOPER: Dr. Hayes, you never resigned from Lucky Strike in protest over health issues, did you?
+
+THE WITNESS: No, I did not resign in protest.
+
+MR. COOPER: You worked there for 32 years until retirement age?
+
+THE WITNESS: That's correct.
+
+MR. COOPER: No further questions.
+
+MR. KINNEY: Just a few follow-up questions, Dr. Hayes. When Mr. Cooper asked about proof of causation, you mentioned animal studies. What did those studies show?
+
+THE WITNESS: Laboratory mice exposed to cigarette smoke developed lung tumors at significantly higher rates than control groups.
+
+MR. KINNEY: And that was consistent across multiple studies?
+
+THE WITNESS: Yes, the results were reproducible.
+
+MR. KINNEY: Dr. Hayes, Mr. Cooper asked about your compensation. Did your compensation ever depend on concealing research results?
+
+THE WITNESS: No, there were no explicit bonuses for concealing research.
+
+MR. KINNEY: But you understood that revealing harmful research could affect company profitability and potentially your job security?
+
+THE WITNESS: That was the implicit understanding, yes.
+
+MR. KINNEY: Thank you. No further questions.
+
+(DEPOSITION CONCLUDED AT 3:47 P.M.)
+
+---
+
+CERTIFICATE
+
+I, SUSAN MARTINEZ, Certified Shorthand Reporter, do hereby certify that the witness was duly sworn and that the foregoing transcript is a true record of the testimony given by the witness.
+
+I further certify that I am not related to any of the parties to this action by blood or marriage, and that I am in no way interested in the outcome of this matter.
+
+IN WITNESS WHEREOF, I have hereunto set my hand this 30th day of January, 2025.
+
+_________________________
+SUSAN MARTINEZ, CSR
+License No. 4729
+
+ERRATA SHEET
+
+Page 47, Line 12: Change "commercial suicide" to "commercially problematic"
+Page 52, Line 8: Change "definitely" to "definitively"
+
+Dr. William Hayes
+Date: February 2, 2025

@@ -153,8 +153,11 @@ git clone <repository>
 cd private-legal-dms
 make up
 
-# For fresh installation, set up database schema
-make fresh-install
+# Set up database (interactive script)
+./scripts/setup-database.sh
+
+# OR quick setup with current data
+docker compose exec -T app-db psql -U app -d app < scripts/sql/03_current_full_dump.sql
 
 # Access the application
 open http://localhost
@@ -248,8 +251,8 @@ graph TB
 # Start all services
 make up
 
-# Set up fresh database (new installations)
-make fresh-install
+# Set up database (interactive setup)
+./scripts/setup-database.sh
 
 # View application logs  
 make logs

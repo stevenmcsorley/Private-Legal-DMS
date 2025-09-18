@@ -1,0 +1,243 @@
+COMPLEX SEARCH TESTING DOCUMENT
+KEYWORDS FOR FULL-TEXT SEARCH VALIDATION
+
+This document contains various legal terms and phrases to test the full-text search capabilities of the document management system. Search functionality should be able to locate these terms across different contexts and document types.
+
+LEGAL TERMINOLOGY:
+- Attorney-client privilege
+- Work product doctrine
+- Discovery materials
+- Deposition transcript
+- Expert witness testimony
+- Chain of custody
+- Miranda rights
+- Probable cause
+- Search warrant
+- Subpoena duces tecum
+- Motion to suppress
+- Plea agreement
+- Settlement negotiation
+- Due diligence
+- Confidential information
+- Trade secrets
+- Intellectual property
+- Patent application
+- Copyright infringement
+- Securities violation
+- Money laundering
+- Tax evasion
+- Corporate governance
+- Fiduciary duty
+- Breach of contract
+- Negligence claim
+- Medical malpractice
+- Class action lawsuit
+- Punitive damages
+- Injunctive relief
+
+FINANCIAL TERMS:
+- Asset purchase agreement
+- Merger and acquisition
+- Financial statements
+- Balance sheet
+- Income statement
+- Cash flow analysis
+- Audit report
+- Internal controls
+- Sarbanes-Oxley compliance
+- SEC filing
+- 10-K annual report
+- Proxy statement
+- Shareholder agreement
+- Stock option plan
+- Executive compensation
+- Pension fund
+- Investment advisory
+- Hedge fund
+- Private equity
+- Venture capital
+- Initial public offering
+- Bond indenture
+- Credit facility
+- Loan agreement
+- Security interest
+- Collateral assignment
+
+REGULATORY COMPLIANCE:
+- Environmental impact
+- OSHA regulations
+- FDA approval
+- Clinical trials
+- Drug safety
+- Product liability
+- Consumer protection
+- Antitrust violations
+- Price fixing
+- Market manipulation
+- Insider trading
+- Foreign Corrupt Practices Act
+- Anti-money laundering
+- Bank Secrecy Act
+- Patriot Act compliance
+- Privacy regulations
+- HIPAA compliance
+- Data protection
+- Cybersecurity breach
+- Information security
+
+CRIMINAL LAW:
+- Indictment
+- Grand jury
+- Arraignment
+- Preliminary hearing
+- Bail hearing
+- Pre-trial motion
+- Jury selection
+- Opening statement
+- Cross-examination
+- Closing argument
+- Jury instruction
+- Verdict
+- Sentencing
+- Appeal
+- Habeas corpus
+- Post-conviction relief
+- Parole hearing
+- Probation violation
+- Restitution order
+- Asset forfeiture
+
+CORPORATE TRANSACTIONS:
+- Joint venture
+- Strategic alliance
+- Licensing agreement
+- Distribution agreement
+- Supply contract
+- Employment agreement
+- Non-disclosure agreement
+- Non-compete clause
+- Severance package
+- Change of control
+- Termination benefits
+- Golden parachute
+- Poison pill
+- Tender offer
+- Proxy contest
+- Shareholder derivative suit
+- Business judgment rule
+- Duty of loyalty
+- Conflict of interest
+- Related party transaction
+
+LITIGATION TERMS:
+- Complaint
+- Answer
+- Counterclaim
+- Cross-claim
+- Third-party complaint
+- Motion to dismiss
+- Summary judgment
+- Preliminary injunction
+- Temporary restraining order
+- Discovery plan
+- Document production
+- Interrogatories
+- Request for admissions
+- Independent medical examination
+- Arbitration
+- Mediation
+- Settlement conference
+- Trial preparation
+- Witness preparation
+- Exhibit list
+- Pre-trial order
+
+REAL ESTATE:
+- Purchase agreement
+- Title insurance
+- Deed restriction
+- Easement
+- Zoning variance
+- Environmental assessment
+- Property survey
+- Mortgage loan
+- Construction contract
+- Lease agreement
+- Landlord-tenant law
+- Eviction proceeding
+- Rent stabilization
+- Condominium conversion
+- Cooperative housing
+- Real estate investment trust
+- Property management
+- Commercial lease
+- Retail lease
+- Office lease
+
+FAMILY LAW:
+- Divorce proceeding
+- Child custody
+- Child support
+- Spousal support
+- Property division
+- Prenuptial agreement
+- Adoption
+- Guardianship
+- Domestic violence
+- Restraining order
+- Paternity test
+- Visitation rights
+- Mediation
+- Collaborative divorce
+- Equitable distribution
+- Community property
+- Separate property
+- Marital assets
+- Retirement benefits
+- Life insurance
+
+EMPLOYMENT LAW:
+- Wrongful termination
+- Employment discrimination
+- Sexual harassment
+- Workplace safety
+- Workers' compensation
+- Unemployment benefits
+- FMLA leave
+- ADA accommodation
+- Equal opportunity
+- Affirmative action
+- Wage and hour
+- Overtime compensation
+- Employee handbook
+- Performance evaluation
+- Disciplinary action
+- Grievance procedure
+- Union organizing
+- Collective bargaining
+- Strike activity
+- Lockout
+
+SPECIAL CHARACTERS AND NUMBERS:
+- Case numbers: 1:24-cv-00234-KBF, 2025-FED-0156, APD-2024-456789
+- Financial amounts: $85,000,000, $2.3M, €1.2 million, £450,000
+- Percentages: 12.4%, 340% increase, 5.7% annual growth
+- Dates: January 30, 2025, 03/15/2010, Feb 28, 2025
+- Phone numbers: (505) 503-4455, 555-123-4567, +1-617-555-0123
+- Email addresses: saul.goodman@sglaw.com, sarah.chen@defaultlaw.com
+- Addresses: 9800 Montgomery Boulevard NE, 1200 Charity Boulevard
+- License numbers: Badge #4721, License No. MD-45821, Bar No. 26842
+
+SEARCH TEST SCENARIOS:
+1. Exact phrase matching: "attorney-client privilege"
+2. Partial word matching: "neglig" should find "negligence"
+3. Case-insensitive search: "SETTLEMENT" should find "settlement"
+4. Number search: "85000000" should find "$85,000,000"
+5. Date format search: "2025" should find all 2025 dates
+6. Email search: "@sglaw.com" should find Saul Goodman's email
+7. Boolean operators: "contract AND negotiation"
+8. Wildcard search: "employ*" should find "employee," "employment," "employer"
+9. Proximity search: "money NEAR laundering"
+10. Complex queries: "(settlement OR agreement) AND (confidential OR privileged)"
+
+This document serves as a comprehensive test for the search functionality and should be uploaded to verify that the full-text search engine can properly index and retrieve legal documents based on various search criteria.
