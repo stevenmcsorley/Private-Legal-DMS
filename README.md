@@ -18,11 +18,14 @@ A comprehensive legal document management system built for law firms requiring o
 - **End-to-End Encryption** — TLS termination, encrypted storage, secure sessions
 
 ### 📁 **Advanced Document Management**
-- **Intelligent Processing** — Apache Tika extraction + Tesseract OCR pipeline
+- **Intelligent Processing** — Apache Tika extraction + Tesseract OCR with smart PDF conversion
+- **Background Processing** — Non-blocking document pipeline with virus scanning, text extraction, and OCR
+- **Smart OCR Conversion** — Automatic conversion of text-rich images to searchable PDFs
+- **Enhanced Image Viewer** — Professional image viewer with zoom, pan, rotate, and full-screen controls
 - **Version Control** — Complete document history with SHA-256 integrity
-- **Smart Search** — OpenSearch with faceted filtering and saved searches
+- **Smart Search** — OpenSearch with OCR text indexing and faceted filtering
 - **Legal Holds** — Automated deletion prevention with compliance reporting
-- **Watermarked Previews** — Role-based document access with PDF.js viewer
+- **Watermarked Previews** — Role-based document access with enhanced PDF.js viewer
 
 ### 👥 **Collaboration & Access Control**
 - **Role-Based Access Control** — 7-tier permission system with attribute-based policies
@@ -50,7 +53,7 @@ A comprehensive legal document management system built for law firms requiring o
 
 ### Advanced Document Viewer
 ![Document Viewer](./document_viewer.png)
-*Professional PDF viewer with zoom controls, page navigation, and watermarking*
+*Professional document viewer with enhanced image controls (zoom, pan, rotate), PDF navigation, and role-based watermarking*
 
 ### Security & Audit Logs
 ![Audit Logs](./auditlogs.png)
@@ -83,10 +86,11 @@ A comprehensive legal document management system built for law firms requiring o
 ### **Processing Pipeline** — Document Intelligence
 ```bash
 - Apache Tika — Multi-format text extraction
-- Tesseract OCR — Optical character recognition
-- ClamAV — Real-time virus scanning
-- OpenSearch — Advanced full-text search
-- Redis + BullMQ — Background job processing
+- Tesseract OCR — Smart OCR with automatic PDF conversion
+- ClamAV — Real-time virus scanning with TCP protocol
+- OpenSearch — Advanced full-text search with OCR text indexing
+- Redis + Bull — Background job processing with retry logic
+- MinIO Integration — WORM-compliant object storage pipeline
 ```
 
 ### **Security & Monitoring** — Defense in Depth
@@ -179,10 +183,10 @@ graph TB
     end
     
     subgraph "Processing Pipeline"
-        QUEUE[Redis + BullMQ<br/>Job Processing]
+        QUEUE[Redis + Bull<br/>Background Jobs]
         TIKA[Apache Tika<br/>Text Extraction]
-        OCR[Tesseract<br/>OCR Engine]
-        AV[ClamAV<br/>Virus Scanning]
+        OCR[Tesseract OCR<br/>Smart PDF Conversion]
+        AV[ClamAV<br/>Real-time Scanning]
     end
     
     subgraph "Observability"
@@ -331,9 +335,10 @@ artifacts:
 
 ### **Real-Time Dashboards**
 - **System Health** — Service uptime, resource utilization
-- **Security Metrics** — Failed logins, permission denials
-- **Document Processing** — Upload throughput, OCR queue status
-- **User Activity** — Access patterns, feature usage
+- **Security Metrics** — Failed logins, permission denials, virus scan results
+- **Document Processing** — Upload throughput, OCR queue status, PDF conversion metrics
+- **Search Analytics** — OCR text indexing performance, search query patterns
+- **User Activity** — Access patterns, feature usage, document viewer analytics
 
 ### **Alerting & Notifications**
 - **Security Incidents** — Automated threat detection
@@ -346,10 +351,11 @@ artifacts:
 ## 🏆 Why This Solution?
 
 ### **For Law Firms**
-- **Complete Security** — Military-grade protection for sensitive documents
+- **Complete Security** — Military-grade protection with real-time virus scanning
+- **Intelligent Document Processing** — Smart OCR with automatic PDF conversion for scanned documents
 - **Regulatory Compliance** — Built-in audit trails and retention management
 - **Cost Effective** — Self-hosted with no per-user licensing fees
-- **Professional UI** — Modern interface designed for legal workflows
+- **Professional UI** — Modern interface with enhanced document viewer and legal workflows
 
 ### **For Developers**  
 - **Modern Tech Stack** — TypeScript, React, NestJS, PostgreSQL

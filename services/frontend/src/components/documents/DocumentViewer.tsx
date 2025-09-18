@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Download, X, Move, RotateCw } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { toast } from '../ui/use-toast';
@@ -66,6 +66,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   const [error, setError] = useState<string>('');
   const [isInitialLoad, setIsInitialLoad] = useState<boolean>(true);
   const [onlyOfficeUrl, setOnlyOfficeUrl] = useState<string>('');
+  
+  // Image viewer state
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const imageContainerRef = useRef<HTMLDivElement>(null);
   
   const documentType = getDocumentType(mimeType);
 
@@ -272,6 +279,51 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
     setScale(1.0);
   };
 
+  // Image manipulation functions
+  const resetImageView = () => {
+    setScale(1.0);
+    setImagePosition({ x: 0, y: 0 });
+    setRotation(0);
+  };
+
+  const rotateImage = () => {
+    setRotation(prev => (prev + 90) % 360);
+  };
+
+  // Mouse/touch handlers for image panning
+  const handleImageMouseDown = useCallback((e: React.MouseEvent) => {
+    if (documentType === 'image' && scale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - imagePosition.x,
+        y: e.clientY - imagePosition.y
+      });
+      e.preventDefault();
+    }
+  }, [documentType, scale, imagePosition]);
+
+  const handleImageMouseMove = useCallback((e: React.MouseEvent) => {
+    if (isDragging && documentType === 'image') {
+      setImagePosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  }, [isDragging, documentType, dragStart]);
+
+  const handleImageMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Wheel zoom for images
+  const handleImageWheel = useCallback((e: React.WheelEvent) => {
+    if (documentType === 'image' && e.ctrlKey) {
+      e.preventDefault();
+      const delta = e.deltaY > 0 ? -0.1 : 0.1;
+      setScale(prev => Math.max(0.1, Math.min(5.0, prev + delta)));
+    }
+  }, [documentType]);
+
   const downloadDocument = async () => {
     try {
       const downloadEndpoint = customDownloadUrl || `/api/documents/${documentId}/download`;
@@ -341,26 +393,26 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg font-medium truncate text-white">{documentName}</CardTitle>
           <div className="flex items-center gap-2">
-            {documentType === 'pdf' && (
+            {(documentType === 'pdf' || documentType === 'image') && (
               <>
                 <Button
                   onClick={zoomOut}
                   variant="outline"
                   size="sm"
-                  disabled={scale <= 0.5}
+                  disabled={scale <= (documentType === 'image' ? 0.1 : 0.5)}
                   title="Zoom Out (Ctrl+-)"
                   className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
                 <Button
-                  onClick={fitToWidth}
+                  onClick={documentType === 'image' ? resetImageView : fitToWidth}
                   variant="outline"
                   size="sm"
-                  title="Fit to Width"
+                  title={documentType === 'image' ? "Reset View" : "Fit to Width"}
                   className="px-2 border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
-                  <span className="text-xs">Fit</span>
+                  <span className="text-xs">{documentType === 'image' ? 'Reset' : 'Fit'}</span>
                 </Button>
                 <span className="text-sm font-medium min-w-[4rem] text-center text-white bg-slate-700 px-2 py-1 rounded border border-slate-600">
                   {Math.round(scale * 100)}%
@@ -369,12 +421,31 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   onClick={zoomIn}
                   variant="outline"
                   size="sm"
-                  disabled={scale >= 3.0}
+                  disabled={scale >= (documentType === 'image' ? 5.0 : 3.0)}
                   title="Zoom In (Ctrl++)"
                   className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
+              </>
+            )}
+            {documentType === 'image' && (
+              <>
+                <Button
+                  onClick={rotateImage}
+                  variant="outline"
+                  size="sm"
+                  title="Rotate 90°"
+                  className="border-slate-500 text-slate-300 hover:bg-slate-500 hover:text-white"
+                >
+                  <RotateCw className="h-4 w-4" />
+                </Button>
+                {scale > 1 && (
+                  <div className="flex items-center gap-1 text-xs text-slate-400 bg-slate-700 px-2 py-1 rounded border border-slate-600">
+                    <Move className="h-3 w-3" />
+                    <span>Drag to pan</span>
+                  </div>
+                )}
               </>
             )}
             <Button onClick={downloadDocument} variant="outline" size="sm" className="border-orange-500 text-orange-300 hover:bg-orange-500 hover:text-white">
@@ -475,12 +546,39 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               style={{ minHeight: '600px' }}
             />
           ) : documentType === 'image' ? (
-            <img
-              src={previewUrl}
-              alt={documentName}
-              className="max-w-full max-h-full object-contain"
-              style={{ transform: `scale(${scale})` }}
-            />
+            <div 
+              ref={imageContainerRef}
+              className="w-full h-full flex items-center justify-center overflow-hidden relative"
+              onMouseDown={handleImageMouseDown}
+              onMouseMove={handleImageMouseMove}
+              onMouseUp={handleImageMouseUp}
+              onMouseLeave={handleImageMouseUp}
+              onWheel={handleImageWheel}
+              style={{ 
+                cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default'
+              }}
+            >
+              <img
+                src={previewUrl}
+                alt={documentName}
+                className="max-w-none max-h-none object-contain select-none"
+                style={{ 
+                  transform: `
+                    translate(${imagePosition.x}px, ${imagePosition.y}px) 
+                    scale(${scale}) 
+                    rotate(${rotation}deg)
+                  `,
+                  transformOrigin: 'center center',
+                  transition: isDragging ? 'none' : 'transform 0.1s ease-out'
+                }}
+                draggable={false}
+              />
+              {scale <= 1 && (
+                <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                  Use Ctrl+Scroll or zoom buttons to zoom in
+                </div>
+              )}
+            </div>
           ) : documentType === 'office' ? (
             <div className="text-center p-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-2"></div>

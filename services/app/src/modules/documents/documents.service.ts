@@ -12,6 +12,7 @@ import { MinioService } from '../../common/services/minio.service';
 import { AuditService } from '../../common/services/audit.service';
 import { SearchService } from '../search/search.service';
 import { TextExtractionService } from '../../common/services/text-extraction.service';
+import { DocumentProcessingQueue } from '../../common/queues/document-processing.queue';
 import { UploadDocumentDto } from './dto/upload-document.dto';
 import { DocumentResponseDto } from './dto/document-response.dto';
 import { UserInfo } from '../../auth/auth.service';
@@ -60,6 +61,7 @@ export class DocumentsService {
     private auditService: AuditService,
     private searchService: SearchService,
     private textExtractionService: TextExtractionService,
+    private documentProcessingQueue: DocumentProcessingQueue,
   ) {}
 
   async uploadDocument(
@@ -168,40 +170,46 @@ export class DocumentsService {
 
       await this.documentMetaRepository.save(documentMeta);
 
-      // Extract text content from the document
+      // Queue background processing jobs
+      const jobData = {
+        documentId: savedDocument.id,
+        documentPath: objectKey,
+        originalFilename: file.originalname,
+        mimeType: file.mimetype,
+        userId: user.sub,
+        firmId: matter.firm_id,
+      };
+
       try {
-        if (this.textExtractionService.isSupportedFileType(file.mimetype, file.originalname)) {
-          this.logger.debug(`Extracting text from ${file.originalname}`);
-          
-          const extractionResult = await this.textExtractionService.extractTextWithLanguage(
-            file.buffer,
-            file.originalname
-          );
+        // Queue virus scanning (highest priority)
+        await this.documentProcessingQueue.addVirusScanJob({
+          documentId: savedDocument.id,
+          documentPath: objectKey,
+          originalFilename: file.originalname,
+          userId: user.sub,
+          firmId: matter.firm_id,
+        });
 
-          if (extractionResult.text) {
-            // Update the document metadata with extracted text
-            documentMeta.extracted_text = extractionResult.text;
-            
-            // Update title if it wasn't provided and we have one from extraction
-            if (!uploadDto.title && extractionResult.metadata.title) {
-              documentMeta.title = extractionResult.metadata.title;
-            }
-            
-            // Store page information if available
-            if (extractionResult.metadata.pages) {
-              documentMeta.pages = extractionResult.metadata.pages;
-            }
+        // Queue text extraction
+        await this.documentProcessingQueue.addTextExtractionJob(jobData);
 
-            await this.documentMetaRepository.save(documentMeta);
-            
-            this.logger.debug(`Extracted ${extractionResult.text.length} characters from ${file.originalname}`);
-          }
-        } else {
-          this.logger.debug(`File type ${file.mimetype} not supported for text extraction: ${file.originalname}`);
-        }
-      } catch (extractionError) {
-        this.logger.warn(`Text extraction failed for ${file.originalname}:`, extractionError.message);
-        // Continue with upload even if text extraction fails
+        // Queue OCR as fallback (if text extraction fails or for image files)
+        await this.documentProcessingQueue.addOCRJob({
+          documentId: savedDocument.id,
+          documentPath: objectKey,
+          originalFilename: file.originalname,
+          mimeType: file.mimetype,
+          userId: user.sub,
+          firmId: matter.firm_id,
+        });
+
+        // Queue search indexing (after text extraction and OCR)
+        await this.documentProcessingQueue.addSearchIndexJob(jobData);
+
+        this.logger.log(`Queued background processing for document ${savedDocument.id}`);
+      } catch (queueError) {
+        this.logger.error(`Failed to queue background processing for ${savedDocument.id}:`, queueError.message);
+        // Don't fail the upload if queueing fails, just log the error
       }
 
       this.logger.log(`Document uploaded: ${savedDocument.id} by user ${user.sub}`);
@@ -215,14 +223,7 @@ export class DocumentsService {
         uploadDto.matter_id,
       );
 
-      // Index document for search
-      try {
-        await this.searchService.indexDocument(savedDocument);
-        this.logger.debug(`Document indexed for search: ${savedDocument.id}`);
-      } catch (indexError) {
-        this.logger.error(`Failed to index document ${savedDocument.id}:`, indexError);
-        // Don't fail the upload if indexing fails, just log the error
-      }
+      // Search indexing is now handled by background queue
 
       return this.buildDocumentResponse(savedDocument, {
         metadata: documentMeta,
@@ -828,5 +829,35 @@ export class DocumentsService {
         res.status(500).json({ error: 'Failed to stream document' });
       }
     }
+  }
+
+  async getDocumentProcessingStatus(id: string, user: UserInfo): Promise<{
+    documentId: string;
+    jobs: any[];
+    processing: boolean;
+    completed: boolean;
+  }> {
+    // Check access to document
+    await this.findOne(id, user);
+
+    // Get job status from queue
+    const jobs = await this.documentProcessingQueue.getDocumentJobs(id);
+    
+    const processing = jobs.some(job => !job.finishedOn && !job.failedReason);
+    const completed = jobs.every(job => job.finishedOn || job.failedReason);
+
+    return {
+      documentId: id,
+      jobs: jobs.map(job => ({
+        id: job.id,
+        name: job.name,
+        progress: job.progress,
+        status: job.finishedOn ? 'completed' : job.failedReason ? 'failed' : 'processing',
+        error: job.failedReason,
+        finishedAt: job.finishedOn,
+      })),
+      processing,
+      completed,
+    };
   }
 }

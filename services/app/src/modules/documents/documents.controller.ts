@@ -460,4 +460,62 @@ export class DocumentsController {
   ): Promise<DocumentResponseDto> {
     return this.documentsService.removeLegalHold(id, user);
   }
+
+  @Get(':id/processing-status')
+  @CanRead('document')
+  @ApiOperation({ summary: 'Get document background processing status' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Processing status retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        documentId: {
+          type: 'string',
+          description: 'Document ID',
+        },
+        jobs: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              progress: { type: 'number' },
+              status: { type: 'string', enum: ['processing', 'completed', 'failed'] },
+              error: { type: 'string' },
+              finishedAt: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+        processing: {
+          type: 'boolean',
+          description: 'Whether any jobs are still processing',
+        },
+        completed: {
+          type: 'boolean',
+          description: 'Whether all jobs are completed',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Document not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Access denied to this document',
+  })
+  async getProcessingStatus(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ): Promise<{
+    documentId: string;
+    jobs: any[];
+    processing: boolean;
+    completed: boolean;
+  }> {
+    return this.documentsService.getDocumentProcessingStatus(id, user);
+  }
 }

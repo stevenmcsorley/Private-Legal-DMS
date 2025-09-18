@@ -24,6 +24,14 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
+# Install OCR tools
+RUN apk add --no-cache \
+    tesseract-ocr \
+    tesseract-ocr-data-eng \
+    imagemagick \
+    ghostscript \
+    poppler-utils
+
 ENV NODE_ENV production
 
 RUN addgroup --system --gid 1001 nodejs

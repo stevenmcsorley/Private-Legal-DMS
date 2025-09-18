@@ -30,6 +30,7 @@ import { SharesModule } from './modules/shares';
 // Common
 import { LoggerModule } from './common/logger/logger.module';
 import { MetricsModule } from './common/metrics/metrics.module';
+import { QueueModule } from './common/queues/queue.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { MetricsModule } from './common/metrics/metrics.module';
     // Core modules
     LoggerModule,
     MetricsModule,
+    QueueModule,
     AuthModule,
     HealthModule,
 
