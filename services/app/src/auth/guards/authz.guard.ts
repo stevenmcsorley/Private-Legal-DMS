@@ -46,14 +46,24 @@ export class AuthzGuard implements CanActivate {
     }
 
     // Build authorization request
+    const resourceAttributes = await this.extractResourceAttributes(request, requiredPermission);
+    const resource: any = {
+      type: requiredPermission.resource,
+      id: requiredPermission.resourceId || this.extractResourceId(request),
+      attributes: resourceAttributes,
+    };
+
+    // For client creation/update, set firm_id at resource level for OPA policy matching
+    if (requiredPermission.resource === 'client' && requiredPermission.action === 'write' && request.method === 'POST') {
+      this.logger.debug(`Client creation: user object:`, JSON.stringify(user, null, 2));
+      resource.firm_id = user.firm_id;
+      this.logger.debug(`Client creation: setting resource.firm_id to:`, resource.firm_id);
+    }
+
     const authzRequest: AuthzRequest = {
       user,
       action: requiredPermission.action,
-      resource: {
-        type: requiredPermission.resource,
-        id: requiredPermission.resourceId || this.extractResourceId(request),
-        attributes: await this.extractResourceAttributes(request, requiredPermission),
-      },
+      resource,
       context: {
         method: request.method,
         path: request.path,

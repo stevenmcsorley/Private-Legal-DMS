@@ -22,7 +22,8 @@ import {
   Crown,
   Loader2,
   Users,
-  Zap
+  Zap,
+  Building
 } from 'lucide-react';
 import {
   Select,
@@ -66,6 +67,7 @@ interface CreateUserFormData {
   client_ids: string[];
   clearance_level: number;
   is_active: boolean;
+  firm_id: string; // Add firm selection for multi-firm support
 }
 
 interface Role {
@@ -80,6 +82,8 @@ export const UserManagement = () => {
   const [roles, setRoles] = useState<Role[]>([]);
   const [clients, setClients] = useState<any[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const [firms, setFirms] = useState<{id: string, name: string}[]>([]);
+  const [loadingFirms, setLoadingFirms] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -108,6 +112,7 @@ export const UserManagement = () => {
     client_ids: [],
     clearance_level: 5,
     is_active: true,
+    firm_id: '',
   });
   const [createUserForm, setCreateUserForm] = useState<CreateUserFormData>({
     email: '',
@@ -121,6 +126,7 @@ export const UserManagement = () => {
     client_ids: [],
     clearance_level: 5,
     is_active: true,
+    firm_id: '',
   });
 
   useEffect(() => {
@@ -128,6 +134,7 @@ export const UserManagement = () => {
     fetchUsers();
     fetchRoles();
     fetchClients();
+    fetchFirms();
   }, []);
 
   const fetchCurrentUser = async () => {
@@ -175,6 +182,23 @@ export const UserManagement = () => {
     }
   };
 
+  const fetchFirms = async () => {
+    setLoadingFirms(true);
+    try {
+      const response = await fetch('/api/admin/firms', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setFirms(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching firms:', error);
+    } finally {
+      setLoadingFirms(false);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       const response = await fetch('/api/admin/users', {
@@ -214,7 +238,14 @@ export const UserManagement = () => {
       return;
     }
 
-    if (!currentUser?.firmId) {
+    // For super admins, require firm selection; for firm admins, use their own firm
+    const isSuperAdmin = currentUser?.roles?.includes('super_admin');
+    if (isSuperAdmin && !createUserForm.firm_id) {
+      alert('Please select which firm to add this user to');
+      return;
+    }
+
+    if (!isSuperAdmin && !currentUser?.firmId) {
       alert('Unable to determine your firm. Please refresh the page and try again.');
       return;
     }
@@ -229,7 +260,7 @@ export const UserManagement = () => {
         roles: createUserForm.roles,
         is_active: createUserForm.is_active,
         clearance_level: createUserForm.clearance_level,
-        firm_id: currentUser.firmId,
+        firm_id: createUserForm.firm_id || currentUser.firmId,
         client_ids: createUserForm.client_ids.length > 0 ? createUserForm.client_ids : undefined,
         attributes: {
           first_name: createUserForm.first_name,
@@ -266,6 +297,7 @@ export const UserManagement = () => {
           client_ids: [],
           clearance_level: 5,
           is_active: true,
+          firm_id: '',
         });
         alert('User created successfully!');
       } else {
@@ -346,6 +378,7 @@ export const UserManagement = () => {
       client_ids: user.attributes?.client_ids || user.client_ids || [],
       clearance_level: user.clearance_level || 5,
       is_active: user.is_active,
+      firm_id: user.firm_id || user.firm?.id || '',
     });
     setShowEditDialog(true);
   };
@@ -644,6 +677,54 @@ export const UserManagement = () => {
             </DialogHeader>
             
             <form data-testid="admin-user-create-form" className="space-y-4 py-4">
+              {/* Firm Selection - Only for Super Admins */}
+              {currentUser?.roles?.includes('super_admin') && (
+                <div className="space-y-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <Label htmlFor="firm-select" className="flex items-center">
+                    <Building className="h-4 w-4 mr-2 text-amber-600" />
+                    Select Firm *
+                  </Label>
+                  <Select 
+                    value={createUserForm.firm_id} 
+                    onValueChange={(firmId) => setCreateUserForm({...createUserForm, firm_id: firmId})}
+                  >
+                    <SelectTrigger data-testid="admin-user-firm-select">
+                      <SelectValue placeholder="Choose which firm to add this user to" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {loadingFirms ? (
+                        <SelectItem value="" disabled>Loading firms...</SelectItem>
+                      ) : firms.length === 0 ? (
+                        <SelectItem value="" disabled>No firms available</SelectItem>
+                      ) : (
+                        firms.map((firm) => (
+                          <SelectItem key={firm.id} value={firm.id}>
+                            {firm.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-amber-600">
+                    As a Super Admin, you can add users to any firm. Select the target firm first.
+                  </p>
+                </div>
+              )}
+
+              {/* Current Firm Info - For Firm Admins */}
+              {!currentUser?.roles?.includes('super_admin') && currentUser?.firmName && (
+                <div className="space-y-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <Label className="flex items-center">
+                    <Building className="h-4 w-4 mr-2 text-blue-600" />
+                    Adding User To
+                  </Label>
+                  <p className="font-medium text-blue-800">{currentUser.firmName}</p>
+                  <p className="text-sm text-blue-600">
+                    As a Firm Admin, new users will be added to your firm.
+                  </p>
+                </div>
+              )}
+
               {/* Basic Information */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -815,7 +896,7 @@ export const UserManagement = () => {
               </Button>
               <Button 
                 onClick={createUser}
-                disabled={isCreating || !currentUser?.firmId}
+                disabled={isCreating || (!currentUser?.roles?.includes('super_admin') && !currentUser?.firmId)}
                 data-testid="admin-user-create-submit"
               >
                 {isCreating ? (

@@ -171,7 +171,7 @@ allow if {
 # Client management - specific client with firm_id (when resource has firm_id)
 allow if {
     input.resource.type == "client"
-    input.action in ["create", "update"]
+    input.action in ["create", "update", "write"]
     firm_access_allowed
     input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
 }
