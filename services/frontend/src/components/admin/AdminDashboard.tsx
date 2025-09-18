@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -38,6 +38,21 @@ export const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  const fetchCurrentUser = async () => {
+    try {
+      const response = await fetch('/api/auth/me', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentUser(data.user);
+      }
+    } catch (error) {
+      console.error('Error fetching current user:', error);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -53,9 +68,40 @@ export const AdminDashboard = () => {
     }
   };
 
-  useState(() => {
+  useEffect(() => {
+    fetchCurrentUser();
     fetchStats();
-  });
+  }, []);
+
+  // Determine which tabs to show based on user role
+  const isSuperAdmin = currentUser?.roles?.includes('super_admin');
+  const visibleTabs = [
+    'overview',
+    'users',
+    'teams',
+    ...(isSuperAdmin ? ['firms'] : []), // Firms tab only for super admins
+    'retention',
+    'holds',
+    'shares',
+    'audit-logs',
+    'settings',
+  ];
+
+  // Calculate grid columns based on visible tabs (max 8 for better UX)
+  const gridCols = Math.min(visibleTabs.length, 8);
+  const getGridClass = (cols: number) => {
+    const gridClasses = {
+      1: 'grid-cols-1',
+      2: 'grid-cols-2', 
+      3: 'grid-cols-3',
+      4: 'grid-cols-4',
+      5: 'grid-cols-5',
+      6: 'grid-cols-6',
+      7: 'grid-cols-7',
+      8: 'grid-cols-8',
+    };
+    return gridClasses[cols as keyof typeof gridClasses] || 'grid-cols-8';
+  };
 
   if (loading) {
     return (
@@ -81,16 +127,16 @@ export const AdminDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-9">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="teams">Teams</TabsTrigger>
-          <TabsTrigger value="firms">Firms</TabsTrigger>
-          <TabsTrigger value="retention">Retention</TabsTrigger>
-          <TabsTrigger value="holds">Legal Holds</TabsTrigger>
-          <TabsTrigger value="shares">Shares</TabsTrigger>
-          <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
+        <TabsList className={`grid w-full ${getGridClass(gridCols)}`}>
+          {visibleTabs.includes('overview') && <TabsTrigger value="overview">Overview</TabsTrigger>}
+          {visibleTabs.includes('users') && <TabsTrigger value="users">Users</TabsTrigger>}
+          {visibleTabs.includes('teams') && <TabsTrigger value="teams">Teams</TabsTrigger>}
+          {visibleTabs.includes('firms') && <TabsTrigger value="firms">Firms</TabsTrigger>}
+          {visibleTabs.includes('retention') && <TabsTrigger value="retention">Retention</TabsTrigger>}
+          {visibleTabs.includes('holds') && <TabsTrigger value="holds">Legal Holds</TabsTrigger>}
+          {visibleTabs.includes('shares') && <TabsTrigger value="shares">Shares</TabsTrigger>}
+          {visibleTabs.includes('audit-logs') && <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>}
+          {visibleTabs.includes('settings') && <TabsTrigger value="settings">Settings</TabsTrigger>}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
@@ -262,9 +308,11 @@ export const AdminDashboard = () => {
           <TeamManagement />
         </TabsContent>
 
-        <TabsContent value="firms">
-          <FirmManagement />
-        </TabsContent>
+        {isSuperAdmin && (
+          <TabsContent value="firms">
+            <FirmManagement />
+          </TabsContent>
+        )}
 
         <TabsContent value="retention">
           <RetentionPolicies />

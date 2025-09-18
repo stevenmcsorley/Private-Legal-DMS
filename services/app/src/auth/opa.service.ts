@@ -56,10 +56,6 @@ export class OpaService {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.opaConfig.timeout);
       
-      // Debug logging for client creation
-      if (request.resource.type === 'client' && request.action === 'write') {
-        this.logger.debug('OPA Request for client creation:', JSON.stringify(opaRequest, null, 2));
-      }
 
       const response = await fetch(
         `${this.opaConfig.queryEndpoint}/${this.opaConfig.policyPackage}/decision`,
