@@ -26,6 +26,7 @@ import { SearchModule } from './modules/search/search.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SharesModule } from './modules/shares';
+import { LegalHoldsModule } from './modules/legal-holds/legal-holds.module';
 
 // Common
 import { LoggerModule } from './common/logger/logger.module';
@@ -97,6 +98,7 @@ import { QueueModule } from './common/queues/queue.module';
     AuditModule,
     DashboardModule,
     SharesModule,
+    LegalHoldsModule,
   ],
   controllers: [],
   providers: [],

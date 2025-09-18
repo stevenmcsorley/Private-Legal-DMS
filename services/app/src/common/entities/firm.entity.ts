@@ -12,6 +12,7 @@ import { Client } from './client.entity';
 import { Matter } from './matter.entity';
 import { Document } from './document.entity';
 import { RetentionClass } from './retention-class.entity';
+import { LegalHold } from './legal-hold.entity';
 
 @Entity('firms')
 export class Firm {
@@ -51,4 +52,7 @@ export class Firm {
 
   @OneToMany(() => RetentionClass, retentionClass => retentionClass.firm)
   retention_classes: RetentionClass[];
+
+  @OneToMany(() => LegalHold, legalHold => legalHold.firm)
+  legal_holds: LegalHold[];
 }

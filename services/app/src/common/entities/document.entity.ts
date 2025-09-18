@@ -14,6 +14,7 @@ import { Matter } from './matter.entity';
 import { User } from './user.entity';
 import { RetentionClass } from './retention-class.entity';
 import { DocumentMeta } from './document-meta.entity';
+import { LegalHold } from './legal-hold.entity';
 
 @Entity('documents')
 export class Document {
@@ -64,6 +65,9 @@ export class Document {
 
   @Column({ type: 'timestamp with time zone', nullable: true })
   legal_hold_set_at: Date;
+
+  @Column('uuid', { nullable: true })
+  legal_hold_ref: string;
 
   @Column('uuid')
   created_by: string;
@@ -117,4 +121,8 @@ export class Document {
 
   @OneToOne(() => DocumentMeta, documentMeta => documentMeta.document, { cascade: true })
   metadata: DocumentMeta;
+
+  @ManyToOne(() => LegalHold, legalHold => legalHold.documents, { nullable: true })
+  @JoinColumn({ name: 'legal_hold_ref' })
+  legal_hold_reference: LegalHold;
 }

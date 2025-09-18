@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { MatterShare } from '../../common/entities/matter-share.entity';
+import { Repository, Not } from 'typeorm';
+import { MatterShare, ShareStatus } from '../../common/entities/matter-share.entity';
 import { User, Firm } from '../../common/entities';
 
 @Injectable()
@@ -19,7 +19,7 @@ export class SharesService {
       .leftJoinAndSelect('share.shared_by_user', 'shared_by_user')
       .innerJoin('share.shared_by_user', 'user')
       .where('user.firm_id = :firmId', { firmId })
-      .andWhere('share.revoked_at IS NULL')
+      .andWhere('share.status != :revokedStatus', { revokedStatus: ShareStatus.REVOKED })
       .orderBy('share.created_at', 'DESC');
 
     if (role) {
@@ -45,7 +45,7 @@ export class SharesService {
       },
       role: share.role,
       permissions: share.permissions || [],
-      status: share.isRevoked() ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       access_count: 0, // TODO: implement access tracking
@@ -61,7 +61,7 @@ export class SharesService {
       .leftJoinAndSelect('share.shared_by_user', 'shared_by_user')
       .leftJoinAndSelect('shared_by_user.firm', 'shared_by_firm')
       .where('share.shared_with_firm = :firmId', { firmId })
-      .andWhere('share.revoked_at IS NULL')
+      .andWhere('share.status != :revokedStatus', { revokedStatus: ShareStatus.REVOKED })
       .orderBy('share.created_at', 'DESC');
 
     if (role) {
@@ -81,7 +81,7 @@ export class SharesService {
       shared_by_user: share.shared_by_user?.display_name || '',
       role: share.role,
       permissions: share.permissions || [],
-      status: share.isRevoked() ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       message: null, // No message field in current schema
@@ -93,7 +93,7 @@ export class SharesService {
       where: { 
         id: shareId,
         shared_with_firm: user.firm_id,
-        revoked_at: null
+        status: Not(ShareStatus.REVOKED)
       },
       relations: ['matter', 'matter.client', 'shared_by_user', 'shared_by_user.firm'],
     });
@@ -132,7 +132,7 @@ export class SharesService {
       where: { 
         id: shareId,
         shared_with_firm: user.firm_id,
-        revoked_at: null
+        status: Not(ShareStatus.REVOKED)
       },
     });
 
@@ -140,9 +140,8 @@ export class SharesService {
       throw new NotFoundException('Share not found or not available for declining');
     }
 
-    // For current schema, declining is equivalent to revoking
-    share.revoked_at = new Date();
-    share.revoked_by = user.id;
+    // Set status to declined
+    share.status = ShareStatus.DECLINED;
     await this.shareRepository.save(share);
   }
 
@@ -150,7 +149,7 @@ export class SharesService {
     const share = await this.shareRepository.findOne({
       where: { 
         id: shareId,
-        shared_by: user.id
+        shared_by_user_id: user.id
       },
       relations: ['matter', 'matter.client', 'shared_with_firm_entity', 'shared_by_user'],
     });
@@ -159,12 +158,11 @@ export class SharesService {
       throw new NotFoundException('Share not found or you do not have permission to revoke it');
     }
 
-    if (share.isRevoked()) {
+    if (share.status === ShareStatus.REVOKED) {
       throw new ForbiddenException('Share is already revoked');
     }
 
-    share.revoked_at = new Date();
-    share.revoked_by = user.id;
+    share.status = ShareStatus.REVOKED;
     await this.shareRepository.save(share);
 
     return {
@@ -221,7 +219,7 @@ export class SharesService {
     }
 
     // Check if share is still valid
-    if (share.isRevoked()) {
+    if (share.status === ShareStatus.REVOKED) {
       throw new ForbiddenException('Share has been revoked');
     }
 
@@ -246,7 +244,7 @@ export class SharesService {
       },
       role: share.role,
       permissions: share.permissions || [],
-      status: share.isRevoked() ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       documents: share.matter.documents?.map(doc => ({

@@ -87,20 +87,22 @@ export const AdminDashboard = () => {
     'settings',
   ];
 
-  // Calculate grid columns based on visible tabs (max 8 for better UX)
-  const gridCols = Math.min(visibleTabs.length, 8);
-  const getGridClass = (cols: number) => {
+  // Use flexible layout for tabs instead of fixed grid
+  const getTabsLayoutClass = () => {
+    // For many tabs, use flex with wrapping to handle overflow gracefully
+    if (visibleTabs.length > 6) {
+      return 'flex flex-wrap gap-1';
+    }
+    // For fewer tabs, use grid for even spacing
     const gridClasses = {
-      1: 'grid-cols-1',
-      2: 'grid-cols-2', 
-      3: 'grid-cols-3',
-      4: 'grid-cols-4',
-      5: 'grid-cols-5',
-      6: 'grid-cols-6',
-      7: 'grid-cols-7',
-      8: 'grid-cols-8',
+      1: 'grid grid-cols-1',
+      2: 'grid grid-cols-2', 
+      3: 'grid grid-cols-3',
+      4: 'grid grid-cols-4',
+      5: 'grid grid-cols-5',
+      6: 'grid grid-cols-6',
     };
-    return gridClasses[cols as keyof typeof gridClasses] || 'grid-cols-8';
+    return gridClasses[visibleTabs.length as keyof typeof gridClasses] || 'flex flex-wrap gap-1';
   };
 
   if (loading) {
@@ -127,16 +129,52 @@ export const AdminDashboard = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className={`grid w-full ${getGridClass(gridCols)}`}>
-          {visibleTabs.includes('overview') && <TabsTrigger value="overview">Overview</TabsTrigger>}
-          {visibleTabs.includes('users') && <TabsTrigger value="users">Users</TabsTrigger>}
-          {visibleTabs.includes('teams') && <TabsTrigger value="teams">Teams</TabsTrigger>}
-          {visibleTabs.includes('firms') && <TabsTrigger value="firms">Firms</TabsTrigger>}
-          {visibleTabs.includes('retention') && <TabsTrigger value="retention">Retention</TabsTrigger>}
-          {visibleTabs.includes('holds') && <TabsTrigger value="holds">Legal Holds</TabsTrigger>}
-          {visibleTabs.includes('shares') && <TabsTrigger value="shares">Shares</TabsTrigger>}
-          {visibleTabs.includes('audit-logs') && <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>}
-          {visibleTabs.includes('settings') && <TabsTrigger value="settings">Settings</TabsTrigger>}
+        <TabsList className={`w-full ${getTabsLayoutClass()}`}>
+          {visibleTabs.includes('overview') && (
+            <TabsTrigger value="overview" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Overview
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('users') && (
+            <TabsTrigger value="users" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Users
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('teams') && (
+            <TabsTrigger value="teams" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Teams
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('firms') && (
+            <TabsTrigger value="firms" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Firms
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('retention') && (
+            <TabsTrigger value="retention" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Retention
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('holds') && (
+            <TabsTrigger value="holds" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Legal Holds
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('shares') && (
+            <TabsTrigger value="shares" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Shares
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('audit-logs') && (
+            <TabsTrigger value="audit-logs" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Audit Logs
+            </TabsTrigger>
+          )}
+          {visibleTabs.includes('settings') && (
+            <TabsTrigger value="settings" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
+              Settings
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">

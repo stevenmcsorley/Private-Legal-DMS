@@ -14,6 +14,7 @@ import { User } from './user.entity';
 import { Document } from './document.entity';
 import { MatterShare } from './matter-share.entity';
 import { MatterTeam } from './matter-team.entity';
+import { LegalHold } from './legal-hold.entity';
 
 export enum MatterStatus {
   ACTIVE = 'active',
@@ -79,4 +80,7 @@ export class Matter {
 
   @OneToMany(() => MatterTeam, teamMember => teamMember.matter)
   team_members: MatterTeam[];
+
+  @OneToMany(() => LegalHold, legalHold => legalHold.matter)
+  legal_holds: LegalHold[];
 }

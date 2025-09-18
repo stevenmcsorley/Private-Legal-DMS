@@ -12,6 +12,8 @@ import {
 } from 'typeorm';
 import { Firm } from './firm.entity';
 import { Team } from './team.entity';
+import { LegalHold } from './legal-hold.entity';
+import { LegalHoldCustodian } from './legal-hold-custodian.entity';
 import { Document } from './document.entity';
 import { Matter } from './matter.entity';
 
@@ -67,4 +69,13 @@ export class User {
   // Note: Circular import handled via string reference
   // @OneToMany(() => MatterTeam, matterTeam => matterTeam.user)
   // matter_teams: MatterTeam[];
+
+  @OneToMany(() => LegalHold, legalHold => legalHold.created_by_user)
+  created_legal_holds: LegalHold[];
+
+  @OneToMany(() => LegalHold, legalHold => legalHold.released_by_user)
+  released_legal_holds: LegalHold[];
+
+  @OneToMany(() => LegalHoldCustodian, custodian => custodian.custodian)
+  custodian_assignments: LegalHoldCustodian[];
 }

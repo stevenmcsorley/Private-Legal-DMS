@@ -27,7 +27,7 @@ export class CreateMatterShares1725672000000 implements MigrationInterface {
             isNullable: false,
           },
           {
-            name: 'shared_with_firm_id',
+            name: 'shared_with_firm',
             type: 'uuid',
             isNullable: false,
           },
@@ -93,12 +93,12 @@ export class CreateMatterShares1725672000000 implements MigrationInterface {
       true,
     );
 
-    // Create unique index for matter_id + shared_with_firm_id
+    // Create unique index for matter_id + shared_with_firm
     await queryRunner.createIndex(
       'matter_shares',
       new TableIndex({
         name: 'IDX_matter_shares_matter_firm_unique',
-        columnNames: ['matter_id', 'shared_with_firm_id'],
+        columnNames: ['matter_id', 'shared_with_firm'],
         isUnique: true,
       }),
     );
@@ -112,12 +112,12 @@ export class CreateMatterShares1725672000000 implements MigrationInterface {
       }),
     );
 
-    // Create index for shared_with_firm_id + status
+    // Create index for shared_with_firm + status
     await queryRunner.createIndex(
       'matter_shares',
       new TableIndex({
         name: 'IDX_matter_shares_firm_status',
-        columnNames: ['shared_with_firm_id', 'status'],
+        columnNames: ['shared_with_firm', 'status'],
       }),
     );
 
@@ -148,7 +148,7 @@ export class CreateMatterShares1725672000000 implements MigrationInterface {
       'matter_shares',
       new TableForeignKey({
         name: 'FK_matter_shares_shared_with_firm',
-        columnNames: ['shared_with_firm_id'],
+        columnNames: ['shared_with_firm'],
         referencedColumnNames: ['id'],
         referencedTableName: 'firms',
         onDelete: 'CASCADE',
