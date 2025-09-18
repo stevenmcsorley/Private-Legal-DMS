@@ -41,39 +41,54 @@ export class DashboardController {
     description: 'Dashboard statistics retrieved successfully',
   })
   async getStats(@CurrentUser() user: UserInfo): Promise<DashboardStats> {
-    // Get firm-specific counts
-    const firmId = user.firm_id;
+    // Super admins can see stats across all firms
+    const isSuperAdmin = user.roles.includes('super_admin');
+    const firmId = isSuperAdmin ? undefined : user.firm_id;
+    
     const [totalDocuments, activeMatters, totalClients, totalUsers] = await Promise.all([
-      this.documentRepo.count({ where: { is_deleted: false, firm_id: firmId } }),
-      this.matterRepo.count({ where: { status: MatterStatus.ACTIVE, firm_id: firmId } }),
-      this.clientRepo.count({ where: { firm_id: firmId } }),
-      this.userRepo.count({ where: { firm_id: firmId } }),
+      this.documentRepo.count({ 
+        where: firmId ? { is_deleted: false, firm_id: firmId } : { is_deleted: false }
+      }),
+      this.matterRepo.count({ 
+        where: firmId ? { status: MatterStatus.ACTIVE, firm_id: firmId } : { status: MatterStatus.ACTIVE }
+      }),
+      this.clientRepo.count({ 
+        where: firmId ? { firm_id: firmId } : {}
+      }),
+      this.userRepo.count({ 
+        where: firmId ? { firm_id: firmId } : {}
+      }),
     ]);
 
-    // Get recent activity (last 10 items) for this firm
+    // Get recent activity (last 10 items)
     const recentDocuments = await this.documentRepo.find({
-      where: { firm_id: firmId },
+      where: firmId ? { firm_id: firmId } : {},
       take: 5,
       order: { created_at: 'DESC' },
-      relations: ['matter'],
+      relations: ['matter', 'matter.firm'],
     });
 
     const recentMatters = await this.matterRepo.find({
-      where: { firm_id: firmId },
+      where: firmId ? { firm_id: firmId } : {},
       take: 5, 
       order: { created_at: 'DESC' },
+      relations: ['firm'],
     });
 
     // Create activity feed
     const recentActivity = [
       ...recentDocuments.map(doc => ({
         type: 'document',
-        description: `Document "${doc.original_filename}" uploaded to matter "${doc.matter?.title || 'Unknown'}"`,
+        description: `Document "${doc.original_filename}" uploaded to matter "${doc.matter?.title || 'Unknown'}"${
+          isSuperAdmin && doc.matter?.firm ? ` at ${doc.matter.firm.name}` : ''
+        }`,
         timestamp: doc.created_at,
       })),
       ...recentMatters.map(matter => ({
         type: 'matter',
-        description: `Matter "${matter.title}" created`,
+        description: `Matter "${matter.title}" created${
+          isSuperAdmin && matter.firm ? ` at ${matter.firm.name}` : ''
+        }`,
         timestamp: matter.created_at,
       })),
     ]

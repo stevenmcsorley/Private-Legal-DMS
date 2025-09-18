@@ -23,7 +23,11 @@ import {
   Loader2,
   Users,
   Zap,
-  Building
+  Building,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import {
   Select,
@@ -100,6 +104,9 @@ export const UserManagement = () => {
   const [bulkReason, setBulkReason] = useState('');
   const [bulkRole, setBulkRole] = useState('');
   const [isPerformingBulk, setIsPerformingBulk] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalUsers, setTotalUsers] = useState(0);
   const [editUserForm, setEditUserForm] = useState<CreateUserFormData>({
     email: '',
     display_name: '',
@@ -136,6 +143,19 @@ export const UserManagement = () => {
     fetchClients();
     fetchFirms();
   }, []);
+
+  useEffect(() => {
+    const delayedFetch = setTimeout(() => {
+      setCurrentPage(1);
+      fetchUsers(1, pageSize);
+    }, 500);
+    
+    return () => clearTimeout(delayedFetch);
+  }, [searchTerm, roleFilter, statusFilter]);
+
+  useEffect(() => {
+    fetchUsers(currentPage, pageSize);
+  }, [currentPage, pageSize]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -199,14 +219,25 @@ export const UserManagement = () => {
     }
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (page = currentPage, size = pageSize) => {
     try {
-      const response = await fetch('/api/admin/users', {
+      const searchParams = new URLSearchParams({
+        page: page.toString(),
+        limit: size.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(roleFilter !== 'all' && { role: roleFilter }),
+        ...(statusFilter === 'active' && { active_only: 'true' }),
+        ...(statusFilter === 'inactive' && { active_only: 'false' })
+      });
+      
+      const response = await fetch(`/api/admin/users?${searchParams}`, {
         credentials: 'include',
       });
+      
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
+        setTotalUsers(data.total || data.users?.length || 0);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -510,18 +541,11 @@ export const UserManagement = () => {
     }
   };
 
-  const filteredUsers = users.filter((user) => {
-    const matchesSearch = 
-      user.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesRole = roleFilter === 'all' || user.roles.includes(roleFilter);
-    const matchesStatus = statusFilter === 'all' || 
-      (statusFilter === 'active' && user.is_active) ||
-      (statusFilter === 'inactive' && !user.is_active);
-
-    return matchesSearch && matchesRole && matchesStatus;
-  });
+  // Users are now filtered on the backend, so we just use the fetched users
+  const filteredUsers = users;
+  const totalPages = Math.ceil(totalUsers / pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalUsers);
 
   const getRoleColor = (_role: string) => {
     // Unify role pill styling with dark palette + amber accent
@@ -960,10 +984,30 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Results Count */}
-      <div className="flex items-center text-sm text-slate-400">
-        <Filter className="h-4 w-4 mr-2" />
-        Showing {filteredUsers.length} of {users.length} users
+      {/* Results Count & Pagination Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-sm text-slate-400">
+          <Filter className="h-4 w-4 mr-2" />
+          Showing {totalUsers > 0 ? startIndex : 0} - {endIndex} of {totalUsers} users
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Select value={pageSize.toString()} onValueChange={(value) => {
+            setPageSize(parseInt(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-slate-400">per page</span>
+        </div>
       </div>
 
       {/* Users Table */}
@@ -1092,6 +1136,68 @@ export const UserManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-400">
+            Page {currentPage} of {totalPages}
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+              if (pageNum > totalPages) return null;
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {filteredUsers.length === 0 && (
         <Card>

@@ -14,7 +14,11 @@ import {
   Mail,
   Phone,
   Clock,
-  Archive
+  Archive,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import {
   Select,
@@ -54,17 +58,42 @@ export const ClientList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(12);
+  const [totalClients, setTotalClients] = useState(0);
 
   useEffect(() => {
     fetchClients();
   }, []);
 
-  const fetchClients = async () => {
+  useEffect(() => {
+    const delayedFetch = setTimeout(() => {
+      setCurrentPage(1);
+      fetchClients(1, pageSize);
+    }, 500);
+    
+    return () => clearTimeout(delayedFetch);
+  }, [searchTerm, statusFilter, typeFilter]);
+
+  useEffect(() => {
+    fetchClients(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  const fetchClients = async (page = currentPage, size = pageSize) => {
     try {
-      const response = await fetch('/api/clients', { credentials: 'include' });
+      const searchParams = new URLSearchParams({
+        page: page.toString(),
+        limit: size.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(typeFilter !== 'all' && { type: typeFilter })
+      });
+      
+      const response = await fetch(`/api/clients?${searchParams}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setClients(data.clients || []);
+        setTotalClients(data.total || data.clients?.length || 0);
       }
     } catch (error) {
       console.error('Error fetching clients:', error);
@@ -73,17 +102,11 @@ export const ClientList = () => {
     }
   };
 
-  const filteredClients = clients.filter((client) => {
-    const matchesSearch = 
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (client.contact_email && client.contact_email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (client.metadata?.contact_person && client.metadata.contact_person.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    const matchesStatus = statusFilter === 'all' || client.metadata?.status === statusFilter;
-    const matchesType = typeFilter === 'all' || client.metadata?.client_type === typeFilter;
-
-    return matchesSearch && matchesStatus && matchesType;
-  });
+  // Clients are now filtered on the backend, so we just use the fetched clients
+  const filteredClients = clients;
+  const totalPages = Math.ceil(totalClients / pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalClients);
 
 
   if (loading) {
@@ -157,10 +180,30 @@ export const ClientList = () => {
         </CardContent>
       </Card>
 
-      {/* Results Count */}
-      <div className="flex items-center text-sm text-slate-300">
-        <Filter className="h-4 w-4 mr-2 text-orange-400" />
-        Showing {filteredClients.length} of {clients.length} clients
+      {/* Results Count & Pagination Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-sm text-slate-300">
+          <Filter className="h-4 w-4 mr-2 text-orange-400" />
+          Showing {totalClients > 0 ? startIndex : 0} - {endIndex} of {totalClients} clients
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Select value={pageSize.toString()} onValueChange={(value) => {
+            setPageSize(parseInt(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="6">6</SelectItem>
+              <SelectItem value="12">12</SelectItem>
+              <SelectItem value="24">24</SelectItem>
+              <SelectItem value="48">48</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-slate-400">per page</span>
+        </div>
       </div>
 
       {/* Clients Grid */}
@@ -264,6 +307,68 @@ export const ClientList = () => {
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-400">
+            Page {currentPage} of {totalPages}
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+              if (pageNum > totalPages) return null;
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {filteredClients.length === 0 && (
         <Card className="bg-slate-800 border-slate-700">

@@ -112,6 +112,7 @@ export class AdminService {
         attributes: user.attributes,
         firm: user.firm ? { id: user.firm.id, name: user.firm.name } : null,
         is_active: user.is_active,
+        clearance_level: user.clearance_level || 5,
         created_at: user.created_at,
         client_count: user.attributes?.client_ids?.length || 0,
         has_client_access: !!(user.attributes?.client_ids && user.attributes.client_ids.length > 0),

@@ -66,9 +66,16 @@ export class MatterResponseDto {
   @Expose()
   documents_count?: number;
 
-  // Exclude sensitive data
+  @ApiProperty({ description: 'Firm information', required: false })
+  @Expose()
+  firm?: {
+    id: string;
+    name: string;
+  };
+
+  // Exclude full firm object with sensitive data
   @Exclude()
-  firm: any;
+  firm_full: any;
 
   constructor(partial: Partial<MatterResponseDto>) {
     Object.assign(this, partial);

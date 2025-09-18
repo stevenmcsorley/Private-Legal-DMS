@@ -11,7 +11,11 @@ import {
   FileText,
   User,
   Clock,
-  AlertCircle
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from 'lucide-react';
 import {
   Select,
@@ -52,17 +56,41 @@ export const MatterList = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [totalMatters, setTotalMatters] = useState(0);
 
   useEffect(() => {
     fetchMatters();
   }, []);
 
-  const fetchMatters = async () => {
+  useEffect(() => {
+    const delayedFetch = setTimeout(() => {
+      setCurrentPage(1);
+      fetchMatters(1, pageSize);
+    }, 500);
+    
+    return () => clearTimeout(delayedFetch);
+  }, [searchTerm, statusFilter, typeFilter, priorityFilter]);
+
+  useEffect(() => {
+    fetchMatters(currentPage, pageSize);
+  }, [currentPage, pageSize]);
+
+  const fetchMatters = async (page = currentPage, size = pageSize) => {
     try {
-      const response = await fetch('/api/matters', { credentials: 'include' });
+      const searchParams = new URLSearchParams({
+        page: page.toString(),
+        limit: size.toString(),
+        ...(searchTerm && { search: searchTerm }),
+        ...(statusFilter !== 'all' && { status: statusFilter })
+      });
+      
+      const response = await fetch(`/api/matters?${searchParams}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
         setMatters(data.matters || []);
+        setTotalMatters(data.total || data.matters?.length || 0);
       }
     } catch (error) {
       console.error('Error fetching matters:', error);
@@ -71,18 +99,11 @@ export const MatterList = () => {
     }
   };
 
-  const filteredMatters = matters.filter((matter) => {
-    const matchesSearch = 
-      matter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (matter.client?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      matter.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || matter.status === statusFilter;
-    const matchesType = typeFilter === 'all'; // No matter_type in current API
-    const matchesPriority = priorityFilter === 'all'; // No priority in current API
-
-    return matchesSearch && matchesStatus && matchesType && matchesPriority;
-  });
+  // Matters are now filtered on the backend, so we just use the fetched matters
+  const filteredMatters = matters;
+  const totalPages = Math.ceil(totalMatters / pageSize);
+  const startIndex = (currentPage - 1) * pageSize + 1;
+  const endIndex = Math.min(currentPage * pageSize, totalMatters);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -178,10 +199,30 @@ export const MatterList = () => {
         </CardContent>
       </Card>
 
-      {/* Results Count */}
-      <div className="flex items-center text-sm text-slate-300">
-        <Filter className="h-4 w-4 mr-2 text-orange-400" />
-        Showing {filteredMatters.length} of {matters.length} matters
+      {/* Results Count & Pagination Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center text-sm text-slate-300">
+          <Filter className="h-4 w-4 mr-2 text-orange-400" />
+          Showing {totalMatters > 0 ? startIndex : 0} - {endIndex} of {totalMatters} matters
+        </div>
+        
+        <div className="flex items-center space-x-2">
+          <Select value={pageSize.toString()} onValueChange={(value) => {
+            setPageSize(parseInt(value));
+            setCurrentPage(1);
+          }}>
+            <SelectTrigger className="w-20">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="25">25</SelectItem>
+              <SelectItem value="50">50</SelectItem>
+            </SelectContent>
+          </Select>
+          <span className="text-sm text-slate-400">per page</span>
+        </div>
       </div>
 
       {/* Matters Grid */}
@@ -256,6 +297,68 @@ export const MatterList = () => {
           </Card>
         ))}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-slate-400">
+            Page {currentPage} of {totalPages}
+          </div>
+          
+          <div className="flex items-center space-x-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(1)}
+              disabled={currentPage === 1}
+            >
+              <ChevronsLeft className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+              disabled={currentPage === 1}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            {/* Page numbers */}
+            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+              const pageNum = Math.max(1, Math.min(totalPages - 4, currentPage - 2)) + i;
+              if (pageNum > totalPages) return null;
+              
+              return (
+                <Button
+                  key={pageNum}
+                  variant={currentPage === pageNum ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setCurrentPage(pageNum)}
+                >
+                  {pageNum}
+                </Button>
+              );
+            })}
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage(totalPages)}
+              disabled={currentPage === totalPages}
+            >
+              <ChevronsRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {filteredMatters.length === 0 && (
         <Card className="bg-slate-800 border-slate-700">

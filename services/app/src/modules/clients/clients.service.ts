@@ -70,9 +70,12 @@ export class ClientsService {
     limit: number;
   }> {
     const { page = 1, limit = 20, search } = query;
-    const firm_id = query.firm_id || user.firm_id;
+    
+    // Super admins can see all clients across all firms
+    const isSuperAdmin = user.roles.includes('super_admin');
+    const firm_id = query.firm_id || (isSuperAdmin ? undefined : user.firm_id);
 
-    if (!firm_id) {
+    if (!firm_id && !isSuperAdmin) {
       throw new ForbiddenException('Firm ID is required');
     }
 
@@ -80,7 +83,12 @@ export class ClientsService {
       .createQueryBuilder('client')
       .leftJoinAndSelect('client.matters', 'matter')
       .leftJoinAndSelect('client.documents', 'document')
-      .where('client.firm_id = :firm_id', { firm_id });
+      .leftJoinAndSelect('client.firm', 'firm');
+
+    // Only filter by firm_id if specified (super admins can see all)
+    if (firm_id) {
+      queryBuilder.where('client.firm_id = :firm_id', { firm_id });
+    }
 
     if (search) {
       queryBuilder.andWhere(
@@ -102,6 +110,10 @@ export class ClientsService {
         matter_count: client.matters?.length || 0,
         document_count: client.documents?.length || 0,
         last_activity: client.updated_at,
+        firm: client.firm ? {
+          id: client.firm.id,
+          name: client.firm.name,
+        } : undefined,
       })),
       total,
       page,

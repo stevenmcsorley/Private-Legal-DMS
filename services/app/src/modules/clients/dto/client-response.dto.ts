@@ -57,9 +57,16 @@ export class ClientResponseDto {
   @Type(() => Date)
   last_activity?: Date;
 
-  // Exclude sensitive data
+  @ApiProperty({ description: 'Firm information', required: false })
+  @Expose()
+  firm?: {
+    id: string;
+    name: string;
+  };
+
+  // Exclude sensitive data from full firm object
   @Exclude()
-  firm: any;
+  firm_full: any;
 
   @Exclude()
   matters: any;

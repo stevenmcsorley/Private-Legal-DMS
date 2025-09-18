@@ -79,9 +79,12 @@ export class MattersService {
     limit: number;
   }> {
     const { page = 1, limit = 20, search, status, client_id } = query;
-    const firm_id = query.firm_id || user.firm_id;
+    
+    // Super admins can see all matters across all firms
+    const isSuperAdmin = user.roles.includes('super_admin');
+    const firm_id = query.firm_id || (isSuperAdmin ? undefined : user.firm_id);
 
-    if (!firm_id) {
+    if (!firm_id && !isSuperAdmin) {
       throw new ForbiddenException('Firm ID is required');
     }
 
@@ -89,7 +92,12 @@ export class MattersService {
       .createQueryBuilder('matter')
       .leftJoinAndSelect('matter.client', 'client')
       .leftJoinAndSelect('matter.created_by_user', 'user')
-      .where('matter.firm_id = :firm_id', { firm_id });
+      .leftJoinAndSelect('matter.firm', 'firm');
+
+    // Only filter by firm_id if specified (super admins can see all)
+    if (firm_id) {
+      queryBuilder.where('matter.firm_id = :firm_id', { firm_id });
+    }
 
     if (search) {
       queryBuilder.andWhere(
@@ -125,6 +133,10 @@ export class MattersService {
           id: matter.created_by_user.id,
           display_name: matter.created_by_user.display_name,
           email: matter.created_by_user.email,
+        } : undefined,
+        firm: matter.firm ? {
+          id: matter.firm.id,
+          name: matter.firm.name,
         } : undefined,
       })),
       total,
