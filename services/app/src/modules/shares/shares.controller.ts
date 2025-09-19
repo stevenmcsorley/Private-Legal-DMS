@@ -40,7 +40,7 @@ interface OutgoingShareResponse {
     display_name: string;
   };
   role: string;
-  permissions: string[];
+  permissions: Record<string, any>;
   status: string;
   expires_at?: string;
   created_at: string;
@@ -59,7 +59,7 @@ interface IncomingShareResponse {
   shared_by_firm_name: string;
   shared_by_user: string;
   role: string;
-  permissions: string[];
+  permissions: Record<string, any>;
   status: string;
   expires_at?: string;
   created_at: string;

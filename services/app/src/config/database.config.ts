@@ -14,7 +14,7 @@ export class DatabaseConfig implements TypeOrmOptionsFactory {
       migrations: [__dirname + '/../database/migrations/*{.ts,.js}'],
       synchronize: false, // Always use migrations in production
       logging: this.configService.get('NODE_ENV') === 'development',
-      migrationsRun: true, // Run migrations automatically
+      migrationsRun: false, // Disabled - tables created manually
       ssl: this.configService.get('NODE_ENV') === 'production' ? {
         rejectUnauthorized: false,
       } : false,

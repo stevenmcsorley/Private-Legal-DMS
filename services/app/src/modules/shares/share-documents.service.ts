@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Response } from 'express';
-import { MatterShare } from '../../common/entities/matter-share.entity';
+import { MatterShare, ShareStatus } from '../../common/entities/matter-share.entity';
 import { Document } from '../../common/entities/document.entity';
 import { User, Firm } from '../../common/entities';
 import { WatermarkService } from '../documents/services/watermark.service';
@@ -181,7 +181,7 @@ export class ShareDocumentsService {
     }
 
     // Check if share is still valid
-    if (share.isRevoked()) {
+    if (share.status === ShareStatus.REVOKED) {
       throw new ForbiddenException('Share has been revoked');
     }
 

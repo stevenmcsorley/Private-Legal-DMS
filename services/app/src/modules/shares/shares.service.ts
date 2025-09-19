@@ -49,7 +49,7 @@ export class SharesService {
       },
       role: share.role,
       permissions: share.permissions || [],
-      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: share.isExpired() ? 'expired' : 'active',
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       access_count: 0, // TODO: implement access tracking
@@ -85,7 +85,7 @@ export class SharesService {
       shared_by_user: share.shared_by_user?.display_name || '',
       role: share.role,
       permissions: share.permissions || [],
-      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: share.isExpired() ? 'expired' : 'active',
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       message: null, // No message field in current schema
@@ -248,7 +248,7 @@ export class SharesService {
       },
       role: share.role,
       permissions: share.permissions || [],
-      status: (share.status === ShareStatus.REVOKED) ? 'revoked' : (share.isExpired() ? 'expired' : 'active'),
+      status: share.isExpired() ? 'expired' : 'active',
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       documents: share.matter.documents?.map(doc => ({
