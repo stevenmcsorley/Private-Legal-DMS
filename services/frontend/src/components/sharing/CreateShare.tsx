@@ -44,8 +44,17 @@ interface Firm {
   state?: string;
 }
 
+interface Document {
+  id: string;
+  original_filename: string;
+  file_size: number;
+  mime_type: string;
+  created_at: string;
+}
+
 interface CreateShareFormData {
   matter_id: string;
+  document_id?: string;
   target_firm_id: string;
   role: 'viewer' | 'editor' | 'collaborator' | 'partner_lead';
   expires_at?: string;
@@ -90,7 +99,9 @@ export const CreateShare = () => {
   
   const [matters, setMatters] = useState<Matter[]>([]);
   const [firms, setFirms] = useState<Firm[]>([]);
+  const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(false);
+  const [documentLoading, setDocumentLoading] = useState(false);
   const [firmSearchTerm, setFirmSearchTerm] = useState('');
   const [matterSearchTerm, setMatterSearchTerm] = useState('');
   
@@ -117,6 +128,15 @@ export const CreateShare = () => {
       setFirms([]);
     }
   }, [firmSearchTerm]);
+
+  useEffect(() => {
+    if (formData.matter_id) {
+      fetchDocuments(formData.matter_id);
+    } else {
+      setDocuments([]);
+      setFormData(prev => ({ ...prev, document_id: '' }));
+    }
+  }, [formData.matter_id]);
 
   const fetchMatters = async () => {
     try {
@@ -160,6 +180,29 @@ export const CreateShare = () => {
         description: 'Failed to search firms. Please try again.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const fetchDocuments = async (matterId: string) => {
+    try {
+      setDocumentLoading(true);
+      const response = await fetch(`/api/matters/${matterId}/documents`, {
+        credentials: 'include',
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setDocuments(data.documents || []);
+      }
+    } catch (error) {
+      console.error('Error fetching documents:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load documents. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setDocumentLoading(false);
     }
   };
 
@@ -208,6 +251,7 @@ export const CreateShare = () => {
         credentials: 'include',
         body: JSON.stringify({
           matter_id: formData.matter_id,
+          document_id: formData.document_id || undefined,
           target_firm_id: formData.target_firm_id,
           role: formData.role,
           expires_at: formData.expires_at || undefined,
@@ -258,7 +302,7 @@ export const CreateShare = () => {
               <Share2 className="h-6 w-6 mr-3 text-orange-500" />
               Create New Share
             </h1>
-            <p className="text-slate-400">Share a matter with another law firm</p>
+            <p className="text-slate-400">Share a matter or specific document with another law firm</p>
           </div>
         </div>
       </div>
@@ -341,6 +385,89 @@ export const CreateShare = () => {
               )}
             </CardContent>
           </Card>
+
+          {/* Document Selection */}
+          {formData.matter_id && (
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center text-white">
+                  <FileText className="h-5 w-5 mr-2 text-blue-500" />
+                  Select Document (Optional)
+                </CardTitle>
+                <p className="text-sm text-slate-400 mt-1">
+                  Choose a specific document to share, or leave empty to share the entire matter
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {documentLoading ? (
+                  <div className="text-center py-8 text-slate-400">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    <p>Loading documents...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* Option to share entire matter */}
+                    <div
+                      className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                        !formData.document_id
+                          ? 'border-blue-500 bg-blue-500/10'
+                          : 'border-slate-600 hover:border-slate-500 bg-slate-700/50'
+                      }`}
+                      onClick={() => setFormData({ ...formData, document_id: '' })}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-medium text-white">📁 Entire Matter</h4>
+                          <p className="text-sm text-slate-400 mt-1">
+                            Share all documents in this matter ({documents.length} document{documents.length !== 1 ? 's' : ''})
+                          </p>
+                        </div>
+                        {!formData.document_id && (
+                          <Check className="h-5 w-5 text-blue-500 ml-2" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Individual documents */}
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {documents.map((document) => (
+                        <div
+                          key={document.id}
+                          className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                            formData.document_id === document.id
+                              ? 'border-blue-500 bg-blue-500/10'
+                              : 'border-slate-600 hover:border-slate-500 bg-slate-700/50'
+                          }`}
+                          onClick={() => setFormData({ ...formData, document_id: document.id })}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-white truncate">{document.original_filename}</h4>
+                              <div className="flex items-center space-x-3 text-sm text-slate-400 mt-1">
+                                <span>{document.mime_type}</span>
+                                <span>{(document.file_size / 1024 / 1024).toFixed(2)} MB</span>
+                                <span>{new Date(document.created_at).toLocaleDateString()}</span>
+                              </div>
+                            </div>
+                            {formData.document_id === document.id && (
+                              <Check className="h-5 w-5 text-blue-500 ml-2" />
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {documents.length === 0 && (
+                        <div className="text-center py-8 text-slate-400">
+                          <FileText className="h-8 w-8 mx-auto mb-2 text-slate-500" />
+                          <p>No documents found in this matter</p>
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Firm Selection */}
           <Card className="bg-slate-800 border-slate-700">

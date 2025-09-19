@@ -11,6 +11,7 @@ import {
 import { Matter } from './matter.entity';
 import { Firm } from './firm.entity';
 import { User } from './user.entity';
+import { Document } from './document.entity';
 
 export enum ShareRole {
   VIEWER = 'viewer',
@@ -37,6 +38,9 @@ export class MatterShare {
 
   @Column('uuid')
   matter_id: string;
+
+  @Column('uuid', { nullable: true })
+  document_id: string;
 
   @Column('uuid')
   shared_by_firm_id: string;
@@ -89,6 +93,10 @@ export class MatterShare {
   @ManyToOne(() => Matter, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'matter_id' })
   matter: Matter;
+
+  @ManyToOne(() => Document, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'document_id' })
+  document: Document;
 
   @ManyToOne(() => Firm, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'shared_by_firm_id' })

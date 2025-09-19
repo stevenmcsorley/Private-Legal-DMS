@@ -135,6 +135,8 @@ export class SharesService {
       },
       ip_address: null,
       user_agent: null,
+      risk_level: 'low',
+      outcome: 'success',
     });
     
     return {
@@ -186,6 +188,8 @@ export class SharesService {
       },
       ip_address: null,
       user_agent: null,
+      risk_level: 'low',
+      outcome: 'success',
     });
   }
 
@@ -304,23 +308,43 @@ export class SharesService {
       updated_at: share.updated_at?.toISOString(),
       access_count: accessCount,
       last_accessed: lastAccessTime?.toISOString(),
-      documents: share.matter.documents?.map(doc => ({
-        id: doc.id,
-        title: doc.original_filename,
-        file_name: doc.original_filename,
-        file_size: Number(doc.size_bytes),
-        mime_type: doc.mime_type,
-        uploaded_at: doc.created_at.toISOString(),
-        confidential: doc.metadata?.confidential || false,
-        privileged: doc.metadata?.privileged || false,
-        work_product: doc.metadata?.work_product || false,
-      })) || [],
+      documents: (() => {
+        // If document_id is specified, only return that specific document
+        if (share.document_id) {
+          const specificDoc = share.matter.documents?.find(doc => doc.id === share.document_id);
+          return specificDoc ? [{
+            id: specificDoc.id,
+            title: specificDoc.original_filename,
+            file_name: specificDoc.original_filename,
+            file_size: Number(specificDoc.size_bytes),
+            mime_type: specificDoc.mime_type,
+            uploaded_at: specificDoc.created_at.toISOString(),
+            confidential: specificDoc.metadata?.confidential || false,
+            privileged: specificDoc.metadata?.privileged || false,
+            work_product: specificDoc.metadata?.work_product || false,
+          }] : [];
+        }
+        
+        // Otherwise, return all documents (legacy matter-level sharing)
+        return share.matter.documents?.map(doc => ({
+          id: doc.id,
+          title: doc.original_filename,
+          file_name: doc.original_filename,
+          file_size: Number(doc.size_bytes),
+          mime_type: doc.mime_type,
+          uploaded_at: doc.created_at.toISOString(),
+          confidential: doc.metadata?.confidential || false,
+          privileged: doc.metadata?.privileged || false,
+          work_product: doc.metadata?.work_product || false,
+        })) || [];
+      })(),
       access_log: accessLog,
       is_external: !isOwner && isRecipient,
     };
   }
 
   async createShare(matterId: string, targetFirmId: string, role: ShareRole, user: User, options: {
+    document_id?: string;
     expires_at?: Date;
     permissions?: Record<string, any>;
     restrictions?: Record<string, any>;
@@ -345,23 +369,49 @@ export class SharesService {
       throw new NotFoundException('Target firm not found');
     }
 
-    // Check if share already exists
+    // If document_id is provided, verify the document exists and belongs to the matter
+    if (options.document_id) {
+      const document = await this.matterRepository.manager.findOne('Document', {
+        where: { 
+          id: options.document_id, 
+          matter_id: matterId 
+        }
+      });
+      
+      if (!document) {
+        throw new NotFoundException('Document not found or does not belong to this matter');
+      }
+    }
+
+    // Check if share already exists (for same matter/document combination)
+    const whereCondition: any = {
+      matter_id: matterId,
+      shared_with_firm: targetFirmId,
+      status: Not(ShareStatus.REVOKED),
+    };
+    
+    // For document-level shares, check document_id specifically
+    if (options.document_id) {
+      whereCondition.document_id = options.document_id;
+    } else {
+      // For matter-level shares, ensure no document_id is set
+      whereCondition.document_id = null;
+    }
+    
     const existingShare = await this.shareRepository.findOne({
-      where: {
-        matter_id: matterId,
-        shared_with_firm: targetFirmId,
-        status: Not(ShareStatus.REVOKED),
-      },
+      where: whereCondition,
     });
 
     if (existingShare) {
-      throw new ConflictException('Share already exists with this firm');
+      const shareType = options.document_id ? 'document' : 'matter';
+      throw new ConflictException(`Share already exists for this ${shareType} with this firm`);
     }
 
     // Create the share using direct INSERT
     const userId = user.id || (user as any).sub;
     const shareData = {
       matter_id: matterId,
+      document_id: options.document_id || null,
       shared_by_firm_id: user.firm_id,
       shared_with_firm: targetFirmId,
       shared_by_user_id: userId,

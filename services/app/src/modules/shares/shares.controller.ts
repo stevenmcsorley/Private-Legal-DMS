@@ -209,6 +209,7 @@ export class SharesController {
       required: ['matter_id', 'target_firm_id', 'role'],
       properties: {
         matter_id: { type: 'string', format: 'uuid' },
+        document_id: { type: 'string', format: 'uuid', description: 'Optional: Share only this specific document instead of entire matter' },
         target_firm_id: { type: 'string', format: 'uuid' },
         role: { type: 'string', enum: ['viewer', 'editor', 'collaborator', 'partner_lead'] },
         expires_at: { type: 'string', format: 'date-time' },
@@ -225,6 +226,7 @@ export class SharesController {
   async createShare(
     @Body() createShareDto: {
       matter_id: string;
+      document_id?: string;
       target_firm_id: string;
       role: string;
       expires_at?: string;
@@ -242,6 +244,7 @@ export class SharesController {
       createShareDto.role as any,
       user,
       {
+        document_id: createShareDto.document_id,
         expires_at: expiresAt,
         permissions: createShareDto.permissions,
         restrictions: createShareDto.restrictions,
