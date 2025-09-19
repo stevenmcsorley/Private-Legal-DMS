@@ -30,6 +30,10 @@ export class WatermarkService {
       enabled: true,
       text: 'CONFIDENTIAL - {firm_name}',
       opacity: 0.3,
+      fontSize: 48,
+      position: 'center', // center, top-left, top-right, bottom-left, bottom-right, diagonal
+      color: 'gray', // gray, red, blue, black
+      rotation: 45, // degrees
     };
 
     if (!watermarkSetting?.value) {
@@ -40,6 +44,37 @@ export class WatermarkService {
       ...defaultConfig,
       ...watermarkSetting.value,
     };
+  }
+
+  private getWatermarkPosition(position: string, pageWidth: number, pageHeight: number, textWidth: number, fontSize: number) {
+    const margin = 50;
+    
+    switch (position) {
+      case 'top-left':
+        return { x: margin, y: pageHeight - margin - fontSize };
+      case 'top-right':
+        return { x: pageWidth - margin - textWidth, y: pageHeight - margin - fontSize };
+      case 'bottom-left':
+        return { x: margin, y: margin };
+      case 'bottom-right':
+        return { x: pageWidth - margin - textWidth, y: margin };
+      case 'center':
+        return { x: pageWidth / 2 - textWidth / 2, y: pageHeight / 2 };
+      case 'diagonal':
+      default:
+        return { x: pageWidth / 2 - textWidth / 2, y: pageHeight / 2 };
+    }
+  }
+
+  private getWatermarkColor(colorName: string) {
+    const colors = {
+      gray: rgb(0.5, 0.5, 0.5),
+      red: rgb(0.8, 0.2, 0.2),
+      blue: rgb(0.2, 0.2, 0.8),
+      black: rgb(0.2, 0.2, 0.2),
+    };
+    
+    return colors[colorName] || colors.gray;
   }
 
   async applyWatermark(pdfBuffer: Buffer, options: WatermarkOptions): Promise<Buffer> {
@@ -65,6 +100,9 @@ export class WatermarkService {
       // Process watermark text template
       const watermarkText = config.text.replace('{firm_name}', options.firmName);
       const watermarkOpacity = Math.min(Math.max(config.opacity, 0.1), 1.0); // Clamp between 0.1 and 1.0
+      const fontSize = config.fontSize || 48;
+      const watermarkColor = this.getWatermarkColor(config.color || 'gray');
+      const rotation = config.rotation || 45;
       
       for (const page of pages) {
         const { width, height } = page.getSize();
@@ -89,25 +127,32 @@ export class WatermarkService {
           color: rgb(0.4, 0.4, 0.4),
         });
         
-        // Diagonal custom watermark from admin settings
+        // Main watermark with proper positioning
+        const textWidth = helveticaBold.widthOfTextAtSize(watermarkText, fontSize);
+        const position = this.getWatermarkPosition(config.position || 'diagonal', width, height, textWidth, fontSize);
+        
         page.drawText(watermarkText, {
-          x: width / 2 - (watermarkText.length * 12), // Rough centering
-          y: height / 2,
-          size: 48,
+          x: position.x,
+          y: position.y,
+          size: fontSize,
           font: helveticaBold,
-          color: rgb(watermarkOpacity, watermarkOpacity, watermarkOpacity),
-          rotate: degrees(45)
+          color: watermarkColor,
+          opacity: watermarkOpacity,
+          rotate: config.position === 'diagonal' ? degrees(rotation) : degrees(0),
         });
         
         // Additional confidentiality notice for work product
         if (options.confidentialityLevel === 'work_product') {
-          page.drawText('ATTORNEY WORK PRODUCT', {
-            x: width / 2 - 150,
-            y: height / 2 - 60,
+          const workProductText = 'ATTORNEY WORK PRODUCT';
+          const workProductWidth = helveticaBold.widthOfTextAtSize(workProductText, 24);
+          page.drawText(workProductText, {
+            x: width / 2 - workProductWidth / 2,
+            y: position.y - 60,
             size: 24,
             font: helveticaBold,
-            color: rgb(watermarkOpacity * 0.8, watermarkOpacity * 0.8, watermarkOpacity * 0.8),
-            rotate: degrees(45),
+            color: this.getWatermarkColor(config.color || 'gray'),
+            opacity: watermarkOpacity * 0.8,
+            rotate: config.position === 'diagonal' ? degrees(rotation) : degrees(0),
           });
         }
       }
@@ -139,6 +184,80 @@ export class WatermarkService {
     ];
 
     return supportedTypes.includes(mimeType);
+  }
+
+  /**
+   * Generate a preview PDF with watermark for testing configuration
+   */
+  async generatePreviewPDF(watermarkConfig: any): Promise<Buffer> {
+    try {
+      // Create a simple PDF document for preview
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([595, 842]); // A4 size
+      const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+      const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      
+      const { width, height } = page.getSize();
+      
+      // Add sample content
+      page.drawText('SAMPLE DOCUMENT', {
+        x: 50,
+        y: height - 100,
+        size: 24,
+        font: helveticaBold,
+        color: rgb(0, 0, 0),
+      });
+      
+      page.drawText('This is a preview of how the watermark will appear on your documents.', {
+        x: 50,
+        y: height - 150,
+        size: 12,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      
+      page.drawText('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod', {
+        x: 50,
+        y: height - 200,
+        size: 11,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      
+      page.drawText('tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim', {
+        x: 50,
+        y: height - 220,
+        size: 11,
+        font: helveticaFont,
+        color: rgb(0, 0, 0),
+      });
+      
+      // Apply watermark using current configuration
+      const watermarkText = watermarkConfig.text.replace('{firm_name}', 'Preview Firm');
+      const watermarkOpacity = Math.min(Math.max(watermarkConfig.opacity, 0.1), 1.0);
+      const fontSize = watermarkConfig.fontSize || 48;
+      const watermarkColor = this.getWatermarkColor(watermarkConfig.color || 'gray');
+      const rotation = watermarkConfig.rotation || 45;
+      
+      const textWidth = helveticaBold.widthOfTextAtSize(watermarkText, fontSize);
+      const position = this.getWatermarkPosition(watermarkConfig.position || 'diagonal', width, height, textWidth, fontSize);
+      
+      page.drawText(watermarkText, {
+        x: position.x,
+        y: position.y,
+        size: fontSize,
+        font: helveticaBold,
+        color: watermarkColor,
+        opacity: watermarkOpacity,
+        rotate: watermarkConfig.position === 'diagonal' ? degrees(rotation) : degrees(0),
+      });
+      
+      const pdfBytes = await pdfDoc.save();
+      return Buffer.from(pdfBytes);
+    } catch (error) {
+      this.logger.error(`Failed to generate watermark preview: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 
   /**

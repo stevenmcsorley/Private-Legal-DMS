@@ -514,6 +514,28 @@ export class AdminController {
     return this.adminService.updateSystemSettings(systemSettingsDto, user);
   }
 
+  @Post('watermark/preview')
+  @CanRead('admin')
+  @ApiOperation({ summary: 'Generate watermark preview PDF' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Watermark preview generated successfully',
+  })
+  async generateWatermarkPreview(
+    @Body() watermarkConfig: any,
+    @Res() res: Response,
+    @CurrentUser() user: UserInfo,
+  ) {
+    const previewPdf = await this.adminService.generateWatermarkPreview(watermarkConfig, user);
+    
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': 'attachment; filename="watermark-preview.pdf"',
+    });
+    
+    res.send(previewPdf);
+  }
+
   // Team Management
   @Get('teams')
   @CanRead('admin')

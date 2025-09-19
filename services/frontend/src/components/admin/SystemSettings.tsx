@@ -30,6 +30,10 @@ interface SystemSettings {
     enabled: boolean;
     text: string;
     opacity: number;
+    fontSize: number;
+    position: string;
+    color: string;
+    rotation: number;
   };
   security_policy?: {
     session_timeout_minutes: number;
@@ -114,6 +118,41 @@ export const SystemSettings = () => {
       ...settings,
       [key]: { ...(settings[key] || {} as any), ...updates },
     });
+  };
+
+  const generateWatermarkPreview = async () => {
+    if (!settings?.watermark_config) return;
+
+    try {
+      const response = await fetch('/api/admin/watermark/preview', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify(settings.watermark_config),
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `watermark-preview-${Date.now()}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        console.error('Failed to generate watermark preview');
+        setSaveMessage('Failed to generate watermark preview');
+        setTimeout(() => setSaveMessage(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error generating watermark preview:', error);
+      setSaveMessage('Error generating watermark preview');
+      setTimeout(() => setSaveMessage(''), 3000);
+    }
   };
 
   if (isLoading) {
@@ -440,22 +479,108 @@ export const SystemSettings = () => {
                 </p>
               </div>
 
-              <div>
-                <Label htmlFor="watermark_opacity">Watermark Opacity</Label>
-                <Input
-                  id="watermark_opacity"
-                  type="number"
-                  min="0.1"
-                  max="1"
-                  step="0.1"
-                  value={settings.watermark_config?.opacity || 0.3}
-                  onChange={(e) => updateNestedSettings('watermark_config', { 
-                    opacity: parseFloat(e.target.value) || 0.3 
-                  })}
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Value between 0.1 (very light) and 1.0 (opaque)
-                </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="watermark_opacity">Watermark Opacity</Label>
+                  <Input
+                    id="watermark_opacity"
+                    type="number"
+                    min="0.1"
+                    max="1"
+                    step="0.1"
+                    value={settings.watermark_config?.opacity || 0.3}
+                    onChange={(e) => updateNestedSettings('watermark_config', { 
+                      opacity: parseFloat(e.target.value) || 0.3 
+                    })}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Value between 0.1 (very light) and 1.0 (opaque)
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="watermark_fontSize">Font Size</Label>
+                  <Input
+                    id="watermark_fontSize"
+                    type="number"
+                    min="12"
+                    max="120"
+                    value={settings.watermark_config?.fontSize || 48}
+                    onChange={(e) => updateNestedSettings('watermark_config', { 
+                      fontSize: parseInt(e.target.value) || 48 
+                    })}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Font size in points (12-120)
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="watermark_position">Position</Label>
+                  <Select
+                    value={settings.watermark_config?.position || 'diagonal'}
+                    onValueChange={(value) => updateNestedSettings('watermark_config', { position: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="diagonal">Diagonal (Center)</SelectItem>
+                      <SelectItem value="center">Center</SelectItem>
+                      <SelectItem value="top-left">Top Left</SelectItem>
+                      <SelectItem value="top-right">Top Right</SelectItem>
+                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="watermark_color">Color</Label>
+                  <Select
+                    value={settings.watermark_config?.color || 'gray'}
+                    onValueChange={(value) => updateNestedSettings('watermark_config', { color: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="gray">Gray</SelectItem>
+                      <SelectItem value="red">Red</SelectItem>
+                      <SelectItem value="blue">Blue</SelectItem>
+                      <SelectItem value="black">Black</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="watermark_rotation">Rotation (degrees)</Label>
+                  <Input
+                    id="watermark_rotation"
+                    type="number"
+                    min="0"
+                    max="360"
+                    value={settings.watermark_config?.rotation || 45}
+                    onChange={(e) => updateNestedSettings('watermark_config', { 
+                      rotation: parseInt(e.target.value) || 45 
+                    })}
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Only applies to diagonal position
+                  </p>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => generateWatermarkPreview()}
+                    className="mt-6"
+                  >
+                    <FileImage className="h-4 w-4 mr-2" />
+                    Preview Watermark
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

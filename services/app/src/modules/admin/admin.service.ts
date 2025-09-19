@@ -17,6 +17,7 @@ import { SystemSettingsDto } from './dto/system-settings.dto';
 import { CreateRetentionClassDto } from './dto/create-retention-class.dto';
 import { UpdateRetentionClassDto } from './dto/update-retention-class.dto';
 import { UserInfo } from '../../auth/auth.service';
+import { WatermarkService } from '../documents/services/watermark.service';
 
 interface SystemStats {
   users: {
@@ -64,6 +65,7 @@ export class AdminService {
     private auditLogRepository: Repository<AuditLog>,
     @InjectRepository(SystemSettings)
     private systemSettingsRepository: Repository<SystemSettings>,
+    private watermarkService: WatermarkService,
   ) {}
 
   // User Management
@@ -1291,6 +1293,21 @@ export class AdminService {
 
     // Return the updated settings
     return systemSettingsDto;
+  }
+
+  async generateWatermarkPreview(
+    watermarkConfig: any,
+    currentUser: UserInfo,
+  ): Promise<Buffer> {
+    this.validateAdminAccess(currentUser);
+
+    this.logger.log(`Generating watermark preview for ${currentUser.email}`, {
+      config: watermarkConfig,
+      userId: currentUser.sub,
+      firmId: currentUser.firm_id,
+    });
+
+    return this.watermarkService.generatePreviewPDF(watermarkConfig);
   }
 
   private validateAdminAccess(user: UserInfo): void {
