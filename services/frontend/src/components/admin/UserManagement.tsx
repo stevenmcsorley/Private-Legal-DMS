@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -82,6 +83,7 @@ interface Role {
 }
 
 export const UserManagement = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [clients, setClients] = useState<any[]>([]);
@@ -395,24 +397,6 @@ export const UserManagement = () => {
     }));
   };
 
-  const openEditDialog = (user: any) => {
-    setEditingUser(user);
-    setEditUserForm({
-      email: user.email,
-      display_name: user.display_name,
-      first_name: user.attributes?.first_name || '',
-      last_name: user.attributes?.last_name || '',
-      job_title: user.attributes?.job_title || '',
-      department: user.attributes?.department || '',
-      phone: user.attributes?.phone || '',
-      roles: user.roles || [],
-      client_ids: user.attributes?.client_ids || user.client_ids || [],
-      clearance_level: user.clearance_level || 5,
-      is_active: user.is_active,
-      firm_id: user.firm_id || user.firm?.id || '',
-    });
-    setShowEditDialog(true);
-  };
 
   const updateUser = async () => {
     if (!editingUser) return;
@@ -689,12 +673,13 @@ export const UserManagement = () => {
           )}
 
           <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-            <DialogTrigger asChild>
-              <Button data-testid="admin-user-create-button">
-                <Plus className="h-4 w-4 mr-2" />
-                Add User
-              </Button>
-            </DialogTrigger>
+            <Button 
+              data-testid="admin-user-create-button"
+              onClick={() => navigate('/admin/users/create')}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add User
+            </Button>
             <DialogContent className="sm:max-w-[600px]" data-testid="admin-user-create-dialog">
             <DialogHeader>
               <DialogTitle>Create New User</DialogTitle>
@@ -966,7 +951,7 @@ export const UserManagement = () => {
                 <SelectItem value="firm_admin">Firm Admin</SelectItem>
                 <SelectItem value="legal_manager">Legal Manager</SelectItem>
                 <SelectItem value="legal_professional">Legal Professional</SelectItem>
-                <SelectItem value="paralegal">Paralegal</SelectItem>
+                <SelectItem value="support_staff">Support Staff</SelectItem>
                 <SelectItem value="client_user">Client User</SelectItem>
               </SelectContent>
             </Select>
@@ -1105,7 +1090,7 @@ export const UserManagement = () => {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => openEditDialog(user)}
+                          onClick={() => navigate(`/admin/users/${user.id}/edit`)}
                           data-testid={`admin-user-edit-${user.id}`}
                         >
                           <Edit className="h-4 w-4" />

@@ -124,6 +124,127 @@ export class LegalHoldsController {
     return this.legalHoldsService.getHoldStatistics(user);
   }
 
+  @Get(':id/documents')
+  @CanRead('legal_hold')
+  @ApiOperation({ summary: 'Get documents associated with a legal hold' })
+  @ApiParam({ name: 'id', description: 'Legal hold ID' })
+  @ApiQuery({ name: 'search', required: false, description: 'Search term for documents' })
+  @ApiQuery({ name: 'page', required: false, description: 'Page number' })
+  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Documents retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              title: { type: 'string' },
+              file_path: { type: 'string' },
+              file_size: { type: 'number' },
+              file_type: { type: 'string' },
+              created_at: { type: 'string' },
+              updated_at: { type: 'string' },
+              metadata: { type: 'object' },
+              matter: {
+                type: 'object',
+                properties: {
+                  title: { type: 'string' },
+                  matter_number: { type: 'string' },
+                },
+              },
+            },
+          },
+        },
+        total: { type: 'number' },
+        page: { type: 'number' },
+        limit: { type: 'number' },
+        totalPages: { type: 'number' },
+      },
+    },
+  })
+  async getHoldDocuments(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+    @Query('search') search?: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+  ) {
+    return this.legalHoldsService.getHoldDocuments(id, { search, page, limit }, user);
+  }
+
+  @Get(':id/custodians')
+  @CanRead('legal_hold')
+  @ApiOperation({ summary: 'Get custodians associated with a legal hold' })
+  @ApiParam({ name: 'id', description: 'Legal hold ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Custodians retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              name: { type: 'string' },
+              email: { type: 'string' },
+              department: { type: 'string' },
+              notified_at: { type: 'string' },
+              acknowledged_at: { type: 'string' },
+              status: { type: 'string', enum: ['notified', 'acknowledged', 'pending'] },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getHoldCustodians(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.legalHoldsService.getHoldCustodians(id, user);
+  }
+
+  @Get(':id/audit')
+  @CanRead('legal_hold')
+  @ApiOperation({ summary: 'Get audit log for a legal hold' })
+  @ApiParam({ name: 'id', description: 'Legal hold ID' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Audit log retrieved successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        data: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string' },
+              action: { type: 'string' },
+              details: { type: 'string' },
+              user_name: { type: 'string' },
+              timestamp: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getHoldAuditLog(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() user: UserInfo,
+  ) {
+    return this.legalHoldsService.getHoldAuditLog(id, user);
+  }
+
   @Get(':id')
   @CanRead('legal_hold')
   @ApiOperation({ summary: 'Get a legal hold by ID' })

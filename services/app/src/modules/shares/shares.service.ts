@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Not } from 'typeorm';
 import { MatterShare, ShareStatus, ShareRole } from '../../common/entities/matter-share.entity';
 import { User, Firm, Matter } from '../../common/entities';
+import { AuditLog } from '../../common/entities/audit-log.entity';
 
 @Injectable()
 export class SharesService {
@@ -13,6 +14,8 @@ export class SharesService {
     private readonly matterRepository: Repository<Matter>,
     @InjectRepository(Firm)
     private readonly firmRepository: Repository<Firm>,
+    @InjectRepository(AuditLog)
+    private readonly auditRepository: Repository<AuditLog>,
   ) {}
 
   async getOutgoingShares(firmId: string, role?: string) {
@@ -32,7 +35,7 @@ export class SharesService {
 
     const shares = await queryBuilder.getMany();
 
-    return shares.map(share => ({
+    return Promise.all(shares.map(async share => ({
       id: share.id,
       matter_id: share.matter_id,
       matter: {
@@ -52,10 +55,10 @@ export class SharesService {
       status: share.isExpired() ? 'expired' : 'active',
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
-      access_count: 0, // TODO: implement access tracking
+      access_count: await this.getShareAccessCount(share.id),
       last_accessed: null,
       message: null, // No message field in current schema
-    }));
+    })));
   }
 
   async getIncomingShares(firmId: string, role?: string) {
@@ -231,6 +234,14 @@ export class SharesService {
       throw new ForbiddenException('Share has expired');
     }
 
+    // Track access to this share
+    await this.trackShareAccess(shareId, user, 'share_view');
+
+    // Get access statistics and logs
+    const accessCount = await this.getShareAccessCount(shareId);
+    const lastAccessTime = await this.getLastAccessTime(shareId);
+    const accessLog = await this.getShareAccessLog(shareId, 20);
+
     return {
       id: share.id,
       matter: {
@@ -243,18 +254,23 @@ export class SharesService {
       },
       shared_by_firm_name: share.shared_by_user?.firm?.name || '',
       shared_with_firm_name: share.shared_with_firm_entity?.name || '',
-      shared_by_user: {
+      shared_by: {
         display_name: share.shared_by_user?.display_name || '',
       },
       role: share.role,
-      permissions: share.permissions || [],
-      status: share.isExpired() ? 'expired' : 'active',
+      permissions: share.permissions || {},
+      restrictions: share.restrictions || {},
+      invitation_message: share.invitation_message,
+      status: share.isExpired() ? 'expired' : share.status,
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
+      updated_at: share.updated_at?.toISOString(),
+      access_count: accessCount,
+      last_accessed: lastAccessTime?.toISOString(),
       documents: share.matter.documents?.map(doc => ({
         id: doc.id,
-        filename: doc.original_filename,
-        original_filename: doc.original_filename,
+        title: doc.original_filename,
+        file_name: doc.original_filename,
         file_size: Number(doc.size_bytes),
         mime_type: doc.mime_type,
         uploaded_at: doc.created_at.toISOString(),
@@ -262,6 +278,7 @@ export class SharesService {
         privileged: doc.metadata?.privileged || false,
         work_product: doc.metadata?.work_product || false,
       })) || [],
+      access_log: accessLog,
       is_external: !isOwner && isRecipient,
     };
   }
@@ -333,12 +350,18 @@ export class SharesService {
     };
   }
 
-  async updateSharePermissions(shareId: string, permissions: Record<string, any>, user: User) {
+  async updateSharePermissions(shareId: string, updateData: {
+    permissions?: Record<string, any>;
+    restrictions?: Record<string, any>;
+    role?: ShareRole;
+    expires_at?: string | null;
+  }, user: User) {
     const share = await this.shareRepository.findOne({
       where: { 
         id: shareId,
         shared_by_user_id: user.id,
       },
+      relations: ['matter', 'shared_with_firm_entity', 'shared_by_user'],
     });
 
     if (!share) {
@@ -349,13 +372,54 @@ export class SharesService {
       throw new ForbiddenException('Cannot modify revoked share');
     }
 
-    share.permissions = permissions;
+    // Update permissions if provided
+    if (updateData.permissions !== undefined) {
+      share.permissions = updateData.permissions;
+    }
+
+    // Update restrictions if provided
+    if (updateData.restrictions !== undefined) {
+      share.restrictions = updateData.restrictions;
+    }
+
+    // Update role if provided
+    if (updateData.role !== undefined) {
+      share.role = updateData.role;
+    }
+
+    // Update expiration if provided
+    if (updateData.expires_at !== undefined) {
+      share.expires_at = updateData.expires_at ? new Date(updateData.expires_at) : null;
+    }
+
+    // Update the updated_at timestamp
+    share.updated_at = new Date();
+
     await this.shareRepository.save(share);
+
+    // Track the permission update
+    await this.trackShareAccess(shareId, user, 'share_permissions_updated');
 
     return {
       id: share.id,
+      matter: {
+        id: share.matter.id,
+        title: share.matter.title,
+        matter_number: share.matter.id.slice(-8),
+        client: {
+          name: share.matter.client?.name || '',
+        },
+      },
+      shared_with_firm_name: share.shared_with_firm_entity?.name || '',
+      shared_by: {
+        display_name: share.shared_by_user?.display_name || '',
+      },
+      role: share.role,
       permissions: share.permissions,
-      updated_at: new Date().toISOString(),
+      restrictions: share.restrictions,
+      status: share.isExpired() ? 'expired' : share.status,
+      expires_at: share.expires_at?.toISOString(),
+      updated_at: share.updated_at.toISOString(),
     };
   }
 
@@ -517,6 +581,66 @@ export class SharesService {
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       updated_at: share.updated_at?.toISOString(),
+    }));
+  }
+
+  async getShareAccessCount(shareId: string): Promise<number> {
+    const count = await this.auditRepository.count({
+      where: {
+        resource_type: 'shares',
+        resource_id: shareId,
+        action: 'shares_access',
+      },
+    });
+    return count;
+  }
+
+  async getLastAccessTime(shareId: string): Promise<Date | null> {
+    const lastAccess = await this.auditRepository.findOne({
+      where: {
+        resource_type: 'shares',
+        resource_id: shareId,
+        action: 'shares_access',
+      },
+      order: { timestamp: 'DESC' },
+    });
+    return lastAccess?.timestamp || null;
+  }
+
+  async trackShareAccess(shareId: string, user: User, action: string = 'shares_access', documentId?: string): Promise<void> {
+    await this.auditRepository.save({
+      user_id: user.id,
+      firm_id: user.firm_id,
+      action,
+      resource_type: 'shares',
+      resource_id: shareId,
+      outcome: 'success',
+      details: {
+        action,
+        share_id: shareId,
+        document_id: documentId,
+        timestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  async getShareAccessLog(shareId: string, limit: number = 50): Promise<any[]> {
+    const accessLogs = await this.auditRepository.find({
+      where: {
+        resource_type: 'shares',
+        resource_id: shareId,
+      },
+      relations: ['user'],
+      order: { timestamp: 'DESC' },
+      take: limit,
+    });
+
+    return accessLogs.map(log => ({
+      accessed_at: log.timestamp,
+      user_email: log.user?.email || 'Unknown',
+      action: log.action,
+      document_id: log.details?.document_id,
+      document_title: log.details?.document_title,
     }));
   }
 }

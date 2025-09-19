@@ -272,7 +272,7 @@ describe('Phase 1 Integration Tests', () => {
         first_name: 'Test',
         last_name: 'User',
         firm_id: testFirmId,
-        roles: ['paralegal'],
+        roles: ['support_staff'],
       };
 
       const createdUser = await adminService.createUser(testUserData, firmAdminUser);

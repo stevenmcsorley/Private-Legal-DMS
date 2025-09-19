@@ -1,20 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Share2,
   Plus,
@@ -82,19 +73,9 @@ interface ShareAnalytics {
   }>;
 }
 
-interface Firm {
-  id: string;
-  name: string;
-}
-
-interface Matter {
-  id: string;
-  title: string;
-  matter_number: string;
-  client?: { name: string };
-}
 
 export const ShareManagement = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('outgoing');
   const [outgoingShares, setOutgoingShares] = useState<Share[]>([]);
   const [incomingShares, setIncomingShares] = useState<Share[]>([]);
@@ -104,44 +85,11 @@ export const ShareManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('month');
   
-  // Create share dialog state
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [createShareForm, setCreateShareForm] = useState({
-    matter_id: '',
-    target_firm_id: '',
-    role: 'viewer',
-    expires_at: '',
-    invitation_message: '',
-    permissions: {},
-  });
-  const [searchFirms, setSearchFirms] = useState<Firm[]>([]);
-  const [matters, setMatters] = useState<Matter[]>([]);
-  const [firmSearchQuery, setFirmSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
-    fetchMatters();
   }, [timeRange]);
 
-  const fetchMatters = async () => {
-    try {
-      const response = await fetch('/api/matters', {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMatters(data.matters || data); // Handle different response formats
-      }
-    } catch (error) {
-      console.error('Error fetching matters:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (firmSearchQuery.length >= 2) {
-      searchForFirms(firmSearchQuery);
-    }
-  }, [firmSearchQuery]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -200,44 +148,9 @@ export const ShareManagement = () => {
     }
   };
 
-  const searchForFirms = async (query: string) => {
-    try {
-      const response = await fetch(`/api/shares/firms/search?q=${encodeURIComponent(query)}`, {
-        credentials: 'include',
-      });
-      if (response.ok) {
-        const firms = await response.json();
-        setSearchFirms(firms);
-      }
-    } catch (error) {
-      console.error('Error searching firms:', error);
-    }
-  };
 
-  const createShare = async () => {
-    try {
-      const response = await fetch('/api/shares', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(createShareForm),
-      });
-
-      if (response.ok) {
-        setShowCreateDialog(false);
-        setCreateShareForm({
-          matter_id: '',
-          target_firm_id: '',
-          role: 'viewer',
-          expires_at: '',
-          invitation_message: '',
-          permissions: {},
-        });
-        fetchOutgoingShares();
-      }
-    } catch (error) {
-      console.error('Error creating share:', error);
-    }
+  const createNewShare = () => {
+    navigate('/admin/shares/create');
   };
 
   const revokeShare = async (shareId: string) => {
@@ -286,13 +199,11 @@ export const ShareManagement = () => {
   };
 
   const viewShareDetails = (shareId: string) => {
-    // TODO: Navigate to share details page or open modal
-    console.log('View details for share:', shareId);
+    navigate(`/admin/shares/${shareId}`);
   };
 
   const manageShare = (shareId: string) => {
-    // TODO: Navigate to share management page or open modal
-    console.log('Manage share:', shareId);
+    navigate(`/admin/shares/${shareId}/manage`);
   };
 
   const getStatusBadge = (status: string) => {
@@ -615,125 +526,10 @@ export const ShareManagement = () => {
                 </SelectContent>
               </Select>
 
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-orange-600 hover:bg-orange-700">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Share
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-slate-800 border-slate-700 text-white max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>Create New Share</DialogTitle>
-                    <DialogDescription className="text-slate-400">
-                      Share a matter with another firm and set permissions.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="matter">Matter to Share</Label>
-                      <Select value={createShareForm.matter_id} onValueChange={(value) => 
-                        setCreateShareForm({ ...createShareForm, matter_id: value })
-                      }>
-                        <SelectTrigger className="bg-slate-700 border-slate-600">
-                          <SelectValue placeholder="Select a matter to share" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {matters.map((matter) => (
-                            <SelectItem key={matter.id} value={matter.id}>
-                              {matter.title} ({matter.matter_number})
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="firm-search">Target Firm</Label>
-                      <Input
-                        id="firm-search"
-                        placeholder="Search for a firm..."
-                        value={firmSearchQuery}
-                        onChange={(e) => setFirmSearchQuery(e.target.value)}
-                        className="bg-slate-700 border-slate-600"
-                      />
-                      {searchFirms.length > 0 && (
-                        <div className="mt-2 max-h-32 overflow-y-auto bg-slate-700 border border-slate-600 rounded">
-                          {searchFirms.map((firm) => (
-                            <div
-                              key={firm.id}
-                              className="p-2 hover:bg-slate-600 cursor-pointer"
-                              onClick={() => {
-                                setCreateShareForm({ ...createShareForm, target_firm_id: firm.id });
-                                setFirmSearchQuery(firm.name);
-                                setSearchFirms([]);
-                              }}
-                            >
-                              {firm.name}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div>
-                      <Label htmlFor="role">Role</Label>
-                      <Select value={createShareForm.role} onValueChange={(value) => 
-                        setCreateShareForm({ ...createShareForm, role: value })
-                      }>
-                        <SelectTrigger className="bg-slate-700 border-slate-600">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="viewer">Viewer</SelectItem>
-                          <SelectItem value="editor">Editor</SelectItem>
-                          <SelectItem value="collaborator">Collaborator</SelectItem>
-                          <SelectItem value="partner_lead">Partner Lead</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="expires-at">Expiration Date (Optional)</Label>
-                      <Input
-                        id="expires-at"
-                        type="datetime-local"
-                        value={createShareForm.expires_at}
-                        onChange={(e) => setCreateShareForm({ ...createShareForm, expires_at: e.target.value })}
-                        className="bg-slate-700 border-slate-600"
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="invitation-message">Invitation Message (Optional)</Label>
-                      <Textarea
-                        id="invitation-message"
-                        placeholder="Add a personal message to the invitation..."
-                        value={createShareForm.invitation_message}
-                        onChange={(e) => setCreateShareForm({ ...createShareForm, invitation_message: e.target.value })}
-                        className="bg-slate-700 border-slate-600"
-                      />
-                    </div>
-
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="secondary"
-                        onClick={() => setShowCreateDialog(false)}
-                        className="bg-slate-700 hover:bg-slate-600"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        onClick={createShare}
-                        disabled={!createShareForm.target_firm_id || !createShareForm.matter_id}
-                        className="bg-orange-600 hover:bg-orange-700"
-                      >
-                        Create Share
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
+              <Button onClick={createNewShare} className="bg-orange-600 hover:bg-orange-700">
+                <Plus className="h-4 w-4 mr-2" />
+                Create Share
+              </Button>
             </div>
           </div>
         </CardHeader>

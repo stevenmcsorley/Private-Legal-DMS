@@ -9,6 +9,7 @@ import { MatterList } from '@/components/matters/MatterList'
 import { MatterDetails } from '@/components/matters/MatterDetails'
 import { CreateMatter } from '@/components/matters/CreateMatter'
 import { EditMatter } from '@/components/matters/EditMatter'
+import { MatterAddMember } from '@/components/matters/MatterAddMember'
 import { ClientList } from '@/components/clients/ClientList'
 import { ClientDetails } from '@/components/clients/ClientDetails'
 import { CreateClient } from '@/components/clients/CreateClient'
@@ -47,6 +48,11 @@ export const App = () => {
           <Route path="matters/:id/edit" element={
             <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to edit matters.</p></div>}>
               <EditMatter />
+            </LegalStaffOnly>
+          } />
+          <Route path="matters/:id/add-member" element={
+            <LegalStaffOnly fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to add team members.</p></div>}>
+              <MatterAddMember />
             </LegalStaffOnly>
           } />
           

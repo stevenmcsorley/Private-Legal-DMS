@@ -260,9 +260,11 @@ export class SharesController {
   @ApiBody({
     schema: {
       type: 'object',
-      required: ['permissions'],
       properties: {
         permissions: { type: 'object' },
+        restrictions: { type: 'object' },
+        role: { type: 'string', enum: ['viewer', 'editor', 'collaborator', 'partner_lead'] },
+        expires_at: { type: 'string', format: 'date-time', nullable: true },
       },
     },
   })
@@ -272,10 +274,18 @@ export class SharesController {
   })
   async updateSharePermissions(
     @Param('shareId', ParseUUIDPipe) shareId: string,
-    @Body() updateDto: { permissions: Record<string, any> },
+    @Body() updateDto: { 
+      permissions?: Record<string, any>;
+      restrictions?: Record<string, any>;
+      role?: string;
+      expires_at?: string | null;
+    },
     @CurrentUser() user: User,
   ) {
-    return this.sharesService.updateSharePermissions(shareId, updateDto.permissions, user);
+    return this.sharesService.updateSharePermissions(shareId, {
+      ...updateDto,
+      role: updateDto.role as any, // Cast to ShareRole
+    }, user);
   }
 
   @Get('analytics/dashboard')

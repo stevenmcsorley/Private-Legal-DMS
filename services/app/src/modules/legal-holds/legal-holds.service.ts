@@ -443,6 +443,102 @@ export class LegalHoldsService {
     }
   }
 
+  async getHoldDocuments(holdId: string, options: { search?: string; page?: number; limit?: number }, user: UserInfo) {
+    // First verify the hold exists and user has access
+    await this.findOne(holdId, user);
+
+    const page = options.page || 1;
+    const limit = Math.min(options.limit || 20, 100);
+    const offset = (page - 1) * limit;
+
+    const queryBuilder = this.documentRepository
+      .createQueryBuilder('document')
+      .leftJoinAndSelect('document.matter', 'matter')
+      .innerJoin('document.legal_holds', 'hold', 'hold.id = :holdId', { holdId })
+      .orderBy('document.created_at', 'DESC');
+
+    if (options.search) {
+      queryBuilder.andWhere(
+        '(document.title ILIKE :search OR document.file_type ILIKE :search)',
+        { search: `%${options.search}%` }
+      );
+    }
+
+    const [documents, total] = await queryBuilder
+      .skip(offset)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      data: documents.map(doc => ({
+        id: doc.id,
+        title: doc.original_filename || 'Untitled Document',
+        file_path: doc.object_key,
+        file_size: Number(doc.size_bytes),
+        file_type: doc.mime_type || 'unknown',
+        created_at: doc.created_at,
+        updated_at: doc.updated_at,
+        metadata: {},
+        matter: doc.matter ? {
+          title: doc.matter.title,
+          matter_number: `M-${doc.matter.id.slice(-6)}`,
+        } : null,
+      })),
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getHoldCustodians(holdId: string, user: UserInfo) {
+    // First verify the hold exists and user has access
+    await this.findOne(holdId, user);
+
+    const custodians = await this.custodianRepository
+      .createQueryBuilder('custodian')
+      .leftJoinAndSelect('custodian.custodian', 'user')
+      .where('custodian.legal_hold_id = :holdId', { holdId })
+      .orderBy('user.display_name', 'ASC')
+      .getMany();
+
+    return {
+      data: custodians.map(custodian => ({
+        id: custodian.id,
+        name: custodian.custodian?.display_name || 'Unknown User',
+        email: custodian.custodian?.email || 'unknown@example.com',
+        department: custodian.custodian?.attributes?.department || 'Unknown',
+        notified_at: custodian.notice_sent_at,
+        acknowledged_at: custodian.acknowledged_at,
+        status: custodian.status,
+      })),
+    };
+  }
+
+  async getHoldAuditLog(holdId: string, user: UserInfo) {
+    // First verify the hold exists and user has access
+    await this.findOne(holdId, user);
+
+    const { logs } = await this.auditService.queryAuditLogs({
+      resourceType: 'legal_hold',
+      firmId: user.firm_id,
+      limit: 100,
+    });
+
+    // Filter by resource_id manually since queryAuditLogs doesn't have this filter
+    const filteredLogs = logs.filter(log => log.resource_id === holdId);
+
+    return {
+      data: filteredLogs.map(log => ({
+        id: log.id,
+        action: log.action,
+        details: typeof log.details === 'string' ? log.details : JSON.stringify(log.details),
+        user_name: log.user?.display_name || 'Unknown User',
+        timestamp: log.timestamp,
+      })),
+    };
+  }
+
   async getHoldStatistics(user: UserInfo): Promise<{
     total_holds: number;
     active_holds: number;

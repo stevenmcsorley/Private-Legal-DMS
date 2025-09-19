@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { 
   Archive, 
@@ -15,14 +15,6 @@ import {
   Shield,
   Search
 } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from '@/components/ui/dialog';
 // Table component not available - using div-based layout instead
 // import {
 //   Table,
@@ -48,28 +40,12 @@ interface RetentionPolicy {
   minio_policy?: Record<string, any>;
 }
 
-interface CreateRetentionPolicyData {
-  name: string;
-  description?: string;
-  retention_years: number;
-  auto_delete: boolean;
-  legal_hold_override: boolean;
-  minio_policy?: Record<string, any>;
-}
 
 export const RetentionPolicies = () => {
+  const navigate = useNavigate();
   const [policies, setPolicies] = useState<RetentionPolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [editingPolicy, setEditingPolicy] = useState<RetentionPolicy | null>(null);
-  const [formData, setFormData] = useState<CreateRetentionPolicyData>({
-    name: '',
-    description: '',
-    retention_years: 7,
-    auto_delete: false,
-    legal_hold_override: false,
-  });
 
   useEffect(() => {
     fetchPolicies();
@@ -104,64 +80,6 @@ export const RetentionPolicies = () => {
     }
   };
 
-  const handleCreatePolicy = async () => {
-    // Validate required fields
-    if (!formData.name.trim()) {
-      toast({
-        title: 'Validation Error',
-        description: 'Policy name is required',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (formData.retention_years < 0 || formData.retention_years > 100) {
-      toast({
-        title: 'Validation Error',
-        description: 'Retention period must be between 0 and 100 years',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    try {
-      const url = editingPolicy 
-        ? `/api/admin/retention-classes/${editingPolicy.id}`
-        : '/api/admin/retention-classes';
-      const method = editingPolicy ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        await fetchPolicies();
-        setShowCreateDialog(false);
-        resetForm();
-        toast({
-          title: 'Success',
-          description: `Retention policy ${editingPolicy ? 'updated' : 'created'} successfully`,
-        });
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        toast({
-          title: 'Error',
-          description: errorData.message || `Failed to ${editingPolicy ? 'update' : 'create'} retention policy`,
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error with retention policy:', error);
-      toast({
-        title: 'Error',
-        description: `Failed to ${editingPolicy ? 'update' : 'create'} retention policy`,
-        variant: 'destructive',
-      });
-    }
-  };
 
   const handleDeletePolicy = async (policyId: string) => {
     if (!confirm('Are you sure you want to delete this retention policy?')) return;
@@ -196,28 +114,6 @@ export const RetentionPolicies = () => {
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      retention_years: 7,
-      auto_delete: false,
-      legal_hold_override: false,
-    });
-    setEditingPolicy(null);
-  };
-
-  const startEdit = (policy: RetentionPolicy) => {
-    setEditingPolicy(policy);
-    setFormData({
-      name: policy.name,
-      description: policy.description || '',
-      retention_years: policy.retention_years,
-      auto_delete: policy.auto_delete,
-      legal_hold_override: policy.legal_hold_override,
-    });
-    setShowCreateDialog(true);
-  };
 
   const filteredPolicies = policies.filter(policy =>
     policy.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -250,102 +146,10 @@ export const RetentionPolicies = () => {
           </p>
         </div>
         
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Policy
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                {editingPolicy ? 'Edit Retention Policy' : 'Create Retention Policy'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="name">Policy Name</Label>
-                  <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g., Standard Legal Documents"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="retention-period">Retention Period (Years)</Label>
-                  <Input
-                    id="retention-period"
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={formData.retention_years}
-                    onChange={(e) => setFormData({...formData, retention_years: parseInt(e.target.value) || 0})}
-                  />
-                  <p className="text-xs text-slate-400 mt-1">
-                    Set to 0 for indefinite retention. Documents older than this period may be deleted.
-                  </p>
-                </div>
-              </div>
-              
-              <div>
-                <Label htmlFor="description">Description (Optional)</Label>
-                <Input
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Describe what this policy covers..."
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <label className="flex items-start space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.auto_delete}
-                    onChange={(e) => setFormData({...formData, auto_delete: e.target.checked})}
-                    className="rounded border-slate-300 mt-0.5"
-                  />
-                  <div>
-                    <span className="text-sm font-medium">Auto-delete after retention period</span>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Automatically soft-delete documents when their retention period expires. 
-                      Documents under legal hold will never be deleted.
-                    </p>
-                  </div>
-                </label>
-                
-                <label className="flex items-start space-x-2">
-                  <input
-                    type="checkbox"
-                    checked={formData.legal_hold_override}
-                    onChange={(e) => setFormData({...formData, legal_hold_override: e.target.checked})}
-                    className="rounded border-slate-300 mt-0.5"
-                  />
-                  <div>
-                    <span className="text-sm font-medium">Legal hold can override this policy</span>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Allow documents in this retention class to be placed under legal hold, 
-                      which prevents deletion even if auto-delete is enabled.
-                    </p>
-                  </div>
-                </label>
-              </div>
-            </div>
-            
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreatePolicy}>
-                {editingPolicy ? 'Update Policy' : 'Create Policy'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={() => navigate('/admin/retention/create')}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Policy
+        </Button>
       </div>
 
       {/* Search and Stats */}
@@ -459,7 +263,7 @@ export const RetentionPolicies = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => startEdit(policy)}
+                      onClick={() => navigate(`/admin/retention/${policy.id}/edit`)}
                     >
                       <Edit className="h-4 w-4" />
                     </Button>

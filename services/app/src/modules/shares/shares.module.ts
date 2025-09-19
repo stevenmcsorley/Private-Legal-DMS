@@ -6,13 +6,14 @@ import { SharesService } from './shares.service';
 import { ShareDocumentsService } from './share-documents.service';
 import { MatterShare } from '../../common/entities/matter-share.entity';
 import { Document, Firm, Matter } from '../../common/entities';
+import { AuditLog } from '../../common/entities/audit-log.entity';
 import { DocumentsModule } from '../documents/documents.module';
 import { MinioService } from '../../common/services/minio.service';
 import { MinioConfig } from '../../config/minio.config';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([MatterShare, Document, Firm, Matter]),
+    TypeOrmModule.forFeature([MatterShare, Document, Firm, Matter, AuditLog]),
     DocumentsModule,
   ],
   controllers: [SharesController, ShareDocumentsController],

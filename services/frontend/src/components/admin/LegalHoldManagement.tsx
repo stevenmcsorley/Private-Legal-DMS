@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -22,21 +23,15 @@ import {
   Loader2,
   Eye,
   Ban,
+  Settings,
 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@/components/ui/tabs';
 
 interface LegalHold {
   id: string;
@@ -101,75 +96,24 @@ interface LegalHoldStats {
   holds_by_type: Record<string, number>;
 }
 
-interface CreateLegalHoldFormData {
-  name: string;
-  description: string;
-  reason: string;
-  type: 'litigation' | 'investigation' | 'audit' | 'regulatory' | 'other';
-  matter_id?: string;
-  expiry_date?: string;
-  auto_apply_to_new_documents: boolean;
-  custodian_instructions?: string;
-  notification_settings: {
-    email_custodians: boolean;
-    email_legal_team: boolean;
-    reminder_frequency?: 'weekly' | 'monthly' | 'quarterly';
-    escalation_days?: number;
-  };
-  search_criteria: {
-    keywords: string[];
-    date_range?: {
-      start?: string;
-      end?: string;
-    };
-    document_types: string[];
-    custodians: string[];
-    matters: string[];
-  };
-}
 
 export const LegalHoldManagement = () => {
+  const navigate = useNavigate();
   const [holds, setHolds] = useState<LegalHold[]>([]);
   const [stats, setStats] = useState<LegalHoldStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [showReleaseDialog, setShowReleaseDialog] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
   const [isReleasing, setIsReleasing] = useState(false);
-  const [viewingHold, setViewingHold] = useState<LegalHold | null>(null);
+  const [viewingHold] = useState<LegalHold | null>(null);
   const [releasingHold, setReleasingHold] = useState<LegalHold | null>(null);
   const [releaseReason, setReleaseReason] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [pageSize] = useState(10);
-
-  const [createHoldForm, setCreateHoldForm] = useState<CreateLegalHoldFormData>({
-    name: '',
-    description: '',
-    reason: '',
-    type: 'litigation',
-    matter_id: '',
-    expiry_date: '',
-    auto_apply_to_new_documents: true,
-    custodian_instructions: '',
-    notification_settings: {
-      email_custodians: true,
-      email_legal_team: true,
-      reminder_frequency: 'monthly',
-      escalation_days: 30,
-    },
-    search_criteria: {
-      keywords: [],
-      date_range: {},
-      document_types: [],
-      custodians: [],
-      matters: [],
-    },
-  });
 
   useEffect(() => {
     fetchHolds();
@@ -217,41 +161,6 @@ export const LegalHoldManagement = () => {
     }
   };
 
-  const createHold = async () => {
-    if (!createHoldForm.name || !createHoldForm.description || !createHoldForm.reason) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    setIsCreating(true);
-    
-    try {
-      const response = await fetch('/api/legal-holds', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(createHoldForm),
-      });
-
-      if (response.ok) {
-        await fetchHolds();
-        await fetchStats();
-        setShowCreateDialog(false);
-        resetCreateForm();
-        alert('Legal hold created successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Failed to create legal hold: ${error.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error creating legal hold:', error);
-      alert('Failed to create legal hold. Please try again.');
-    } finally {
-      setIsCreating(false);
-    }
-  };
 
   const releaseHold = async () => {
     if (!releasingHold || !releaseReason) {
@@ -315,36 +224,19 @@ export const LegalHoldManagement = () => {
     }
   };
 
-  const resetCreateForm = () => {
-    setCreateHoldForm({
-      name: '',
-      description: '',
-      reason: '',
-      type: 'litigation',
-      matter_id: '',
-      expiry_date: '',
-      auto_apply_to_new_documents: true,
-      custodian_instructions: '',
-      notification_settings: {
-        email_custodians: true,
-        email_legal_team: true,
-        reminder_frequency: 'monthly',
-        escalation_days: 30,
-      },
-      search_criteria: {
-        keywords: [],
-        date_range: {},
-        document_types: [],
-        custodians: [],
-        matters: [],
-      },
-    });
+
+  const viewHoldDetails = (holdId: string) => {
+    navigate(`/admin/legal-holds/${holdId}`);
   };
 
-  const openViewDialog = (hold: LegalHold) => {
-    setViewingHold(hold);
-    setShowViewDialog(true);
+  const manageHold = (holdId: string) => {
+    navigate(`/admin/legal-holds/${holdId}/manage`);
   };
+
+  const createNewHold = () => {
+    navigate('/admin/legal-holds/create');
+  };
+
 
   const openReleaseDialog = (hold: LegalHold) => {
     setReleasingHold(hold);
@@ -405,278 +297,10 @@ export const LegalHoldManagement = () => {
           <p className="text-slate-400">Manage legal holds and document preservation</p>
         </div>
         
-        <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Create Legal Hold
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Legal Hold</DialogTitle>
-            </DialogHeader>
-            
-            <Tabs defaultValue="basic" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="basic">Basic Information</TabsTrigger>
-                <TabsTrigger value="criteria">Search Criteria</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="basic" className="space-y-4 mt-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Hold Name *</Label>
-                    <Input
-                      id="name"
-                      placeholder="Smith v. Corporation - Document Preservation"
-                      value={createHoldForm.name}
-                      onChange={(e) => setCreateHoldForm({...createHoldForm, name: e.target.value})}
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="type">Hold Type *</Label>
-                    <Select 
-                      value={createHoldForm.type} 
-                      onValueChange={(value) => setCreateHoldForm({...createHoldForm, type: value as any})}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="litigation">Litigation</SelectItem>
-                        <SelectItem value="investigation">Investigation</SelectItem>
-                        <SelectItem value="audit">Audit</SelectItem>
-                        <SelectItem value="regulatory">Regulatory</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Detailed description of the legal hold..."
-                    value={createHoldForm.description}
-                    onChange={(e) => setCreateHoldForm({...createHoldForm, description: e.target.value})}
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="reason">Reason *</Label>
-                  <Textarea
-                    id="reason"
-                    placeholder="Reason for placing the legal hold..."
-                    value={createHoldForm.reason}
-                    onChange={(e) => setCreateHoldForm({...createHoldForm, reason: e.target.value})}
-                    rows={3}
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="custodian_instructions">Custodian Instructions</Label>
-                  <Textarea
-                    id="custodian_instructions"
-                    placeholder="Instructions for custodians regarding this hold..."
-                    value={createHoldForm.custodian_instructions}
-                    onChange={(e) => setCreateHoldForm({...createHoldForm, custodian_instructions: e.target.value})}
-                    rows={3}
-                  />
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id="auto_apply"
-                    checked={createHoldForm.auto_apply_to_new_documents}
-                    onChange={(e) => setCreateHoldForm({...createHoldForm, auto_apply_to_new_documents: e.target.checked})}
-                    className="rounded border-gray-300"
-                  />
-                  <Label htmlFor="auto_apply">Auto-apply to new documents matching criteria</Label>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="criteria" className="space-y-4 mt-4">
-                <div className="space-y-2">
-                  <Label>Keywords (comma-separated)</Label>
-                  <Input
-                    placeholder="contract, agreement, email, financial"
-                    value={createHoldForm.search_criteria.keywords.join(', ')}
-                    onChange={(e) => setCreateHoldForm({
-                      ...createHoldForm,
-                      search_criteria: {
-                        ...createHoldForm.search_criteria,
-                        keywords: e.target.value.split(',').map(k => k.trim()).filter(k => k)
-                      }
-                    })}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Date Range Start</Label>
-                    <Input
-                      type="date"
-                      value={createHoldForm.search_criteria.date_range?.start || ''}
-                      onChange={(e) => setCreateHoldForm({
-                        ...createHoldForm,
-                        search_criteria: {
-                          ...createHoldForm.search_criteria,
-                          date_range: {
-                            ...createHoldForm.search_criteria.date_range,
-                            start: e.target.value
-                          }
-                        }
-                      })}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Date Range End</Label>
-                    <Input
-                      type="date"
-                      value={createHoldForm.search_criteria.date_range?.end || ''}
-                      onChange={(e) => setCreateHoldForm({
-                        ...createHoldForm,
-                        search_criteria: {
-                          ...createHoldForm.search_criteria,
-                          date_range: {
-                            ...createHoldForm.search_criteria.date_range,
-                            end: e.target.value
-                          }
-                        }
-                      })}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>Document Types (comma-separated)</Label>
-                  <Input
-                    placeholder="pdf, docx, email, contract"
-                    value={createHoldForm.search_criteria.document_types.join(', ')}
-                    onChange={(e) => setCreateHoldForm({
-                      ...createHoldForm,
-                      search_criteria: {
-                        ...createHoldForm.search_criteria,
-                        document_types: e.target.value.split(',').map(t => t.trim()).filter(t => t)
-                      }
-                    })}
-                  />
-                </div>
-              </TabsContent>
-
-              <TabsContent value="notifications" className="space-y-4 mt-4">
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="email_custodians"
-                      checked={createHoldForm.notification_settings.email_custodians}
-                      onChange={(e) => setCreateHoldForm({
-                        ...createHoldForm,
-                        notification_settings: {
-                          ...createHoldForm.notification_settings,
-                          email_custodians: e.target.checked
-                        }
-                      })}
-                      className="rounded border-gray-300"
-                    />
-                    <Label htmlFor="email_custodians">Email custodians</Label>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="email_legal_team"
-                      checked={createHoldForm.notification_settings.email_legal_team}
-                      onChange={(e) => setCreateHoldForm({
-                        ...createHoldForm,
-                        notification_settings: {
-                          ...createHoldForm.notification_settings,
-                          email_legal_team: e.target.checked
-                        }
-                      })}
-                      className="rounded border-gray-300"
-                    />
-                    <Label htmlFor="email_legal_team">Email legal team</Label>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Reminder Frequency</Label>
-                      <Select 
-                        value={createHoldForm.notification_settings.reminder_frequency || 'monthly'} 
-                        onValueChange={(value) => setCreateHoldForm({
-                          ...createHoldForm,
-                          notification_settings: {
-                            ...createHoldForm.notification_settings,
-                            reminder_frequency: value as any
-                          }
-                        })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="weekly">Weekly</SelectItem>
-                          <SelectItem value="monthly">Monthly</SelectItem>
-                          <SelectItem value="quarterly">Quarterly</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Escalation Days</Label>
-                      <Input
-                        type="number"
-                        placeholder="30"
-                        value={createHoldForm.notification_settings.escalation_days || ''}
-                        onChange={(e) => setCreateHoldForm({
-                          ...createHoldForm,
-                          notification_settings: {
-                            ...createHoldForm.notification_settings,
-                            escalation_days: parseInt(e.target.value) || undefined
-                          }
-                        })}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowCreateDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={createHold}
-                disabled={isCreating}
-              >
-                {isCreating ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  'Create Legal Hold'
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <Button onClick={createNewHold}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Legal Hold
+        </Button>
       </div>
 
       {/* Statistics */}
@@ -843,20 +467,30 @@ export const LegalHoldManagement = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => openViewDialog(hold)}
+                    onClick={() => viewHoldDetails(hold.id)}
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
                   
                   {hold.status === 'active' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openReleaseDialog(hold)}
-                      className="text-orange-600 hover:text-orange-700"
-                    >
-                      <Ban className="h-4 w-4" />
-                    </Button>
+                    <>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => manageHold(hold.id)}
+                        className="text-blue-600 hover:text-blue-700"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openReleaseDialog(hold)}
+                        className="text-orange-600 hover:text-orange-700"
+                      >
+                        <Ban className="h-4 w-4" />
+                      </Button>
+                    </>
                   )}
                   
                   {hold.status !== 'active' && (

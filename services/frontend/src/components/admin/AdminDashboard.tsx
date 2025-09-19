@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -20,6 +21,19 @@ import { ShareManagement } from './ShareManagement';
 import { SystemSettings } from './SystemSettings';
 import { AuditLogs } from './AuditLogs';
 import { FirmManagement } from './FirmManagement';
+import { ShareDetails } from './ShareDetails';
+import { ShareManage } from './ShareManage';
+import { LegalHoldDetails } from './LegalHoldDetails';
+import { LegalHoldManage } from './LegalHoldManage';
+import { LegalHoldCreate } from './LegalHoldCreate';
+import { ShareCreate } from './ShareCreate';
+import { RetentionPolicyCreate } from './RetentionPolicyCreate';
+import { FirmCreate } from './FirmCreate';
+import { FirmDetails } from './FirmDetails';
+import { TeamCreate } from './TeamCreate';
+import { TeamEdit } from './TeamEdit';
+import { UserCreate } from './UserCreate';
+import { UserEdit } from './UserEdit';
 
 interface AdminStats {
   total_users: number;
@@ -35,10 +49,24 @@ interface AdminStats {
 }
 
 export const AdminDashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Check if we're on a subroute
+  const isSubRoute = location.pathname.includes('/admin/shares/') || location.pathname.includes('/admin/legal-holds/') || location.pathname.includes('/admin/retention/') || location.pathname.includes('/admin/firms/') || location.pathname.includes('/admin/teams/') || location.pathname.includes('/admin/users/');
+
+  // Extract tab from URL query params
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tab = searchParams.get('tab');
+    if (tab && !isSubRoute) {
+      setActiveTab(tab);
+    }
+  }, [location, isSubRoute]);
 
   const fetchCurrentUser = async () => {
     try {
@@ -72,6 +100,12 @@ export const AdminDashboard = () => {
     fetchCurrentUser();
     fetchStats();
   }, []);
+
+  // Handle tab changes with navigation
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    navigate(`/admin?tab=${tab}`);
+  };
 
   // Determine which tabs to show based on user role
   const isSuperAdmin = currentUser?.roles?.includes('super_admin');
@@ -116,6 +150,27 @@ export const AdminDashboard = () => {
     );
   }
 
+  // If we're on a subroute, render the specific component
+  if (isSubRoute) {
+    return (
+      <Routes>
+        <Route path="shares/create" element={<ShareCreate />} />
+        <Route path="shares/:shareId" element={<ShareDetails />} />
+        <Route path="shares/:shareId/manage" element={<ShareManage />} />
+        <Route path="legal-holds/create" element={<LegalHoldCreate />} />
+        <Route path="legal-holds/:holdId" element={<LegalHoldDetails />} />
+        <Route path="legal-holds/:holdId/manage" element={<LegalHoldManage />} />
+        <Route path="retention/create" element={<RetentionPolicyCreate />} />
+        <Route path="firms/create" element={<FirmCreate />} />
+        <Route path="firms/:firmId" element={<FirmDetails />} />
+        <Route path="teams/create" element={<TeamCreate />} />
+        <Route path="teams/:teamId/edit" element={<TeamEdit />} />
+        <Route path="users/create" element={<UserCreate />} />
+        <Route path="users/:userId/edit" element={<UserEdit />} />
+      </Routes>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -128,7 +183,7 @@ export const AdminDashboard = () => {
       </div>
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className={`w-full ${getTabsLayoutClass()}`}>
           {visibleTabs.includes('overview') && (
             <TabsTrigger value="overview" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>

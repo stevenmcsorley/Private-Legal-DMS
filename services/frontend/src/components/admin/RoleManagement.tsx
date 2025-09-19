@@ -48,7 +48,7 @@ const getRoleIcon = (roleName: string) => {
       return <Briefcase className="h-4 w-4 text-blue-500" />;
     case 'legal_professional':
       return <FileText className="h-4 w-4 text-green-500" />;
-    case 'paralegal':
+    case 'support_staff':
       return <FileText className="h-4 w-4 text-purple-500" />;
     case 'secretary':
       return <Eye className="h-4 w-4 text-gray-500" />;
@@ -67,7 +67,7 @@ const getRoleBadgeColor = (roleName: string) => {
       return 'bg-blue-100 text-blue-800 border-blue-200';
     case 'legal_professional':
       return 'bg-green-100 text-green-800 border-green-200';
-    case 'paralegal':
+    case 'support_staff':
       return 'bg-purple-100 text-purple-800 border-purple-200';
     case 'secretary':
       return 'bg-gray-100 text-gray-800 border-gray-200';
