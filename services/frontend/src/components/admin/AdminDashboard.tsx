@@ -17,16 +17,13 @@ import { UserManagement } from './UserManagement';
 import { TeamManagement } from './TeamManagement';
 import { RetentionPolicies } from './RetentionPolicies';
 import { LegalHoldManagement } from './LegalHoldManagement';
-import { ShareManagement } from './ShareManagement';
+import { ShareAnalytics } from './ShareAnalytics';
 import { SystemSettings } from './SystemSettings';
 import { AuditLogs } from './AuditLogs';
 import { FirmManagement } from './FirmManagement';
-import { ShareDetails } from './ShareDetails';
-import { ShareManage } from './ShareManage';
 import { LegalHoldDetails } from './LegalHoldDetails';
 import { LegalHoldManage } from './LegalHoldManage';
 import { LegalHoldCreate } from './LegalHoldCreate';
-import { ShareCreate } from './ShareCreate';
 import { RetentionPolicyCreate } from './RetentionPolicyCreate';
 import { FirmCreate } from './FirmCreate';
 import { FirmDetails } from './FirmDetails';
@@ -57,7 +54,7 @@ export const AdminDashboard = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   // Check if we're on a subroute
-  const isSubRoute = location.pathname.includes('/admin/shares/') || location.pathname.includes('/admin/legal-holds/') || location.pathname.includes('/admin/retention/') || location.pathname.includes('/admin/firms/') || location.pathname.includes('/admin/teams/') || location.pathname.includes('/admin/users/');
+  const isSubRoute = location.pathname.includes('/admin/legal-holds/') || location.pathname.includes('/admin/retention/') || location.pathname.includes('/admin/firms/') || location.pathname.includes('/admin/teams/') || location.pathname.includes('/admin/users/');
 
   // Extract tab from URL query params
   useEffect(() => {
@@ -154,9 +151,6 @@ export const AdminDashboard = () => {
   if (isSubRoute) {
     return (
       <Routes>
-        <Route path="shares/create" element={<ShareCreate />} />
-        <Route path="shares/:shareId" element={<ShareDetails />} />
-        <Route path="shares/:shareId/manage" element={<ShareManage />} />
         <Route path="legal-holds/create" element={<LegalHoldCreate />} />
         <Route path="legal-holds/:holdId" element={<LegalHoldDetails />} />
         <Route path="legal-holds/:holdId/manage" element={<LegalHoldManage />} />
@@ -217,7 +211,7 @@ export const AdminDashboard = () => {
           )}
           {visibleTabs.includes('shares') && (
             <TabsTrigger value="shares" className={visibleTabs.length > 6 ? 'flex-1 min-w-0' : ''}>
-              Shares
+              Share Analytics
             </TabsTrigger>
           )}
           {visibleTabs.includes('audit-logs') && (
@@ -416,7 +410,7 @@ export const AdminDashboard = () => {
         </TabsContent>
 
         <TabsContent value="shares">
-          <ShareManagement />
+          <ShareAnalytics />
         </TabsContent>
 
         <TabsContent value="audit-logs">

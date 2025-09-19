@@ -566,8 +566,10 @@ export const CrossFirmSharing = () => {
                           </Button>
                         </>
                       ) : (
-                        <Button variant="outline" size="sm">
-                          <Eye className="h-4 w-4" />
+                        <Button variant="outline" size="sm" asChild>
+                          <Link to={`/sharing/${share.id}`}>
+                            <Eye className="h-4 w-4" />
+                          </Link>
                         </Button>
                       )}
                     </div>

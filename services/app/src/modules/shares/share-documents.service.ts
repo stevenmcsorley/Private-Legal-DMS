@@ -58,7 +58,7 @@ export class ShareDocumentsService {
         });
 
         if (sharedByFirm && sharedWithFirm) {
-          processedBuffer = await this.watermarkService.applyWatermark(documentBuffer, {
+          processedBuffer = await this.watermarkService.applyWatermarkByType(documentBuffer, document.mime_type, {
             firmName: sharedByFirm.name,
             shareId: shareId,
             recipientFirm: sharedWithFirm.name,
@@ -125,7 +125,7 @@ export class ShareDocumentsService {
         });
 
         if (sharedByFirm && sharedWithFirm) {
-          processedBuffer = await this.watermarkService.applyWatermark(documentBuffer, {
+          processedBuffer = await this.watermarkService.applyWatermarkByType(documentBuffer, document.mime_type, {
             firmName: sharedByFirm.name,
             shareId: shareId,
             recipientFirm: sharedWithFirm.name,

@@ -52,12 +52,12 @@ export class SharesService {
       },
       role: share.role,
       permissions: share.permissions || [],
-      status: share.isExpired() ? 'expired' : 'active',
+      status: share.isExpired() ? 'expired' : share.status,
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
       access_count: await this.getShareAccessCount(share.id),
       last_accessed: null,
-      message: null, // No message field in current schema
+      message: share.invitation_message,
     })));
   }
 
@@ -88,10 +88,10 @@ export class SharesService {
       shared_by_user: share.shared_by_user?.display_name || '',
       role: share.role,
       permissions: share.permissions || [],
-      status: share.isExpired() ? 'expired' : 'active',
+      status: share.isExpired() ? 'expired' : share.status,
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
-      message: null, // No message field in current schema
+      message: share.invitation_message,
     }));
   }
 
@@ -113,8 +113,29 @@ export class SharesService {
       throw new ForbiddenException('Share invitation has expired');
     }
 
-    // For the current schema, we don't have accept/decline states
-    // The share exists and is active by default if not revoked/expired
+    // Update share status to accepted
+    share.status = ShareStatus.ACCEPTED;
+    share.accepted_at = new Date();
+    share.accepted_by_user_id = user.id;
+    
+    // Save the updated share
+    await this.shareRepository.save(share);
+
+    // Log the acceptance
+    await this.auditRepository.save({
+      resource_type: 'matter_share',
+      resource_id: share.id,
+      action: 'accept_share',
+      user_id: user.id,
+      firm_id: user.firm_id,
+      details: {
+        matter_id: share.matter_id,
+        shared_by_firm: share.shared_by_firm_id,
+        shared_with_firm: share.shared_with_firm,
+      },
+      ip_address: null,
+      user_agent: null,
+    });
     
     return {
       id: share.id,
@@ -127,10 +148,10 @@ export class SharesService {
       shared_by_user: share.shared_by_user?.display_name || '',
       role: share.role,
       permissions: share.permissions || [],
-      status: 'active',
+      status: share.status,
       expires_at: share.expires_at?.toISOString(),
       created_at: share.created_at.toISOString(),
-      message: null,
+      message: share.invitation_message,
     };
   }
 
@@ -150,6 +171,22 @@ export class SharesService {
     // Set status to declined
     share.status = ShareStatus.DECLINED;
     await this.shareRepository.save(share);
+
+    // Log the decline
+    await this.auditRepository.save({
+      resource_type: 'matter_share',
+      resource_id: share.id,
+      action: 'decline_share',
+      user_id: user.id,
+      firm_id: user.firm_id,
+      details: {
+        matter_id: share.matter_id,
+        shared_by_firm: share.shared_by_firm_id,
+        shared_with_firm: share.shared_with_firm,
+      },
+      ip_address: null,
+      user_agent: null,
+    });
   }
 
   async revokeShare(shareId: string, user: User) {
@@ -321,21 +358,30 @@ export class SharesService {
       throw new ConflictException('Share already exists with this firm');
     }
 
-    // Create the share
-    const share = this.shareRepository.create({
+    // Create the share using direct INSERT
+    const userId = user.id || (user as any).sub;
+    const shareData = {
       matter_id: matterId,
       shared_by_firm_id: user.firm_id,
       shared_with_firm: targetFirmId,
-      shared_by_user_id: user.id,
-      role,
+      shared_by_user_id: userId,
+      role: role,
       status: ShareStatus.PENDING,
       expires_at: options.expires_at,
       permissions: options.permissions || {},
       restrictions: options.restrictions,
       invitation_message: options.invitation_message,
-    });
+    };
 
-    const savedShare = await this.shareRepository.save(share);
+    const result = await this.shareRepository
+      .createQueryBuilder()
+      .insert()
+      .into(MatterShare)
+      .values(shareData)
+      .returning(['id', 'role', 'status', 'permissions', 'created_at', 'updated_at'])
+      .execute();
+
+    const savedShare = result.generatedMaps[0] as any;
 
     return {
       id: savedShare.id,

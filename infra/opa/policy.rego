@@ -377,6 +377,14 @@ allow if {
     input.user.attrs.firm_id != "system"
 }
 
+# Firm search for sharing (legal professionals and above)
+allow if {
+    input.resource.type == "firm"
+    input.action in ["search", "list"]
+    input.user.roles[_] in ["legal_professional", "legal_manager", "firm_admin"]
+    input.user.attrs.firm_id != "system"
+}
+
 # Admin resource access for firm admins and legal professionals
 allow if {
     input.resource.type == "admin"

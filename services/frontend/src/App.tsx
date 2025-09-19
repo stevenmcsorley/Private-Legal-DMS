@@ -19,6 +19,7 @@ import { SearchPage } from '@/components/search/SearchPage'
 import { AdminDashboard } from '@/components/admin/AdminDashboard'
 import { ClientPortal } from '@/components/portal/ClientPortal'
 import { CrossFirmSharing } from '@/components/sharing/CrossFirmSharing'
+import { CreateShare } from '@/components/sharing/CreateShare'
 import { SharedDocumentViewer } from '@/components/shares/SharedDocumentViewer'
 
 export const App = () => {
@@ -120,7 +121,7 @@ export const App = () => {
           } />
           <Route path="sharing/new" element={
             <RoleGuard roles={['legal_professional', 'legal_manager', 'firm_admin', 'super_admin']} fallback={<div className="p-8 text-center"><h1 className="text-2xl font-bold text-red-600">Access Denied</h1><p className="mt-4">You don't have permission to create shares.</p></div>}>
-              <div className="p-8"><h1 className="text-2xl font-bold">Create New Share</h1><p className="mt-4 text-gray-600">Share creation functionality will be implemented in the next phase.</p></div>
+              <CreateShare />
             </RoleGuard>
           } />
           <Route path="sharing/:shareId" element={<SharedDocumentViewer />} />
