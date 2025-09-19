@@ -38,13 +38,13 @@ import {
 
 interface Share {
   id: string;
-  matter: {
+  matter?: {
     title: string;
     matter_number: string;
     client: { name: string };
   };
   shared_with_firm_name: string;
-  shared_by: { display_name: string };
+  shared_by?: { display_name: string };
   role: string;
   status: string;
   expires_at?: string;
@@ -312,9 +312,9 @@ export const ShareManagement = () => {
   const filterShares = (shares: Share[]) => {
     return shares.filter(share => {
       const matchesSearch = !searchTerm || 
-        share.matter.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        share.matter?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         share.shared_with_firm_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        share.matter.client.name.toLowerCase().includes(searchTerm.toLowerCase());
+        share.matter?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = statusFilter === 'all' || share.status === statusFilter;
       
@@ -455,9 +455,9 @@ export const ShareManagement = () => {
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="text-white font-medium">{share.matter.title}</h3>
+                      <h3 className="text-white font-medium">{share.matter?.title || 'Unknown Matter'}</h3>
                       <p className="text-slate-400 text-sm">
-                        {share.matter.matter_number} • {share.matter.client.name}
+                        {share.matter?.matter_number || 'N/A'} • {share.matter?.client?.name || 'Unknown Client'}
                       </p>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -474,7 +474,7 @@ export const ShareManagement = () => {
                     </div>
                     <div className="flex items-center space-x-1">
                       <Users className="h-4 w-4" />
-                      <span>By: {share.shared_by.display_name}</span>
+                      <span>By: {share.shared_by?.display_name || 'Unknown User'}</span>
                     </div>
                     <div className="flex items-center space-x-1">
                       <Calendar className="h-4 w-4" />
