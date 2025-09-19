@@ -115,12 +115,27 @@ export const ShareManagement = () => {
     permissions: {},
   });
   const [searchFirms, setSearchFirms] = useState<Firm[]>([]);
-  const [,] = useState<Matter[]>([]);
+  const [matters, setMatters] = useState<Matter[]>([]);
   const [firmSearchQuery, setFirmSearchQuery] = useState('');
 
   useEffect(() => {
     fetchData();
+    fetchMatters();
   }, [timeRange]);
+
+  const fetchMatters = async () => {
+    try {
+      const response = await fetch('/api/matters', {
+        credentials: 'include',
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMatters(data.matters || data); // Handle different response formats
+      }
+    } catch (error) {
+      console.error('Error fetching matters:', error);
+    }
+  };
 
   useEffect(() => {
     if (firmSearchQuery.length >= 2) {
@@ -268,6 +283,16 @@ export const ShareManagement = () => {
     } catch (error) {
       console.error('Error declining share:', error);
     }
+  };
+
+  const viewShareDetails = (shareId: string) => {
+    // TODO: Navigate to share details page or open modal
+    console.log('View details for share:', shareId);
+  };
+
+  const manageShare = (shareId: string) => {
+    // TODO: Navigate to share management page or open modal
+    console.log('Manage share:', shareId);
   };
 
   const getStatusBadge = (status: string) => {
@@ -504,6 +529,7 @@ export const ShareManagement = () => {
                         <Button
                           variant="secondary"
                           size="sm"
+                          onClick={() => manageShare(share.id)}
                           className="bg-slate-600 hover:bg-slate-500"
                         >
                           <Settings className="h-4 w-4 mr-1" />
@@ -536,6 +562,7 @@ export const ShareManagement = () => {
                     <Button
                       variant="secondary"
                       size="sm"
+                      onClick={() => viewShareDetails(share.id)}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
                       <Eye className="h-4 w-4 mr-1" />
@@ -603,6 +630,24 @@ export const ShareManagement = () => {
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="matter">Matter to Share</Label>
+                      <Select value={createShareForm.matter_id} onValueChange={(value) => 
+                        setCreateShareForm({ ...createShareForm, matter_id: value })
+                      }>
+                        <SelectTrigger className="bg-slate-700 border-slate-600">
+                          <SelectValue placeholder="Select a matter to share" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {matters.map((matter) => (
+                            <SelectItem key={matter.id} value={matter.id}>
+                              {matter.title} ({matter.matter_number})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
                     <div>
                       <Label htmlFor="firm-search">Target Firm</Label>
                       <Input
