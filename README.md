@@ -2,7 +2,7 @@
 
 > **Enterprise-grade, self-hosted legal DMS with WORM compliance, matter-centric workflows, and zero-trust security architecture**
 
-A comprehensive legal document management system built for law firms requiring on-premise security, regulatory compliance, and sophisticated access controls. Features military-grade security, full audit trails, client portal access, and cross-firm collaboration capabilities.
+A comprehensive legal document management system built for law firms requiring on-premise security, regulatory compliance, and sophisticated access controls. Features military-grade security, document security classifications (confidential/privileged/work product), advanced clearance-based access control, full audit trails, and enterprise-grade multi-firm management capabilities.
 
 ![Login Screen](./login-screen.png)
 
@@ -26,6 +26,8 @@ A comprehensive legal document management system built for law firms requiring o
 - **Smart Search** — OpenSearch with OCR text indexing and faceted filtering
 - **Legal Holds** — Automated deletion prevention with compliance reporting
 - **Watermarked Previews** — Role-based document access with enhanced PDF.js viewer
+- **Document Security Classifications** — Confidential, privileged, and work product tagging with filtering ✅ **NEW**
+- **Advanced Upload Controls** — Security classification during upload with metadata validation ✅ **NEW**
 
 ### 👥 **Collaboration & Access Control**
 - **Advanced User Management** — Complete user administration with security clearance system ✅ **NEW**
@@ -34,6 +36,8 @@ A comprehensive legal document management system built for law firms requiring o
 - **Matter Security Classifications** — 5-tier document security classes with granular access control
 - **Clearance-Based Document Access** — Automatic access control: user clearance ≥ matter security class ✅ **NEW**
 - **Bulk Clearance Operations** — Administrative tools for managing user clearances with audit trails ✅ **NEW**
+- **Super Admin Cross-Firm Access** — Complete visibility and control across all firms and resources ✅ **NEW**
+- **Intelligent Team Management** — Smart user filtering to prevent client/team member confusion ✅ **NEW**
 - **Client Portal** — Secure client access to assigned matters and documents
 - **Cross-Firm Sharing** — Time-boxed collaboration with external partners
 - **Firm Isolation** — Complete data segregation with OPA policy enforcement
@@ -302,8 +306,8 @@ make security-scan
 | **Dashboard** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Limited | ❌ No | ❌ No |
 | **Client Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Matter Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ View Only | ❌ No | ❌ No |
-| **Document Read** | ✅ Full | ✅ Yes | ✅ Yes | ✅ **Clearance-based (Smart Access Control)** | ✅ Assigned Only | ❌ No | ✅ Shared Only |
-| **Document Upload** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Inbox Only | ✅ Yes | ❌ No |
+| **Document Read** | ✅ **Cross-Firm + Security Classifications** | ✅ Yes | ✅ Yes | ✅ **Clearance-based (Smart Access Control)** | ✅ Assigned Only | ❌ No | ✅ Shared Only |
+| **Document Upload** | ✅ **Cross-Firm + Security Classifications** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ Inbox Only | ✅ Yes | ❌ No |
 | **Document Delete** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Advanced Search** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
 | **Cross-Firm Sharing** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
@@ -341,6 +345,33 @@ make security-scan
   "access": "❌ DENIED" // 3 < 5
 }
 ```
+
+### **Document Security Classifications** ✅ **NEW**
+
+#### **Legal Document Protection Levels**
+- **Confidential**: Sensitive client information requiring restricted access
+- **Privileged**: Attorney-client privileged communications and legal advice
+- **Work Product**: Attorney work product protected under discovery rules
+
+#### **Security Classification Features**
+```typescript
+// Upload with security classifications
+{
+  "document": "merger_agreement_draft.pdf",
+  "classifications": {
+    "confidential": true,
+    "privileged": true,
+    "work_product": false
+  },
+  "access": "Automatically filtered based on user permissions"
+}
+```
+
+#### **Smart Filtering & Search**
+- **Upload Controls**: Set security classifications during document upload
+- **Visual Indicators**: Security badges displayed on document lists
+- **Advanced Filtering**: Filter documents by confidential, privileged, or work product status
+- **Search Integration**: Security-aware search respects classification levels
 
 ### **Firm Isolation & Cross-Firm Access**
 - **Default**: Users can only access resources within their firm
@@ -411,6 +442,8 @@ artifacts:
 - **Complete Security** — Military-grade protection with real-time virus scanning
 - **Advanced User Management** — Comprehensive user administration with security clearance system ✅ **NEW**
 - **Smart Access Control** — Role-based clearance levels with automatic document access enforcement ✅ **NEW**
+- **Document Security Classifications** — Confidential, privileged, and work product protection with smart filtering ✅ **NEW**
+- **Super Admin Capabilities** — Cross-firm visibility and management for enterprise deployments ✅ **NEW**
 - **Intelligent Document Processing** — Smart OCR with automatic PDF conversion for scanned documents
 - **Regulatory Compliance** — Built-in audit trails, clearance tracking, and retention management
 - **Cost Effective** — Self-hosted with no per-user licensing fees
