@@ -2,6 +2,10 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { SuperAdminFirmManagement } from './SuperAdminFirmManagement';
 import { 
   Server, 
   Database, 
@@ -12,7 +16,10 @@ import {
   CheckCircle,
   HardDrive,
   Network,
-  TrendingUp
+  TrendingUp,
+  Settings,
+  Save,
+  RotateCcw
 } from 'lucide-react';
 
 interface SystemHealthMetrics {
@@ -43,16 +50,31 @@ interface FirmOnboardingStats {
   }>;
 }
 
+interface GlobalSetting {
+  id: string;
+  key: string;
+  value: string;
+  description?: string;
+  type: 'string' | 'number' | 'boolean' | 'json';
+  requires_restart: boolean;
+  category: 'system' | 'security' | 'storage' | 'email' | 'backup' | 'performance';
+}
+
 export const SystemManagement = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [healthMetrics, setHealthMetrics] = useState<SystemHealthMetrics | null>(null);
   const [firmStats, setFirmStats] = useState<FirmOnboardingStats | null>(null);
+  const [globalSettings, setGlobalSettings] = useState<GlobalSetting[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(false);
 
   useEffect(() => {
     fetchSystemHealth();
     fetchFirmStats();
-  }, []);
+    if (activeTab === 'settings') {
+      fetchGlobalSettings();
+    }
+  }, [activeTab]);
 
   const fetchSystemHealth = async () => {
     try {
@@ -81,6 +103,53 @@ export const SystemManagement = () => {
       console.error('Error fetching firm stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchGlobalSettings = async () => {
+    try {
+      setSettingsLoading(true);
+      const response = await fetch('/api/super-admin/settings', { 
+        credentials: 'include' 
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setGlobalSettings(data);
+      }
+    } catch (error) {
+      console.error('Error fetching global settings:', error);
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const updateSetting = async (key: string, value: string) => {
+    try {
+      const response = await fetch(`/api/super-admin/settings/${key}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ value }),
+      });
+      if (response.ok) {
+        await fetchGlobalSettings(); // Refresh settings
+      }
+    } catch (error) {
+      console.error('Error updating setting:', error);
+    }
+  };
+
+  const initializeDefaultSettings = async () => {
+    try {
+      const response = await fetch('/api/super-admin/settings/initialize', {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        await fetchGlobalSettings(); // Refresh settings
+      }
+    } catch (error) {
+      console.error('Error initializing settings:', error);
     }
   };
 
@@ -134,10 +203,11 @@ export const SystemManagement = () => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full">
+        <TabsList className="grid grid-cols-5 w-full">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="infrastructure">Infrastructure</TabsTrigger>
           <TabsTrigger value="firms">Firm Management</TabsTrigger>
+          <TabsTrigger value="settings">Global Settings</TabsTrigger>
           <TabsTrigger value="monitoring">Monitoring</TabsTrigger>
         </TabsList>
 
@@ -387,46 +457,104 @@ export const SystemManagement = () => {
         </TabsContent>
 
         <TabsContent value="firms" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Firm Onboarding Pipeline</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-slate-400 mb-4">Manage firm registrations and approvals</p>
-              
-              {firmStats?.recent_signups && firmStats.recent_signups.length > 0 ? (
-                <div className="space-y-3">
-                  {firmStats.recent_signups.map((signup, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border border-slate-700 rounded-lg">
-                      <div>
-                        <p className="font-medium">{signup.firm_name}</p>
-                        <p className="text-sm text-slate-400">{signup.contact_email}</p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(signup.signup_date).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          signup.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          signup.status === 'approved' ? 'bg-green-100 text-green-800' :
-                          'bg-blue-100 text-blue-800'
-                        }`}>
-                          {signup.status}
-                        </span>
-                        {signup.status === 'pending' && (
-                          <Button variant="outline" size="sm">
-                            Review
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-400">No recent firm signups</p>
-              )}
-            </CardContent>
-          </Card>
+          <SuperAdminFirmManagement />
+        </TabsContent>
+
+        <TabsContent value="settings" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Global System Settings</h3>
+              <p className="text-slate-400">Configure enterprise-wide system parameters</p>
+            </div>
+            <Button onClick={initializeDefaultSettings} variant="outline">
+              <RotateCcw className="h-4 w-4 mr-2" />
+              Initialize Defaults
+            </Button>
+          </div>
+
+          {settingsLoading ? (
+            <div className="flex items-center justify-center h-32">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {['system', 'security', 'storage', 'email', 'backup', 'performance'].map(category => {
+                const categorySettings = globalSettings.filter(s => s.category === category);
+                if (categorySettings.length === 0) return null;
+
+                return (
+                  <Card key={category}>
+                    <CardHeader>
+                      <CardTitle className="flex items-center capitalize">
+                        <Settings className="h-5 w-5 mr-2 text-blue-500" />
+                        {category} Settings
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {categorySettings.map(setting => (
+                        <div key={setting.id} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <Label className="text-sm font-medium">{setting.key}</Label>
+                              {setting.description && (
+                                <p className="text-xs text-slate-500 mt-1">{setting.description}</p>
+                              )}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              {setting.requires_restart && (
+                                <Badge variant="outline" className="text-xs">
+                                  Restart Required
+                                </Badge>
+                              )}
+                              <Badge variant="secondary" className="text-xs">
+                                {setting.type}
+                              </Badge>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {setting.type === 'boolean' ? (
+                              <input
+                                type="checkbox"
+                                checked={setting.value === 'true'}
+                                onChange={(e) => 
+                                  updateSetting(setting.key, e.target.checked.toString())
+                                }
+                                className="h-4 w-4 rounded border-slate-700 bg-slate-800 text-blue-600 focus:ring-blue-500"
+                              />
+                            ) : (
+                              <div className="flex space-x-2 flex-1">
+                                <Input
+                                  type={setting.type === 'number' ? 'number' : 'text'}
+                                  value={setting.value}
+                                  onChange={(e) => {
+                                    // Update local state immediately for better UX
+                                    const newSettings = globalSettings.map(s => 
+                                      s.id === setting.id ? { ...s, value: e.target.value } : s
+                                    );
+                                    setGlobalSettings(newSettings);
+                                  }}
+                                  onBlur={(e) => updateSetting(setting.key, e.target.value)}
+                                  className="flex-1"
+                                />
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => updateSetting(setting.key, setting.value)}
+                                >
+                                  <Save className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="monitoring" className="space-y-6">

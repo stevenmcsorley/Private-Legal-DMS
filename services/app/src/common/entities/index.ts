@@ -10,3 +10,4 @@ export { AuditLog } from './audit-log.entity';
 export { MatterShare, ShareRole, ShareStatus } from './matter-share.entity';
 export { MatterTeam, MatterRole, AccessLevel } from './matter-team.entity';
 export { SystemSettings } from './system-settings.entity';
+export { GlobalSettings } from './global-settings.entity';
