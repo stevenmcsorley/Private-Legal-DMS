@@ -76,6 +76,8 @@ interface DocumentQuery {
   document_type?: string;
   tags?: string[];
   confidential?: boolean;
+  privileged?: boolean;
+  work_product?: boolean;
   legal_hold?: boolean;
   uploaded_by_type?: string;
 }
@@ -107,6 +109,8 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [documentType, setDocumentType] = useState<string>('');
   const [showConfidential, setShowConfidential] = useState<boolean | null>(null);
+  const [showPrivileged, setShowPrivileged] = useState<boolean | null>(null);
+  const [showWorkProduct, setShowWorkProduct] = useState<boolean | null>(null);
   const [showLegalHold, setShowLegalHold] = useState<boolean | null>(null);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [uploadType, setUploadType] = useState<string>('');
@@ -122,10 +126,15 @@ export const DocumentList: React.FC<DocumentListProps> = ({
   const [retentionClasses, setRetentionClasses] = useState<Array<{ id: string; name: string; retention_years: number }>>([]);
   const [selectedRetentionClass, setSelectedRetentionClass] = useState<string>('');
   const [showUploadDialog, setShowUploadDialog] = useState<boolean>(false);
+  
+  // Security flag states for upload
+  const [uploadConfidential, setUploadConfidential] = useState<boolean>(false);
+  const [uploadPrivileged, setUploadPrivileged] = useState<boolean>(false);
+  const [uploadWorkProduct, setUploadWorkProduct] = useState<boolean>(false);
 
   useEffect(() => {
     fetchDocuments();
-  }, [currentPage, matterId, clientId, searchTerm, documentType, showConfidential, showLegalHold, selectedTags, uploadType]);
+  }, [currentPage, matterId, clientId, searchTerm, documentType, showConfidential, showPrivileged, showWorkProduct, showLegalHold, selectedTags, uploadType]);
 
   const fetchDocuments = async () => {
     try {
@@ -140,6 +149,8 @@ export const DocumentList: React.FC<DocumentListProps> = ({
         ...(documentType && { document_type: documentType }),
         ...(selectedTags.length > 0 && { tags: selectedTags }),
         ...(showConfidential !== null && { confidential: showConfidential }),
+        ...(showPrivileged !== null && { privileged: showPrivileged }),
+        ...(showWorkProduct !== null && { work_product: showWorkProduct }),
         ...(showLegalHold !== null && { legal_hold: showLegalHold }),
         ...(uploadType && { uploaded_by_type: uploadType }),
       };
@@ -263,6 +274,8 @@ export const DocumentList: React.FC<DocumentListProps> = ({
     setSearchTerm('');
     setDocumentType('');
     setShowConfidential(null);
+    setShowPrivileged(null);
+    setShowWorkProduct(null);
     setShowLegalHold(null);
     setSelectedTags([]);
     setUploadType('');
@@ -332,6 +345,17 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                   if (selectedRetentionClass) {
                     form.append('retention_class_id', selectedRetentionClass);
                   }
+                  
+                  // Add security classification flags (only append if true)
+                  if (uploadConfidential) {
+                    form.append('confidential', 'true');
+                  }
+                  if (uploadPrivileged) {
+                    form.append('privileged', 'true');
+                  }
+                  if (uploadWorkProduct) {
+                    form.append('work_product', 'true');
+                  }
                   console.log('Sending form data - matter_id:', targetMatterId);
 
                   const response = await fetch('/api/documents/upload', {
@@ -347,8 +371,11 @@ export const DocumentList: React.FC<DocumentListProps> = ({
 
                   toast({ title: 'Uploaded', description: `${file.name} uploaded.` });
                   await fetchDocuments();
-                  // Reset retention class selection after successful upload
+                  // Reset upload form after successful upload
                   setSelectedRetentionClass('');
+                  setUploadConfidential(false);
+                  setUploadPrivileged(false);
+                  setUploadWorkProduct(false);
                 } catch (err: any) {
                   console.error('Upload error:', err);
                   toast({
@@ -465,6 +492,22 @@ export const DocumentList: React.FC<DocumentListProps> = ({
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
+                  id="privileged"
+                  checked={showPrivileged === true}
+                  onCheckedChange={(checked) => setShowPrivileged(checked ? true : null)}
+                />
+                <label htmlFor="privileged" className="text-sm">Privileged</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="work-product"
+                  checked={showWorkProduct === true}
+                  onCheckedChange={(checked) => setShowWorkProduct(checked ? true : null)}
+                />
+                <label htmlFor="work-product" className="text-sm">Work Product</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
                   id="legal-hold"
                   checked={showLegalHold === true}
                   onCheckedChange={(checked) => setShowLegalHold(checked ? true : null)}
@@ -521,8 +564,18 @@ export const DocumentList: React.FC<DocumentListProps> = ({
                         </Badge>
                       )}
                       {document.metadata?.confidential && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="text-xs bg-red-100 text-red-800 border-red-200">
                           Confidential
+                        </Badge>
+                      )}
+                      {document.metadata?.privileged && (
+                        <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-800 border-purple-200">
+                          Privileged
+                        </Badge>
+                      )}
+                      {document.metadata?.work_product && (
+                        <Badge variant="secondary" className="text-xs bg-orange-100 text-orange-800 border-orange-200">
+                          Work Product
                         </Badge>
                       )}
                       {document.uploaded_by_type === 'client' && (
@@ -710,9 +763,57 @@ export const DocumentList: React.FC<DocumentListProps> = ({
             </p>
           </div>
 
+          {/* Security Classification */}
+          <div>
+            <Label className="text-sm font-medium">Security Classification</Label>
+            <div className="mt-2 space-y-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="upload-confidential"
+                  checked={uploadConfidential}
+                  onCheckedChange={(checked) => setUploadConfidential(checked === true)}
+                />
+                <label htmlFor="upload-confidential" className="text-sm">
+                  <span className="font-medium">Confidential</span>
+                  <span className="text-slate-500 block text-xs">Restricted access - not visible to clients</span>
+                </label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="upload-privileged"
+                  checked={uploadPrivileged}
+                  onCheckedChange={(checked) => setUploadPrivileged(checked === true)}
+                />
+                <label htmlFor="upload-privileged" className="text-sm">
+                  <span className="font-medium">Attorney-Client Privileged</span>
+                  <span className="text-slate-500 block text-xs">Protected by attorney-client privilege</span>
+                </label>
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="upload-work-product"
+                  checked={uploadWorkProduct}
+                  onCheckedChange={(checked) => setUploadWorkProduct(checked === true)}
+                />
+                <label htmlFor="upload-work-product" className="text-sm">
+                  <span className="font-medium">Work Product</span>
+                  <span className="text-slate-500 block text-xs">Attorney work product protection</span>
+                </label>
+              </div>
+            </div>
+            <p className="text-xs text-slate-500 mt-2">
+              Security classifications control who can access this document.
+            </p>
+          </div>
+
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => {
               setSelectedRetentionClass('');
+              setUploadConfidential(false);
+              setUploadPrivileged(false);
+              setUploadWorkProduct(false);
               setShowUploadDialog(false);
             }}>
               Cancel

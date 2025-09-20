@@ -175,6 +175,8 @@ export class DocumentsController {
   @ApiQuery({ name: 'document_type', required: false, description: 'Filter by document type' })
   @ApiQuery({ name: 'tags', required: false, description: 'Filter by tags (comma-separated)' })
   @ApiQuery({ name: 'confidential', required: false, description: 'Filter by confidential status' })
+  @ApiQuery({ name: 'privileged', required: false, description: 'Filter by privileged status' })
+  @ApiQuery({ name: 'work_product', required: false, description: 'Filter by work product status' })
   @ApiQuery({ name: 'legal_hold', required: false, description: 'Filter by legal hold status' })
   @ApiResponse({
     status: HttpStatus.OK,

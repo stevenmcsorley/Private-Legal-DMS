@@ -29,6 +29,8 @@ export interface DocumentQuery {
   document_type?: string;
   tags?: string[];
   confidential?: boolean;
+  privileged?: boolean;
+  work_product?: boolean;
   legal_hold?: boolean;
   firm_id?: string;
 }
@@ -69,6 +71,11 @@ export class DocumentsService {
     uploadDto: UploadDocumentDto,
     user: UserInfo,
   ): Promise<DocumentResponseDto> {
+    // Super admins have NO document access - they are system administrators, not legal professionals
+    if (user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Super admins do not have document access for legal/ethical reasons');
+    }
+    
     if (!user.firm_id) {
       throw new ForbiddenException('User must belong to a firm to upload documents');
     }
@@ -83,7 +90,7 @@ export class DocumentsService {
       throw new NotFoundException(`Matter with ID ${uploadDto.matter_id} not found`);
     }
 
-    if (matter.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+    if (matter.firm_id !== user.firm_id) {
       throw new ForbiddenException('Cannot upload document to matter from different firm');
     }
 
@@ -251,9 +258,14 @@ export class DocumentsService {
     page: number;
     limit: number;
   }> {
-    const { page = 1, limit = 20, search, matter_id, client_id, document_type, tags, confidential, legal_hold } = query;
+    const { page = 1, limit = 20, search, matter_id, client_id, document_type, tags, confidential, privileged, work_product, legal_hold } = query;
     const firm_id = query.firm_id || user.firm_id;
 
+    // Super admins have NO document access - they are system administrators, not legal professionals
+    if (user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Super admins do not have document access for legal/ethical reasons');
+    }
+    
     if (!firm_id) {
       throw new ForbiddenException('Firm ID is required');
     }
@@ -295,6 +307,14 @@ export class DocumentsService {
       queryBuilder.andWhere('meta.confidential = :confidential', { confidential });
     }
 
+    if (privileged !== undefined) {
+      queryBuilder.andWhere('meta.privileged = :privileged', { privileged });
+    }
+
+    if (work_product !== undefined) {
+      queryBuilder.andWhere('meta.work_product = :work_product', { work_product });
+    }
+
     if (legal_hold !== undefined) {
       queryBuilder.andWhere('document.legal_hold = :legal_hold', { legal_hold });
     }
@@ -324,8 +344,13 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
+    // Super admins have NO document access - they are system administrators, not legal professionals
+    if (user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Super admins do not have document access for legal/ethical reasons');
+    }
+
     // Check firm access
-    if (document.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+    if (document.firm_id !== user.firm_id) {
       throw new ForbiddenException('Access denied to this document');
     }
 
@@ -354,8 +379,13 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
+    // Super admins have NO document access - they are system administrators, not legal professionals
+    if (user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Super admins do not have document access for legal/ethical reasons');
+    }
+
     // Check firm access
-    if (document.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+    if (document.firm_id !== user.firm_id) {
       throw new ForbiddenException('Access denied to this document');
     }
 
@@ -407,8 +437,13 @@ export class DocumentsService {
       throw new NotFoundException(`Document with ID ${id} not found`);
     }
 
+    // Super admins have NO document access - they are system administrators, not legal professionals
+    if (user.roles.includes('super_admin')) {
+      throw new ForbiddenException('Super admins do not have document access for legal/ethical reasons');
+    }
+
     // Check firm access
-    if (document.firm_id !== user.firm_id && !user.roles.includes('super_admin')) {
+    if (document.firm_id !== user.firm_id) {
       throw new ForbiddenException('Access denied to this document');
     }
 

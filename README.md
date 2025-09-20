@@ -36,7 +36,7 @@ A comprehensive legal document management system built for law firms requiring o
 - **Matter Security Classifications** — 5-tier document security classes with granular access control
 - **Clearance-Based Document Access** — Automatic access control: user clearance ≥ matter security class ✅ **NEW**
 - **Bulk Clearance Operations** — Administrative tools for managing user clearances with audit trails ✅ **NEW**
-- **Super Admin Cross-Firm Access** — Complete visibility and control across all firms and resources ✅ **NEW**
+- **Super Admin System Control** — Full system administration without document access (legal/ethical compliance) ✅ **NEW**
 - **Intelligent Team Management** — Smart user filtering to prevent client/team member confusion ✅ **NEW**
 - **Client Portal** — Secure client access to assigned matters and documents
 - **Cross-Firm Sharing** — Time-boxed collaboration with external partners
@@ -306,10 +306,10 @@ make security-scan
 | **Dashboard** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Limited | ❌ No | ❌ No |
 | **Client Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Matter Management** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ View Only | ❌ No | ❌ No |
-| **Document Read** | ✅ **Cross-Firm + Security Classifications** | ✅ Yes | ✅ Yes | ✅ **Clearance-based (Smart Access Control)** | ✅ Assigned Only | ❌ No | ✅ Shared Only |
-| **Document Upload** | ✅ **Cross-Firm + Security Classifications** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ Inbox Only | ✅ Yes | ❌ No |
-| **Document Delete** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
-| **Advanced Search** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
+| **Document Read** | ❌ **No Access (Legal/Ethical)** | ✅ Yes | ✅ Yes | ✅ **Clearance-based (Smart Access Control)** | ✅ Assigned Only | ❌ No | ✅ Shared Only |
+| **Document Upload** | ❌ **No Access (Legal/Ethical)** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ **Security Classifications** | ✅ Inbox Only | ✅ Yes | ❌ No |
+| **Document Delete** | ❌ **No Access (Legal/Ethical)** | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| **Advanced Search** | ❌ **No Document Search** | ✅ Yes | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No |
 | **Cross-Firm Sharing** | ✅ Full | ✅ Yes | ✅ Yes | ✅ Yes | ❌ No | ❌ No | ❌ No |
 | **Admin Panel** | ✅ Full | ✅ **Firm + User Clearance Management** | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No |
 | **System Administration** | ✅ Yes | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No | ❌ No |
@@ -373,11 +373,13 @@ make security-scan
 - **Advanced Filtering**: Filter documents by confidential, privileged, or work product status
 - **Search Integration**: Security-aware search respects classification levels
 
-### **Firm Isolation & Cross-Firm Access**
+### **Firm Isolation & Access Boundaries**
 - **Default**: Users can only access resources within their firm
+- **Super Admins**: System administration only - **NO document access** for legal/ethical compliance
 - **Cross-Firm Sharing**: Explicit matter sharing with time-limited access
 - **Client Portal**: Clients see only their assigned matters and documents
 - **External Partners**: Access limited to specifically shared matters only
+- **Document Isolation**: Super admins cannot view, upload, download, or search any documents
 
 ---
 

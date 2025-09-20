@@ -1,5 +1,6 @@
 import { IsString, IsOptional, IsUUID, IsInt, Min, Max, IsBoolean, IsDateString, Matches } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 
 export class UploadDocumentDto {
   @ApiProperty({
@@ -91,6 +92,12 @@ export class UploadDocumentDto {
     default: false,
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true';
+    }
+    return value;
+  })
   @IsBoolean()
   confidential?: boolean;
 
@@ -99,6 +106,12 @@ export class UploadDocumentDto {
     default: false,
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true';
+    }
+    return value;
+  })
   @IsBoolean()
   privileged?: boolean;
 
@@ -107,6 +120,12 @@ export class UploadDocumentDto {
     default: false,
   })
   @IsOptional()
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      return value === 'true';
+    }
+    return value;
+  })
   @IsBoolean()
   work_product?: boolean;
 
