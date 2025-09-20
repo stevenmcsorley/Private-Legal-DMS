@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -46,6 +47,7 @@ interface AdminStats {
 }
 
 export const AdminDashboard = () => {
+  const { isSuperAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
@@ -105,15 +107,14 @@ export const AdminDashboard = () => {
   };
 
   // Determine which tabs to show based on user role
-  const isSuperAdmin = currentUser?.roles?.includes('super_admin');
+  const userIsSuperAdmin = currentUser?.roles?.includes('super_admin');
   const visibleTabs = [
     'overview',
     'users',
     'teams',
-    ...(isSuperAdmin ? ['firms'] : []), // Firms tab only for super admins
-    'retention',
-    'holds',
-    'shares',
+    ...(userIsSuperAdmin ? ['firms'] : []), // Firms tab only for super admins
+    // Super admins don't see document-related tabs (retention, holds, shares)
+    ...(!userIsSuperAdmin ? ['retention', 'holds', 'shares'] : []),
     'audit-logs',
     'settings',
   ];
@@ -269,26 +270,29 @@ export const AdminDashboard = () => {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <FileText className="h-5 w-5 text-orange-500" />
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-sm font-medium text-slate-300">Documents</p>
-                        <div className="flex items-center">
-                          <p className="text-2xl font-bold text-slate-100">{stats.total_documents}</p>
-                          {stats.documents_on_hold > 0 && (
-                            <span className="ml-2 text-sm text-red-600">
-                              ({stats.documents_on_hold} on hold)
-                            </span>
-                          )}
+                {/* Super admins don't see document stats for legal/ethical reasons */}
+                {!isSuperAdmin() && (
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <FileText className="h-5 w-5 text-orange-500" />
+                        </div>
+                        <div className="ml-4">
+                          <p className="text-sm font-medium text-slate-300">Documents</p>
+                          <div className="flex items-center">
+                            <p className="text-2xl font-bold text-slate-100">{stats.total_documents}</p>
+                            {stats.documents_on_hold > 0 && (
+                              <span className="ml-2 text-sm text-red-600">
+                                ({stats.documents_on_hold} on hold)
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                    </CardContent>
+                  </Card>
+                )}
 
                 <Card>
                   <CardContent className="pt-6">
@@ -332,7 +336,8 @@ export const AdminDashboard = () => {
                       </div>
                     )}
                     
-                    {stats.documents_on_hold > 0 && (
+                    {/* Super admins don't see document legal holds for legal/ethical reasons */}
+                    {!isSuperAdmin() && stats.documents_on_hold > 0 && (
                       <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                         <div>
                           <p className="font-medium text-red-800">Legal Holds Active</p>
@@ -344,7 +349,8 @@ export const AdminDashboard = () => {
                       </div>
                     )}
 
-                    {stats.pending_retention_actions === 0 && stats.documents_on_hold === 0 && (
+                    {/* Show "All systems operational" based on what the user can see */}
+                    {stats.pending_retention_actions === 0 && (isSuperAdmin() || stats.documents_on_hold === 0) && (
                       <div className="text-center py-6">
                         <Activity className="h-8 w-8 text-green-500 mx-auto mb-2" />
                         <p className="text-green-700 font-medium">All systems operational</p>
@@ -395,7 +401,7 @@ export const AdminDashboard = () => {
           <TeamManagement />
         </TabsContent>
 
-        {isSuperAdmin && (
+        {isSuperAdmin() && (
           <TabsContent value="firms">
             <FirmManagement />
           </TabsContent>

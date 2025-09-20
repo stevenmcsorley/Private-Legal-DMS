@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText, Users, Briefcase, HardDrive } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface DashboardStats {
   totalDocuments: number
@@ -16,6 +17,7 @@ interface DashboardStats {
 }
 
 export const Dashboard = () => {
+  const { isSuperAdmin } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -60,18 +62,21 @@ export const Dashboard = () => {
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">Total Documents</CardTitle>
-            <FileText className="h-4 w-4 text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.totalDocuments || 0}</div>
-            <p className="text-xs text-slate-300">
-              {stats?.totalDocuments === 0 ? 'No documents uploaded yet' : 'Documents in system'}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Super admins don't see document stats for legal/ethical reasons */}
+        {!isSuperAdmin() && (
+          <Card className="bg-slate-800 border-slate-700">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium text-white">Total Documents</CardTitle>
+              <FileText className="h-4 w-4 text-orange-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-white">{stats?.totalDocuments || 0}</div>
+              <p className="text-xs text-slate-300">
+                {stats?.totalDocuments === 0 ? 'No documents uploaded yet' : 'Documents in system'}
+              </p>
+            </CardContent>
+          </Card>
+        )}
         
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

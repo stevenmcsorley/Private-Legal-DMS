@@ -27,10 +27,20 @@ interface NavItem {
 
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Documents', href: '/documents', icon: FileText },
+  { 
+    name: 'Documents', 
+    href: '/documents', 
+    icon: FileText,
+    requiredRoles: ['legal_professional', 'legal_manager', 'firm_admin', 'support_staff', 'client_user', 'external_partner']
+  },
   { name: 'Matters', href: '/matters', icon: Archive },
   { name: 'Clients', href: '/clients', icon: Building },
-  { name: 'Search', href: '/search', icon: Search },
+  { 
+    name: 'Search', 
+    href: '/search', 
+    icon: Search,
+    requiredRoles: ['legal_professional', 'legal_manager', 'firm_admin', 'support_staff', 'client_user']
+  },
   { 
     name: 'Cross-Firm Sharing', 
     href: '/sharing', 
