@@ -1240,6 +1240,10 @@ export class AdminService {
         enabled: true,
         text: 'CONFIDENTIAL - {firm_name}',
         opacity: 0.3,
+        fontSize: 48,
+        position: 'diagonal',
+        color: 'gray',
+        rotation: 45,
       },
       security_policy: {
         session_timeout_minutes: parseInt(settingsMap.get('session_timeout_minutes') || '60', 10),
@@ -1282,8 +1286,38 @@ export class AdminService {
   ): Promise<SystemSettingsDto> {
     this.validateAdminAccess(currentUser);
 
-    // For now, we'll just validate and return the updated settings
-    // In a real application, these would be persisted to the database
+    // Save each setting as a key-value pair in the database
+    const settingsToSave: Array<{ key: string; value: any }> = [
+      { key: 'firm_name', value: systemSettingsDto.firm_name },
+      { key: 'default_retention_years', value: systemSettingsDto.default_retention_years },
+      { key: 'max_upload_size_mb', value: systemSettingsDto.max_file_size_mb },
+      { key: 'enable_ocr', value: systemSettingsDto.enable_ocr },
+      { key: 'enable_legal_holds', value: systemSettingsDto.enable_legal_holds },
+      { key: 'enable_cross_firm_sharing', value: systemSettingsDto.enable_cross_firm_sharing },
+    ];
+
+    // Add optional configs if they exist
+    if (systemSettingsDto.backup_config) {
+      settingsToSave.push({ key: 'backup_config', value: systemSettingsDto.backup_config });
+    }
+    if (systemSettingsDto.smtp_config) {
+      settingsToSave.push({ key: 'smtp_config', value: systemSettingsDto.smtp_config });
+    }
+    if (systemSettingsDto.watermark_config) {
+      settingsToSave.push({ key: 'watermark_config', value: systemSettingsDto.watermark_config });
+    }
+    if (systemSettingsDto.security_policy) {
+      settingsToSave.push({ key: 'security_policy', value: systemSettingsDto.security_policy });
+    }
+
+    // Save or update each setting
+    for (const setting of settingsToSave) {
+      await this.systemSettingsRepository.save({
+        key: setting.key,
+        value: setting.value,
+        updated_by: currentUser.sub,
+      });
+    }
     
     this.logger.log(`System settings updated by ${currentUser.email}`, {
       settings: systemSettingsDto,

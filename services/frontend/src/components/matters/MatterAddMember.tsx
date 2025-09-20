@@ -96,9 +96,11 @@ export const MatterAddMember: React.FC = () => {
       
       if (response.ok) {
         const data = await response.json();
-        // Filter out inactive users and get only active ones
-        const activeUsers = (data.users || []).filter((user: User) => user.is_active);
-        setUsers(activeUsers);
+        // Filter out inactive users, client users, and get only firm members
+        const firmUsers = (data.users || []).filter((user: User) => 
+          user.is_active && !user.roles.includes('client_user')
+        );
+        setUsers(firmUsers);
       } else {
         setError('Failed to fetch users');
       }

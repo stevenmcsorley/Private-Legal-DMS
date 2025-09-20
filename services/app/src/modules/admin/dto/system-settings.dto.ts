@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, IsBoolean, IsOptional, IsObject, IsUrl, Min, Max, MaxLength } from 'class-validator';
+import { IsString, IsNumber, IsBoolean, IsOptional, IsObject, Min, Max, MaxLength } from 'class-validator';
 
 export class SystemSettingsDto {
   @ApiProperty({
@@ -82,7 +82,15 @@ export class SystemSettingsDto {
 
   @ApiProperty({
     description: 'Watermark configuration for document downloads',
-    example: { enabled: true, text: 'CONFIDENTIAL - {firm_name}', opacity: 0.3 },
+    example: { 
+      enabled: true, 
+      text: 'CONFIDENTIAL - {firm_name}', 
+      opacity: 0.3, 
+      fontSize: 48, 
+      position: 'diagonal', 
+      color: 'gray', 
+      rotation: 45 
+    },
     required: false,
   })
   @IsOptional()
@@ -91,6 +99,10 @@ export class SystemSettingsDto {
     enabled: boolean;
     text: string;
     opacity: number;
+    fontSize: number;
+    position: string;
+    color: string;
+    rotation: number;
   };
 
   @ApiProperty({

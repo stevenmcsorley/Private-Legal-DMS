@@ -235,7 +235,7 @@ export const CrossFirmSharing = () => {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Loading shares...</p>
+          <p className="mt-2 text-slate-400">Loading shares...</p>
         </div>
       </div>
     );
@@ -250,7 +250,7 @@ export const CrossFirmSharing = () => {
             <Share2 className="h-6 w-6 mr-3 text-blue-600" />
             Cross-Firm Sharing
           </h1>
-          <p className="text-gray-600">Manage sharing with other law firms</p>
+          <p className="text-slate-400">Manage sharing with other law firms</p>
         </div>
         <Button asChild>
           <Link to="/sharing/new">
@@ -269,8 +269,8 @@ export const CrossFirmSharing = () => {
                 <Share2 className="h-5 w-5 text-blue-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Active Outgoing</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-slate-300">Active Outgoing</p>
+                <p className="text-2xl font-bold text-slate-100">
                   {outgoingShares.filter(s => s.status === 'active').length}
                 </p>
               </div>
@@ -285,8 +285,8 @@ export const CrossFirmSharing = () => {
                 <Building className="h-5 w-5 text-green-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Active Incoming</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-slate-300">Active Incoming</p>
+                <p className="text-2xl font-bold text-slate-100">
                   {incomingShares.filter(s => s.status === 'active').length}
                 </p>
               </div>
@@ -301,8 +301,8 @@ export const CrossFirmSharing = () => {
                 <Clock className="h-5 w-5 text-yellow-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Pending</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-slate-300">Pending</p>
+                <p className="text-2xl font-bold text-slate-100">
                   {incomingShares.filter(s => s.status === 'pending').length}
                 </p>
               </div>
@@ -317,8 +317,8 @@ export const CrossFirmSharing = () => {
                 <AlertCircle className="h-5 w-5 text-red-500" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-900">Expiring Soon</p>
-                <p className="text-2xl font-bold text-gray-900">
+                <p className="text-sm font-medium text-slate-300">Expiring Soon</p>
+                <p className="text-2xl font-bold text-slate-100">
                   {outgoingShares.filter(s => isExpiring(s.expires_at)).length}
                 </p>
               </div>
@@ -393,7 +393,7 @@ export const CrossFirmSharing = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="text-lg font-medium text-gray-200 truncate">
+                          <h4 className="text-lg font-medium text-slate-100 truncate">
                             {share.matter.title}
                           </h4>
                           <Badge className={getStatusColor(share.status)}>
@@ -409,7 +409,7 @@ export const CrossFirmSharing = () => {
                           )}
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
                           <span className="flex items-center">
                             <Building className="h-4 w-4 mr-1" />
                             Shared with {share.shared_with_firm_name}
@@ -435,7 +435,7 @@ export const CrossFirmSharing = () => {
                         </div>
 
                         {share.message && (
-                          <p className="text-sm text-gray-600 mt-2 italic">
+                          <p className="text-sm text-slate-400 mt-2 italic">
                             "{share.message}"
                           </p>
                         )}
@@ -474,8 +474,8 @@ export const CrossFirmSharing = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <Share2 className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No outgoing shares</h3>
-                <p className="text-gray-600 mb-4">
+                <h3 className="text-lg font-medium text-slate-100 mb-2">No outgoing shares</h3>
+                <p className="text-slate-400 mb-4">
                   {searchTerm || statusFilter !== 'all' || roleFilter !== 'all'
                     ? 'Try adjusting your filters to see more results.'
                     : 'Start collaborating by sharing a matter with another firm.'}
@@ -504,7 +504,7 @@ export const CrossFirmSharing = () => {
                       
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center space-x-2 mb-2">
-                          <h4 className="text-lg font-medium text-gray-200 truncate">
+                          <h4 className="text-lg font-medium text-slate-100 truncate">
                             {share.matter_title}
                           </h4>
                           <Badge className={getStatusColor(share.status)}>
@@ -515,7 +515,7 @@ export const CrossFirmSharing = () => {
                           </Badge>
                         </div>
                         
-                        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-300">
                           <span className="flex items-center">
                             <Building className="h-4 w-4 mr-1" />
                             From {share.shared_by_firm_name}
@@ -537,7 +537,7 @@ export const CrossFirmSharing = () => {
                         </div>
 
                         {share.message && (
-                          <p className="text-sm text-gray-600 mt-2 italic">
+                          <p className="text-sm text-slate-400 mt-2 italic">
                             "{share.message}"
                           </p>
                         )}
@@ -583,8 +583,8 @@ export const CrossFirmSharing = () => {
             <Card>
               <CardContent className="text-center py-12">
                 <Building className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No incoming shares</h3>
-                <p className="text-gray-600">
+                <h3 className="text-lg font-medium text-slate-100 mb-2">No incoming shares</h3>
+                <p className="text-slate-400">
                   {searchTerm || statusFilter !== 'all' || roleFilter !== 'all'
                     ? 'Try adjusting your filters to see more results.'
                     : 'Matters shared with your firm will appear here.'}
