@@ -2,6 +2,16 @@
 
 > **Enterprise-grade, self-hosted legal DMS with WORM compliance, matter-centric workflows, and zero-trust security architecture**
 
+## 🚀 **PROJECT STATUS: Code Freeze (September 2025)**
+
+> **The system is currently in a production-ready state with all major features complete.** 
+> 
+> **📁 Code Freeze Documentation**: See `/code-freeze/docs/` for complete database dumps and restore procedures.
+> 
+> **🗃️ Database Snapshots**: Full PostgreSQL dumps available for both main database (4.6MB) and Keycloak (304KB).
+> 
+> **🔄 Resume Development**: Complete restoration instructions in `code-freeze/docs/database-restore-instructions.md`
+
 A comprehensive legal document management system built for law firms requiring on-premise security, regulatory compliance, and sophisticated access controls. Features military-grade security, document security classifications (confidential/privileged/work product), advanced clearance-based access control, full audit trails, and enterprise-grade multi-firm management capabilities.
 
 ![Login Screen](./login-screen.png)
@@ -36,7 +46,7 @@ A comprehensive legal document management system built for law firms requiring o
 - **Matter Security Classifications** — 5-tier document security classes with granular access control
 - **Clearance-Based Document Access** — Automatic access control: user clearance ≥ matter security class ✅ **NEW**
 - **Bulk Clearance Operations** — Administrative tools for managing user clearances with audit trails ✅ **NEW**
-- **Super Admin System Control** — Full system administration without document access (legal/ethical compliance) ✅ **NEW**
+- **Super Admin System Control** — Full system administration with firm management and global settings (legal/ethical compliance) ✅ **NEW**
 - **Intelligent Team Management** — Smart user filtering to prevent client/team member confusion ✅ **NEW**
 - **Client Portal** — Secure client access to assigned matters and documents
 - **Cross-Firm Sharing** — Time-boxed collaboration with external partners
