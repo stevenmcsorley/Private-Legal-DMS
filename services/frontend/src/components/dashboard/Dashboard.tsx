@@ -78,31 +78,36 @@ export const Dashboard = () => {
           </Card>
         )}
         
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">Active Matters</CardTitle>
-            <Briefcase className="h-4 w-4 text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.activeMatters || 0}</div>
-            <p className="text-xs text-slate-300">
-              {stats?.activeMatters === 0 ? 'No active matters' : 'Active legal matters'}
-            </p>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-slate-800 border-slate-700">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-white">Clients</CardTitle>
-            <Users className="h-4 w-4 text-orange-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-white">{stats?.totalClients || 0}</div>
-            <p className="text-xs text-slate-300">
-              {stats?.totalClients === 0 ? 'No clients added' : 'Registered clients'}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Super admins don't see firm operational data */}
+        {!isSuperAdmin() && (
+          <>
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white">Active Matters</CardTitle>
+                <Briefcase className="h-4 w-4 text-orange-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">{stats?.activeMatters || 0}</div>
+                <p className="text-xs text-slate-300">
+                  {stats?.activeMatters === 0 ? 'No active matters' : 'Active legal matters'}
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-white">Clients</CardTitle>
+                <Users className="h-4 w-4 text-orange-400" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-white">{stats?.totalClients || 0}</div>
+                <p className="text-xs text-slate-300">
+                  {stats?.totalClients === 0 ? 'No clients added' : 'Registered clients'}
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
         
         <Card className="bg-slate-800 border-slate-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

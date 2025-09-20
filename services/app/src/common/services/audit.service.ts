@@ -30,6 +30,13 @@ export class AuditService {
    */
   async log(context: AuditContext): Promise<void> {
     try {
+      // Skip audit logging for super admins to preserve legal/ethical boundaries
+      // Super admin activities should not be visible in firm audit logs
+      if (context.user.roles.includes('super_admin')) {
+        this.logger.debug(`Skipping audit log for super admin action: ${context.action}`);
+        return;
+      }
+
       const auditLog = this.auditLogRepository.create({
         user_id: context.user.sub,
         firm_id: context.user.firm_id,

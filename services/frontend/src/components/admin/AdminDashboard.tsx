@@ -22,6 +22,7 @@ import { ShareAnalytics } from './ShareAnalytics';
 import { SystemSettings } from './SystemSettings';
 import { AuditLogs } from './AuditLogs';
 import { FirmManagement } from './FirmManagement';
+import { SystemManagement } from './SystemManagement';
 import { LegalHoldDetails } from './LegalHoldDetails';
 import { LegalHoldManage } from './LegalHoldManage';
 import { LegalHoldCreate } from './LegalHoldCreate';
@@ -110,9 +111,8 @@ export const AdminDashboard = () => {
   const userIsSuperAdmin = currentUser?.roles?.includes('super_admin');
   const visibleTabs = [
     'overview',
-    'users',
-    'teams',
-    ...(userIsSuperAdmin ? ['firms'] : []), // Firms tab only for super admins
+    // Super admins see system management
+    ...(userIsSuperAdmin ? ['users', 'firms'] : ['users', 'teams']),
     // Super admins don't see document-related tabs (retention, holds, shares)
     ...(!userIsSuperAdmin ? ['retention', 'holds', 'shares'] : []),
     'audit-logs',
@@ -164,6 +164,11 @@ export const AdminDashboard = () => {
         <Route path="users/:userId/edit" element={<UserEdit />} />
       </Routes>
     );
+  }
+
+  // Super admins get the dedicated system management interface
+  if (isSuperAdmin()) {
+    return <SystemManagement />;
   }
 
   return (

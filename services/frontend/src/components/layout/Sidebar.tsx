@@ -33,8 +33,18 @@ const navigation: NavItem[] = [
     icon: FileText,
     requiredRoles: ['legal_professional', 'legal_manager', 'firm_admin', 'support_staff', 'client_user', 'external_partner']
   },
-  { name: 'Matters', href: '/matters', icon: Archive },
-  { name: 'Clients', href: '/clients', icon: Building },
+  { 
+    name: 'Matters', 
+    href: '/matters', 
+    icon: Archive,
+    requiredRoles: ['legal_professional', 'legal_manager', 'firm_admin', 'support_staff', 'client_user', 'external_partner']
+  },
+  { 
+    name: 'Clients', 
+    href: '/clients', 
+    icon: Building,
+    requiredRoles: ['legal_professional', 'legal_manager', 'firm_admin', 'support_staff']
+  },
   { 
     name: 'Search', 
     href: '/search', 
