@@ -378,13 +378,22 @@ export const MatterDetails = () => {
         <TabsContent value="people" className="space-y-4">
           <div className="flex justify-between items-center">
             <h3 className="text-lg font-medium text-white">Team Members</h3>
-            <Button 
-              variant="outline"
-              onClick={() => navigate(`/matters/${id}/add-member`)}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Add Member
-            </Button>
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline"
+                onClick={() => navigate(`/matters/${id}/add-member`)}
+              >
+                <Users className="h-4 w-4 mr-2" />
+                Add Member
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate(`/matters/${id}/change-client`)}
+              >
+                <Building className="h-4 w-4 mr-2" />
+                Change Client
+              </Button>
+            </div>
           </div>
 
           <div className="space-y-2">

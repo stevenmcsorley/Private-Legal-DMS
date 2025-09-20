@@ -198,7 +198,8 @@ export const MatterAddMember: React.FC = () => {
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-slate-100">Add Team Member</h1>
-            <p className="text-slate-400">Add a team member to: {matter.title}</p>
+            <p className="text-slate-400">Add a firm member to: {matter.title}</p>
+            <p className="text-xs text-slate-500">Note: To change the client for this matter, use the "Change Client" option in matter settings</p>
           </div>
         </div>
         

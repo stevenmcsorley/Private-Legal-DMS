@@ -31,7 +31,7 @@ export class Matter {
   @Column('uuid')
   firm_id: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: true })
   client_id: string;
 
   @Column({ type: 'varchar', length: 500 })

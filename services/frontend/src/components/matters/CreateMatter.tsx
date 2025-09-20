@@ -145,16 +145,26 @@ export const CreateMatter = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="client">Client *</Label>
+                <Label htmlFor="client">Client</Label>
                 <Select
                   value={formData.client_id}
                   onValueChange={(value) => handleInputChange('client_id', value)}
-                  required
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select client" />
+                    <SelectValue placeholder="Select client (optional)" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-8 h-8 rounded-full bg-slate-500 flex items-center justify-center text-slate-300 text-xs">
+                          ?
+                        </div>
+                        <div>
+                          <div className="font-medium">No Client</div>
+                          <div className="text-sm text-slate-400">Assign client later</div>
+                        </div>
+                      </div>
+                    </SelectItem>
                     {Array.isArray(clients) && clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.name} {client.contact_email ? `(${client.contact_email})` : ''}
@@ -162,6 +172,9 @@ export const CreateMatter = () => {
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-sm text-slate-500">
+                  Client assignment is optional. You can create matters and assign clients later.
+                </p>
               </div>
 
               <div className="space-y-2">

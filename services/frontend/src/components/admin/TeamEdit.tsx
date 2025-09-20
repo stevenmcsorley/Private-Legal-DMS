@@ -96,7 +96,11 @@ export const TeamEdit: React.FC = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setAvailableUsers(data.users || []);
+        // Filter out client users - teams are for firm members only
+        const firmUsers = (data.users || []).filter((user: User) => 
+          !user.roles.includes('client_user')
+        );
+        setAvailableUsers(firmUsers);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
@@ -301,6 +305,9 @@ export const TeamEdit: React.FC = () => {
               {/* User Search */}
               <div className="space-y-2">
                 <Label>Add Team Members</Label>
+                <p className="text-sm text-slate-500">
+                  Teams are for firm members only. Client users are managed separately through matter assignments.
+                </p>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input

@@ -3,13 +3,13 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MatterStatus } from '../../../common/entities';
 
 export class CreateMatterDto {
-  @ApiProperty({
-    description: 'Client ID this matter belongs to',
+  @ApiPropertyOptional({
+    description: 'Client ID this matter belongs to (optional - can be assigned later)',
     example: '123e4567-e89b-12d3-a456-426614174000',
   })
+  @IsOptional()
   @IsUUID()
-  @IsNotEmpty()
-  client_id: string;
+  client_id?: string;
 
   @ApiProperty({
     description: 'Matter title',
